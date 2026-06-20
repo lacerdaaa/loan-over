@@ -81,6 +81,7 @@ export const Sidebar = () => {
   const { data: me } = useMe();
   const theme = useTheme();
   const animations = useAnimations();
+  const spring = animations.enabled ? { type: 'spring' as const, stiffness: 400, damping: 36 } : { duration: 0 };
 
   return (
     <div className="flex h-screen bg-base-100 overflow-hidden">
@@ -88,7 +89,7 @@ export const Sidebar = () => {
       {/* Desktop sidebar */}
       <motion.aside
         animate={{ width: collapsed ? 64 : 240 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 36 }}
+        transition={spring}
         className="hidden md:flex flex-col border-r border-base-300 bg-base-200 overflow-hidden shrink-0"
       >
         <div className="flex items-center gap-3 px-3 py-5 border-b border-base-300">
@@ -121,8 +122,8 @@ export const Sidebar = () => {
             />
             <motion.aside
               className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-base-200 border-r border-base-300 md:hidden"
-              initial={{ x: -256 }} animate={{ x: 0 }} exit={{ x: -256 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 36 }}
+              initial={{ x: animations.enabled ? -256 : 0 }} animate={{ x: 0 }} exit={{ x: animations.enabled ? -256 : 0 }}
+              transition={spring}
             >
               <div className="flex items-center justify-between px-4 py-5 border-b border-base-300">
                 <div className="flex items-center gap-3">
