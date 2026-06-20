@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDebts } from '../api/debts';
 import { useSnapshot } from '../api/snapshot';
@@ -9,8 +10,13 @@ import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 
 const now = new Date();
-const MONTH = now.getMonth() + 1;
-const YEAR = now.getFullYear();
+const CURRENT_MONTH = now.getMonth() + 1;
+const CURRENT_YEAR = now.getFullYear();
+
+const addMonths = (month: number, year: number, delta: number) => {
+  const d = new Date(year, month - 1 + delta, 1);
+  return { month: d.getMonth() + 1, year: d.getFullYear() };
+};
 
 const payoffMonth = (startDate: string, total: number) => {
   const d = new Date(startDate);
@@ -19,17 +25,57 @@ const payoffMonth = (startDate: string, total: number) => {
 };
 
 export const DashboardPage = () => {
-  const snapshot = useSnapshot(MONTH, YEAR);
+  const [month, setMonth] = useState(CURRENT_MONTH);
+  const [year, setYear] = useState(CURRENT_YEAR);
+
+  const snapshot = useSnapshot(month, year);
   const debts = useDebts();
   const openDebts = debts.data?.filter((d) => !d.closed) ?? [];
   const snap = snapshot.data;
 
+  const navigate = (delta: number) => {
+    const next = addMonths(month, year, delta);
+    setMonth(next.month);
+    setYear(next.year);
+  };
+
+  const isCurrentMonth = month === CURRENT_MONTH && year === CURRENT_YEAR;
+
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold text-base-content">{monthLabel(MONTH, YEAR)}</h1>
-          <p className="text-base-content/50 text-sm mt-0.5">Monthly overview</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-base-content">{monthLabel(month, year)}</h1>
+            <p className="text-base-content/50 text-sm mt-0.5">Monthly overview</p>
+          </div>
+          <div className="flex items-center gap-1">
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              className="btn btn-ghost btn-sm btn-square"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={16} />
+            </motion.button>
+            {!isCurrentMonth && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileTap={{ scale: 0.93 }}
+                className="btn btn-ghost btn-xs text-primary px-2"
+                onClick={() => { setMonth(CURRENT_MONTH); setYear(CURRENT_YEAR); }}
+              >
+                Today
+              </motion.button>
+            )}
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              className="btn btn-ghost btn-sm btn-square"
+              onClick={() => navigate(1)}
+            >
+              <ArrowRight size={16} />
+            </motion.button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
