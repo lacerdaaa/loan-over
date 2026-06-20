@@ -21,6 +21,7 @@ export const DashboardPage = () => {
   const snapshot = useSnapshot(MONTH, YEAR);
   const debts = useDebts();
   const openDebts = debts.data?.filter((d) => !d.closed) ?? [];
+  const snap = snapshot.data;
 
   return (
     <PageTransition>
@@ -31,14 +32,18 @@ export const DashboardPage = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {snapshot.data ? (
+          {snap ? (
             <>
-              <StatCard label="Total Income" value={snapshot.data.total_income} delay={0} />
-              <StatCard label="Total Outflow" value={snapshot.data.total_debts + snapshot.data.total_fixed} delay={0.07} />
+              <StatCard label="Total Income" value={snap.total_income} delay={0} />
+              <StatCard
+                label="Total Outflow"
+                value={snap.total_debts + snap.total_fixed + snap.total_occasional}
+                delay={0.07}
+              />
               <StatCard
                 label="Free Balance"
-                value={snapshot.data.free_balance}
-                variant={snapshot.data.free_balance >= 0 ? 'positive' : 'negative'}
+                value={snap.free_balance}
+                variant={snap.free_balance >= 0 ? 'positive' : 'negative'}
                 delay={0.14}
               />
             </>
@@ -48,6 +53,23 @@ export const DashboardPage = () => {
             ))
           )}
         </div>
+
+        {snap && (snap.total_occasional > 0 || snap.total_debt_balance > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {snap.total_occasional > 0 && (
+              <Link to="/occasional-expenses" className="card bg-base-200 border border-base-300 p-4 hover:border-error/40 transition-colors">
+                <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Occasional this month</p>
+                <p className="text-xl font-bold text-error">{formatCurrency(snap.total_occasional)}</p>
+              </Link>
+            )}
+            {snap.total_debt_balance > 0 && (
+              <Link to="/debts" className="card bg-base-200 border border-base-300 p-4 hover:border-warning/40 transition-colors">
+                <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Total debt remaining</p>
+                <p className="text-xl font-bold text-warning">{formatCurrency(snap.total_debt_balance)}</p>
+              </Link>
+            )}
+          </div>
+        )}
 
         <div className="card bg-base-200 border border-base-300 p-5">
           <div className="flex justify-between items-center mb-4">
@@ -71,7 +93,9 @@ export const DashboardPage = () => {
                 <div className="flex-1">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-base-content">{debt.name}</span>
-                    <span className="text-base-content/50">{formatCurrency(debt.installment_amount)}/mo · payoff {payoffMonth(debt.start_date, debt.total_installments)}</span>
+                    <span className="text-base-content/50">
+                      {formatCurrency(debt.installment_amount)}/mo · payoff {payoffMonth(debt.start_date, debt.total_installments)}
+                    </span>
                   </div>
                   <progress
                     className="progress progress-primary w-full h-1.5"

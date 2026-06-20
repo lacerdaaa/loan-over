@@ -33,5 +33,7 @@ export interface MonthlySnapshot {
   total_income: number;
   total_debts: number;
   total_fixed: number;
+  total_occasional: number;
+  total_debt_balance: number;
   free_balance: number;
 }

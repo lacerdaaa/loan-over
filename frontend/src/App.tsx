@@ -7,6 +7,7 @@ import { DebtsPage } from './pages/DebtsPage';
 import { FixedExpensesPage } from './pages/FixedExpensesPage';
 import { GoalPage } from './pages/GoalPage';
 import { IncomePage } from './pages/IncomePage';
+import { OccasionalExpensesPage } from './pages/OccasionalExpensesPage';
 import { TimelinePage } from './pages/TimelinePage';
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const AnimatedRoutes = () => {
         <Route path="/debts" element={<DebtsPage />} />
         <Route path="/income" element={<IncomePage />} />
         <Route path="/fixed-expenses" element={<FixedExpensesPage />} />
+        <Route path="/occasional-expenses" element={<OccasionalExpensesPage />} />
         <Route path="/goal" element={<GoalPage />} />
       </Routes>
     </AnimatePresence>

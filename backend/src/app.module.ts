@@ -6,6 +6,7 @@ import { DebtModule } from './debt/debt.module';
 import { FixedExpenseModule } from './fixed-expense/fixed-expense.module';
 import { GoalModule } from './goal/goal.module';
 import { IncomeModule } from './income/income.module';
+import { OccasionalExpenseModule } from './occasional-expense/occasional-expense.module';
 import { ProjectionModule } from './projection/projection.module';
 import { SnapshotModule } from './snapshot/snapshot.module';
 
@@ -29,6 +30,7 @@ import { SnapshotModule } from './snapshot/snapshot.module';
     IncomeModule,
     DebtModule,
     FixedExpenseModule,
+    OccasionalExpenseModule,
     SnapshotModule,
     ProjectionModule,
     GoalModule,

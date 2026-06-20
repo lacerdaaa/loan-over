@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/debts', label: 'Debts', icon: '💳' },
   { to: '/income', label: 'Income', icon: '💰' },
   { to: '/fixed-expenses', label: 'Fixed Expenses', icon: '📋' },
+  { to: '/occasional-expenses', label: 'Occasional', icon: '🧾' },
   { to: '/goal', label: 'Goal', icon: '🎯' },
 ];
 

@@ -44,12 +44,23 @@ export interface Goal {
   deadline_year: number;
 }
 
+export interface OccasionalExpense {
+  id: string;
+  description: string;
+  amount: number;
+  month: number;
+  year: number;
+  from_benefit: boolean;
+}
+
 export interface MonthlySnapshot {
   month: number;
   year: number;
   total_income: number;
   total_debts: number;
   total_fixed: number;
+  total_occasional: number;
+  total_debt_balance: number;
   free_balance: number;
 }
 
