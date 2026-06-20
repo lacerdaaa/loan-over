@@ -1,10 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DebtService } from '../debt/debt.service';
 import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
 import { IncomeService } from '../income/income.service';
 import { MonthlySnapshot } from '../shared/types';
 import { SnapshotService } from './snapshot.service';
 
+@ApiTags('snapshot')
 @Controller('snapshot')
 export class SnapshotController {
   constructor(
@@ -15,6 +17,15 @@ export class SnapshotController {
   ) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Get monthly cash-flow snapshot',
+    description:
+      'Computes total_income, total_debts, total_fixed and free_balance for the given month. ' +
+      'Closed debts and inactive expenses are excluded.',
+  })
+  @ApiQuery({ name: 'month', required: true, example: 6 })
+  @ApiQuery({ name: 'year', required: true, example: 2026 })
+  @ApiOkResponse({ description: 'MonthlySnapshot' })
   async get(
     @Query('month') month: number,
     @Query('year') year: number,
