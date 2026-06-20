@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useDebts } from '../api/debts';
 import { useGoal, useUpsertGoal } from '../api/goal';
 import { useSnapshot } from '../api/snapshot';
@@ -127,6 +127,8 @@ export const GoalPage = () => {
     [JSON.stringify(openDebts), freeBal, monthlyMin, targetAmount],
   );
 
+  const infoRef = useRef<HTMLDialogElement>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     upsert.mutate(form);
@@ -137,10 +139,60 @@ export const GoalPage = () => {
       <div className="flex flex-col gap-5 w-full">
 
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-base-content">Plano Financeiro</h1>
-          <p className="text-base-content/50 text-sm mt-0.5">Quitar dívidas primeiro, depois poupar</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-base-content">Plano Financeiro</h1>
+            <p className="text-base-content/50 text-sm mt-0.5">Quitar dívidas primeiro, depois poupar</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => infoRef.current?.showModal()}
+            className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-base-content mt-1 shrink-0"
+          >
+            ?
+          </button>
         </div>
+
+        {/* Methodology modal */}
+        <dialog ref={infoRef} className="modal">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">Como funciona o Snowball</h3>
+            <div className="flex flex-col gap-4 text-sm text-base-content/80">
+              <div className="flex gap-3">
+                <span className="badge badge-primary badge-sm mt-0.5 shrink-0">1</span>
+                <p>
+                  <strong className="text-base-content">Fase de quitação</strong> — enquanto houver dívidas abertas,
+                  você reserva a <strong>poupança mínima</strong> que definiu e joga o restante do saldo livre
+                  na dívida com o <strong>menor saldo devedor</strong> primeiro.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <span className="badge badge-primary badge-sm mt-0.5 shrink-0">2</span>
+                <p>
+                  Quando essa dívida é quitada, a parcela que era paga todo mês fica <strong>livre</strong> e
+                  passa a turbinar a próxima da lista. O efeito cresce como uma bola de neve.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <span className="badge badge-success badge-sm mt-0.5 shrink-0">3</span>
+                <p>
+                  <strong className="text-base-content">Fase de poupança</strong> — com todas as dívidas zeradas,
+                  o saldo inteiro vai para a sua meta. Sem dívida, todo o dinheiro é seu.
+                </p>
+              </div>
+              <div className="bg-base-200 rounded-lg p-3 text-xs text-base-content/60">
+                O badge <span className="badge badge-success badge-xs">−3m</span> indica quantos meses mais cedo
+                essa dívida será quitada em comparação com o pagamento mínimo normal.
+              </div>
+            </div>
+            <div className="modal-action">
+              <form method="dialog">
+                <button className="btn btn-sm btn-ghost">Fechar</button>
+              </form>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop"><button>fechar</button></form>
+        </dialog>
 
         {/* Stats bar — full width */}
         <div className="stats stats-horizontal bg-base-200 border border-base-300 w-full shadow-none">
