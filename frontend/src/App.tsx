@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
+import { AnimationsProvider } from './lib/animations';
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Sidebar } from './components/layout/Sidebar';
@@ -33,6 +34,7 @@ const AnimatedRoutes = () => {
 };
 
 export const App = () => (
+  <AnimationsProvider>
   <QueryClientProvider client={queryClient}>
     <Router>
       <Routes>
@@ -46,4 +48,5 @@ export const App = () => (
       </Routes>
     </Router>
   </QueryClientProvider>
+  </AnimationsProvider>
 );

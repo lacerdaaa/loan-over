@@ -1,4 +1,4 @@
-import { LogOut, Moon, Sun } from 'lucide-react';
+import { LogOut, Moon, Sparkles, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clearToken } from '../../lib/auth';
 import { Modal } from '../ui/Modal';
@@ -11,9 +11,11 @@ interface Props {
   avatar?: string;
   dark: boolean;
   onThemeToggle: () => void;
+  animations: boolean;
+  onAnimationsToggle: () => void;
 }
 
-export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThemeToggle }: Props) => {
+export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThemeToggle, animations, onAnimationsToggle }: Props) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -58,6 +60,20 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
             className="toggle toggle-primary"
             checked={dark}
             onChange={onThemeToggle}
+          />
+        </label>
+
+        {/* Animations toggle */}
+        <label className="flex items-center justify-between px-1 cursor-pointer">
+          <div className="flex items-center gap-3">
+            <Sparkles size={16} className="text-base-content/60" />
+            <span className="text-sm text-base-content">Animações</span>
+          </div>
+          <input
+            type="checkbox"
+            className="toggle toggle-primary"
+            checked={animations}
+            onChange={onAnimationsToggle}
           />
         </label>
 

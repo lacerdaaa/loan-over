@@ -4,6 +4,7 @@ import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
+import { useAnimations } from '../../lib/animations';
 import { useTheme } from '../../lib/theme';
 import { SettingsModal } from './SettingsModal';
 
@@ -79,6 +80,7 @@ export const Sidebar = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { data: me } = useMe();
   const theme = useTheme();
+  const animations = useAnimations();
 
   return (
     <div className="flex h-screen bg-base-100 overflow-hidden">
@@ -161,6 +163,8 @@ export const Sidebar = () => {
         avatar={me?.avatar}
         dark={theme.dark}
         onThemeToggle={theme.toggle}
+        animations={animations.enabled}
+        onAnimationsToggle={animations.toggle}
       />
     </div>
   );
