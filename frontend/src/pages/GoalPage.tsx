@@ -35,7 +35,7 @@ export const GoalPage = () => {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-6 max-w-2xl">
+      <div className="flex flex-col gap-6 w-full max-w-2xl">
         <div>
           <h1 className="text-2xl font-bold text-base-content">Savings Goal</h1>
           <p className="text-base-content/50 text-sm mt-0.5">Track progress toward your target</p>

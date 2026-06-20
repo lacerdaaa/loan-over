@@ -113,7 +113,7 @@ export const IncomePage = () => {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-6 max-w-3xl">
+      <div className="flex flex-col gap-6 w-full">
         <div className="flex justify-between items-start">
           <h1 className="text-2xl font-bold text-base-content">Income</h1>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">

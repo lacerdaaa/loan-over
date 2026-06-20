@@ -12,7 +12,7 @@ export const TimelinePage = () => {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-6 max-w-5xl">
+      <div className="flex flex-col gap-6 w-full">
         <div>
           <h1 className="text-2xl font-bold text-base-content">24-Month Projection</h1>
           <p className="text-base-content/50 text-sm mt-0.5">Future cash flow based on current debts and income</p>

@@ -43,7 +43,7 @@ export const DashboardPage = () => {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-6 max-w-4xl">
+      <div className="flex flex-col gap-6 w-full">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-base-content">{monthLabel(month, year)}</h1>
@@ -78,7 +78,7 @@ export const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {snap ? (
             <>
               <StatCard label="Total Income" value={snap.total_income} delay={0} />
@@ -102,7 +102,7 @@ export const DashboardPage = () => {
         </div>
 
         {snap && ((snap.total_occasional ?? 0) > 0 || (snap.total_debt_balance ?? 0) > 0 || (snap.total_benefit ?? 0) > 0) && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(snap.total_benefit ?? 0) > 0 && (
               <Link to="/income" className="card bg-base-200 border border-base-300 p-4 hover:border-warning/40 transition-colors">
                 <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Benefits (restricted)</p>
