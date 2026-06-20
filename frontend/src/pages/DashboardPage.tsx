@@ -1,0 +1,106 @@
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { useDebts } from '../api/debts';
+import { useSnapshot } from '../api/snapshot';
+import { StatCard } from '../components/ui/StatCard';
+import { PageTransition } from '../components/ui/PageTransition';
+import { formatCurrency } from '../lib/formatCurrency';
+import { monthLabel } from '../lib/monthLabel';
+
+const now = new Date();
+const MONTH = now.getMonth() + 1;
+const YEAR = now.getFullYear();
+
+const payoffMonth = (startDate: string, total: number) => {
+  const d = new Date(startDate);
+  d.setMonth(d.getMonth() + total);
+  return monthLabel(d.getMonth() + 1, d.getFullYear());
+};
+
+export const DashboardPage = () => {
+  const snapshot = useSnapshot(MONTH, YEAR);
+  const debts = useDebts();
+  const openDebts = debts.data?.filter((d) => !d.closed) ?? [];
+
+  return (
+    <PageTransition>
+      <div className="flex flex-col gap-6 max-w-4xl">
+        <div>
+          <h1 className="text-2xl font-bold text-base-content">{monthLabel(MONTH, YEAR)}</h1>
+          <p className="text-base-content/50 text-sm mt-0.5">Monthly overview</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {snapshot.data ? (
+            <>
+              <StatCard label="Total Income" value={snapshot.data.total_income} delay={0} />
+              <StatCard label="Total Outflow" value={snapshot.data.total_debts + snapshot.data.total_fixed} delay={0.07} />
+              <StatCard
+                label="Free Balance"
+                value={snapshot.data.free_balance}
+                variant={snapshot.data.free_balance >= 0 ? 'positive' : 'negative'}
+                delay={0.14}
+              />
+            </>
+          ) : (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="card bg-base-200 border border-base-300 p-6 h-24 animate-pulse" />
+            ))
+          )}
+        </div>
+
+        <div className="card bg-base-200 border border-base-300 p-5">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-semibold text-base-content">Open Debts</h2>
+            <Link to="/debts" className="text-primary text-sm hover:underline">View all →</Link>
+          </div>
+
+          {openDebts.length === 0 && (
+            <p className="text-base-content/50 text-sm">No open debts 🎉</p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            {openDebts.map((debt, i) => (
+              <motion.div
+                key={debt.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="flex items-center gap-3"
+              >
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-base-content">{debt.name}</span>
+                    <span className="text-base-content/50">{formatCurrency(debt.installment_amount)}/mo · payoff {payoffMonth(debt.start_date, debt.total_installments)}</span>
+                  </div>
+                  <progress
+                    className="progress progress-primary w-full h-1.5"
+                    value={debt.paid_installments}
+                    max={debt.total_installments}
+                  />
+                </div>
+                <span className="badge badge-ghost text-xs shrink-0">
+                  {debt.total_installments - debt.paid_installments} left
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <Link to="/timeline">
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="card bg-primary/5 border border-primary/20 p-4 flex items-center justify-between cursor-pointer"
+          >
+            <div>
+              <p className="font-semibold text-primary">View 24-month projection</p>
+              <p className="text-sm text-base-content/50">See when each debt closes and your balance grows</p>
+            </div>
+            <span className="text-primary text-xl">→</span>
+          </motion.div>
+        </Link>
+      </div>
+    </PageTransition>
+  );
+};
