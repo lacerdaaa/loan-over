@@ -1,0 +1,35 @@
+import { Injectable } from '@nestjs/common';
+import { Debt } from '../debt/debt.entity';
+import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
+import { Income } from '../income/income.entity';
+import { MonthlySnapshot } from '../shared/types';
+
+interface ComputeInput {
+  month: number;
+  year: number;
+  incomes: Income[];
+  fixedExpenses: FixedExpense[];
+  debts: Debt[];
+}
+
+@Injectable()
+export class SnapshotService {
+  compute({ month, year, incomes, fixedExpenses, debts }: ComputeInput): MonthlySnapshot {
+    const total_income = incomes.reduce((sum, i) => sum + Number(i.amount), 0);
+    const total_fixed = fixedExpenses
+      .filter((e) => e.active)
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+    const total_debts = debts
+      .filter((d) => !d.closed)
+      .reduce((sum, d) => sum + Number(d.installment_amount), 0);
+
+    return {
+      month,
+      year,
+      total_income,
+      total_fixed,
+      total_debts,
+      free_balance: total_income - total_fixed - total_debts,
+    };
+  }
+}
