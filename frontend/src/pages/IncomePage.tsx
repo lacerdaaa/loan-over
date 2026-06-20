@@ -9,8 +9,9 @@ import type { Income, IncomeCategory, IncomeType } from '../types/api';
 const now = new Date();
 const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salary', rent: 'Rent', other: 'Other' };
 
+const deductions = (income: Income) => income.deductions ?? [];
 const netAmount = (income: Income) =>
-  income.amount - (income.deductions ?? []).reduce((s, d) => s + Number(d.amount), 0);
+  income.amount - deductions(income).reduce((s, d) => s + Number(d.amount), 0);
 
 type DeductionFormState = { incomeId: string; label: string; amount: string };
 
@@ -20,7 +21,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
   const addDeduction = useAddDeduction(income.id, month, year);
   const removeDeduction = useRemoveDeduction(income.id, month, year);
   const net = netAmount(income);
-  const hasDeductions = income.deductions.length > 0;
+  const hasDeductions = deductions(income).length > 0;
 
   const submitDeduction = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +39,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
           <span>{formatCurrency(income.amount)}</span>
         </div>
       )}
-      {income.deductions.map((d) => (
+      {deductions(income).map((d) => (
         <div key={d.id} className="flex items-center justify-between text-xs text-error/80 pr-1">
           <span>– {d.label}</span>
           <div className="flex items-center gap-2">
@@ -148,7 +149,7 @@ export const IncomePage = () => {
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-3">
                   <span className="font-semibold text-success text-sm">
-                    {formatCurrency(income.deductions.length > 0 ? netAmount(income) : income.amount)}
+                    {formatCurrency(deductions(income).length > 0 ? netAmount(income) : income.amount)}
                   </span>
                   <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}>✕</motion.button>
                 </div>
