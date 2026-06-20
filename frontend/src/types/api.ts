@@ -1,5 +1,5 @@
 export type IncomeType = 'fixed' | 'variable';
-export type IncomeCategory = 'salary' | 'rent' | 'other';
+export type IncomeCategory = 'salary' | 'rent' | 'benefit' | 'other';
 
 export interface IncomeDeduction {
   id: string;
@@ -34,6 +34,7 @@ export interface FixedExpense {
   amount: number;
   due_day: number;
   active: boolean;
+  from_benefit: boolean;
 }
 
 export interface Goal {

@@ -7,7 +7,7 @@ import { formatCurrency } from '../lib/formatCurrency';
 import type { Income, IncomeCategory, IncomeType } from '../types/api';
 
 const now = new Date();
-const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salary', rent: 'Rent', other: 'Other' };
+const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salary', rent: 'Rent', benefit: 'Benefit', other: 'Other' };
 
 const deductions = (income: Income) => income.deductions ?? [];
 const netAmount = (income: Income) =>
@@ -142,7 +142,12 @@ export const IncomePage = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium text-base-content text-sm">{income.description}</p>
-                  <span className="badge badge-outline badge-xs capitalize">{CATEGORY_LABEL[income.category]}</span>
+                  <span className={`badge badge-xs capitalize ${income.category === 'benefit' ? 'badge-warning' : 'badge-outline'}`}>
+                    {CATEGORY_LABEL[income.category ?? 'other']}
+                  </span>
+                  {income.category === 'benefit' && (
+                    <span className="text-xs text-warning/70">restricted</span>
+                  )}
                   {income.type === 'variable' && (
                     <span className="text-xs text-base-content/50">{income.month}/{income.year}</span>
                   )}
@@ -172,6 +177,7 @@ export const IncomePage = () => {
             <select className="select select-bordered select-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as IncomeCategory })}>
               <option value="salary">Salary</option>
               <option value="rent">Rent</option>
+              <option value="benefit">Benefit (food card, transport, etc.)</option>
               <option value="other">Other</option>
             </select>
           </label>

@@ -16,4 +16,7 @@ export class FixedExpense {
 
   @Column({ default: true })
   declare active: boolean;
+
+  @Column({ default: false })
+  declare from_benefit: boolean;
 }

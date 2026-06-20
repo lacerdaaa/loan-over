@@ -17,7 +17,7 @@ export class FixedExpenseService {
   }
 
   async create(dto: CreateFixedExpenseDto): Promise<FixedExpense> {
-    const expense = this.repo.create({ ...dto, active: dto.active ?? true });
+    const expense = this.repo.create({ ...dto, active: dto.active ?? true, from_benefit: dto.from_benefit ?? false });
     return this.repo.save(expense);
   }
 

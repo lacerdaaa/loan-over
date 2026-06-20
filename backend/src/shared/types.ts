@@ -6,6 +6,7 @@ export enum IncomeType {
 export enum IncomeCategory {
   SALARY = 'salary',
   RENT = 'rent',
+  BENEFIT = 'benefit',
   OTHER = 'other',
 }
 

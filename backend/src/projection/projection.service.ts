@@ -3,7 +3,7 @@ import { Debt } from '../debt/debt.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
-import { IncomeType, ProjectedMonth, ProjectionEvent } from '../shared/types';
+import { IncomeCategory, IncomeType, ProjectedMonth, ProjectionEvent } from '../shared/types';
 
 export interface ProjectionInput {
   incomes: Income[];
@@ -40,12 +40,14 @@ export class ProjectionService {
 
   private sumFixedIncome(incomes: Income[]): number {
     return incomes
-      .filter((i) => i.type === IncomeType.FIXED)
+      .filter((i) => i.type === IncomeType.FIXED && i.category !== IncomeCategory.BENEFIT)
       .reduce((sum, i) => sum + netAmount(i), 0);
   }
 
   private sumActiveExpenses(expenses: FixedExpense[]): number {
-    return expenses.filter((e) => e.active).reduce((sum, e) => sum + Number(e.amount), 0);
+    return expenses
+      .filter((e) => e.active && !e.from_benefit)
+      .reduce((sum, e) => sum + Number(e.amount), 0);
   }
 
   private sumActiveDebtInstallments(debts: Debt[], offset: number): number {

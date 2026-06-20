@@ -22,4 +22,9 @@ export class CreateFixedExpenseDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @ApiPropertyOptional({ example: false, default: false, description: 'True when this expense is paid from a restricted benefit (food card, etc.) — excluded from free_balance' })
+  @IsOptional()
+  @IsBoolean()
+  from_benefit?: boolean;
 }

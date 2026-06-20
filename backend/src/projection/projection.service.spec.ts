@@ -5,11 +5,11 @@ import { Income } from '../income/income.entity';
 import { IncomeCategory, IncomeType } from '../shared/types';
 import { ProjectionService } from './projection.service';
 
-const makeIncome = (amount: number, deductions: { amount: number }[] = []): Income =>
-  ({ id: '1', type: IncomeType.FIXED, category: IncomeCategory.OTHER, amount, month: null, year: null, description: 'Salary', deductions }) as Income;
+const makeIncome = (amount: number, category = IncomeCategory.OTHER, deductions: { amount: number }[] = []): Income =>
+  ({ id: '1', type: IncomeType.FIXED, category, amount, month: null, year: null, description: 'Salary', deductions }) as Income;
 
-const makeExpense = (amount: number): FixedExpense =>
-  ({ id: '1', name: 'Rent', amount, due_day: 5, active: true }) as FixedExpense;
+const makeExpense = (amount: number, from_benefit = false): FixedExpense =>
+  ({ id: '1', name: 'Rent', amount, due_day: 5, active: true, from_benefit }) as FixedExpense;
 
 const makeDebt = (overrides: Partial<Debt>): Debt =>
   ({
@@ -47,8 +47,33 @@ describe('ProjectionService', () => {
       expect(result).toHaveLength(12);
     });
 
+    it('excludes benefit incomes from free_balance', () => {
+      const result = service.project({
+        incomes: [makeIncome(5000), makeIncome(990, IncomeCategory.BENEFIT)],
+        fixedExpenses: [],
+        debts: [],
+        referenceMonth: 6,
+        referenceYear: 2026,
+      }, 1);
+
+      expect(result[0]?.free_balance).toBe(5000);
+    });
+
+    it('excludes from_benefit expenses from total_outflow', () => {
+      const result = service.project({
+        incomes: [makeIncome(5000)],
+        fixedExpenses: [makeExpense(800, true), makeExpense(200)],
+        debts: [],
+        referenceMonth: 6,
+        referenceYear: 2026,
+      }, 1);
+
+      expect(result[0]?.total_outflow).toBe(200);
+      expect(result[0]?.free_balance).toBe(4800);
+    });
+
     it('uses net income (gross minus deductions) in free_balance', () => {
-      const income = makeIncome(6000, [{ amount: 660 }, { amount: 420 }]);
+      const income = makeIncome(6000, IncomeCategory.SALARY, [{ amount: 660 }, { amount: 420 }]);
 
       const result = service.project({
         incomes: [income],

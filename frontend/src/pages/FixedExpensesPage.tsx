@@ -5,7 +5,7 @@ import { Modal } from '../components/ui/Modal';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 
-const EMPTY = { name: '', amount: 0, due_day: 1, active: true };
+const EMPTY = { name: '', amount: 0, due_day: 1, active: true, from_benefit: false };
 
 export const FixedExpensesPage = () => {
   const { data: expenses = [] } = useFixedExpenses();
@@ -35,15 +35,23 @@ export const FixedExpensesPage = () => {
           <table className="table table-sm">
             <thead>
               <tr className="text-base-content/50 text-xs uppercase">
-                <th>Name</th><th>Amount</th><th>Due day</th><th>Active</th><th></th>
+                <th>Name</th><th>Amount</th><th>Due day</th><th>Source</th><th>Active</th><th></th>
               </tr>
             </thead>
             <tbody>
               {expenses.map((exp) => (
                 <motion.tr key={exp.id} layout className={exp.active ? '' : 'opacity-40'}>
-                  <td className={`font-medium ${exp.active ? '' : 'line-through'}`}>{exp.name}</td>
+                  <td className={`font-medium ${exp.active ? '' : 'line-through'}`}>
+                    {exp.name}
+                    {exp.from_benefit && (
+                      <span className="badge badge-warning badge-xs ml-2">benefit</span>
+                    )}
+                  </td>
                   <td className="tabular-nums">{formatCurrency(exp.amount)}</td>
                   <td>Day {exp.due_day}</td>
+                  <td className="text-xs text-base-content/50">
+                    {exp.from_benefit ? 'Restricted' : 'Salary'}
+                  </td>
                   <td>
                     <input
                       type="checkbox"
@@ -58,7 +66,7 @@ export const FixedExpensesPage = () => {
                 </motion.tr>
               ))}
               {expenses.length === 0 && (
-                <tr><td colSpan={5} className="text-center text-base-content/40 py-6">No fixed expenses yet.</td></tr>
+                <tr><td colSpan={6} className="text-center text-base-content/40 py-6">No fixed expenses yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -81,6 +89,18 @@ export const FixedExpensesPage = () => {
               <input type="number" min={1} max={31} className="input input-bordered input-sm" required value={form.due_day} onChange={(e) => setForm({ ...form, due_day: Number(e.target.value) })} />
             </label>
           </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-warning checkbox-sm"
+              checked={form.from_benefit}
+              onChange={(e) => setForm({ ...form, from_benefit: e.target.checked })}
+            />
+            <span className="text-sm">Paid from benefit (food card, transport, etc.)</span>
+          </label>
+          {form.from_benefit && (
+            <p className="text-xs text-warning/80 -mt-1">This expense won't deduct from your free balance — it's covered by restricted funds.</p>
+          )}
           <div className="flex gap-2 mt-2">
             <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancel</button>
             <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Save</motion.button>

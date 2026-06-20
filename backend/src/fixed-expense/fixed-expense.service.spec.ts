@@ -19,6 +19,7 @@ const makeExpense = (overrides: Partial<FixedExpense> = {}): FixedExpense => ({
   amount: 1200,
   due_day: 5,
   active: true,
+  from_benefit: false,
   ...overrides,
 });
 

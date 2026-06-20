@@ -3,7 +3,7 @@ import { Debt } from '../debt/debt.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
-import { MonthlySnapshot } from '../shared/types';
+import { IncomeCategory, MonthlySnapshot } from '../shared/types';
 
 interface ComputeInput {
   month: number;
@@ -16,9 +16,11 @@ interface ComputeInput {
 @Injectable()
 export class SnapshotService {
   compute({ month, year, incomes, fixedExpenses, debts }: ComputeInput): MonthlySnapshot {
-    const total_income = incomes.reduce((sum, i) => sum + netAmount(i), 0);
+    const total_income = incomes
+      .filter((i) => i.category !== IncomeCategory.BENEFIT)
+      .reduce((sum, i) => sum + netAmount(i), 0);
     const total_fixed = fixedExpenses
-      .filter((e) => e.active)
+      .filter((e) => e.active && !e.from_benefit)
       .reduce((sum, e) => sum + Number(e.amount), 0);
     const total_debts = debts
       .filter((d) => !d.closed)
