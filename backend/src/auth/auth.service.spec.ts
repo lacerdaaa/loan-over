@@ -65,7 +65,7 @@ describe('AuthService', () => {
       const user = makeUser();
       const { access_token } = service.login(user);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: user.id, email: user.email });
+      expect(jwtService.sign).toHaveBeenCalledWith({ sub: user.id, email: user.email, name: user.name, avatar: user.avatar });
       expect(access_token).toBe('signed.jwt.token');
     });
   });

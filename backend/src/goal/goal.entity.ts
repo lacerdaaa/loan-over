@@ -13,4 +13,7 @@ export class Goal {
 
   @Column({ type: 'int' })
   declare deadline_year: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  declare monthly_min: number | null;
 }

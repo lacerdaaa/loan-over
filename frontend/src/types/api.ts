@@ -42,6 +42,7 @@ export interface Goal {
   target_amount: number;
   deadline_month: number;
   deadline_year: number;
+  monthly_min: number | null;
 }
 
 export interface OccasionalExpense {
