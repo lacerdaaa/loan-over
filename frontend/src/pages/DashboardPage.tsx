@@ -37,7 +37,7 @@ export const DashboardPage = () => {
               <StatCard label="Total Income" value={snap.total_income} delay={0} />
               <StatCard
                 label="Total Outflow"
-                value={snap.total_debts + snap.total_fixed + snap.total_occasional}
+                value={snap.total_debts + snap.total_fixed + (snap.total_occasional ?? 0)}
                 delay={0.07}
               />
               <StatCard
@@ -54,15 +54,15 @@ export const DashboardPage = () => {
           )}
         </div>
 
-        {snap && (snap.total_occasional > 0 || snap.total_debt_balance > 0) && (
+        {snap && ((snap.total_occasional ?? 0) > 0 || (snap.total_debt_balance ?? 0) > 0) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {snap.total_occasional > 0 && (
+            {(snap.total_occasional ?? 0) > 0 && (
               <Link to="/occasional-expenses" className="card bg-base-200 border border-base-300 p-4 hover:border-error/40 transition-colors">
                 <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Occasional this month</p>
                 <p className="text-xl font-bold text-error">{formatCurrency(snap.total_occasional)}</p>
               </Link>
             )}
-            {snap.total_debt_balance > 0 && (
+            {(snap.total_debt_balance ?? 0) > 0 && (
               <Link to="/debts" className="card bg-base-200 border border-base-300 p-4 hover:border-warning/40 transition-colors">
                 <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Total debt remaining</p>
                 <p className="text-xl font-bold text-warning">{formatCurrency(snap.total_debt_balance)}</p>
