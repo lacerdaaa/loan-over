@@ -83,6 +83,14 @@ describe('SnapshotService', () => {
       expect(result.free_balance).toBe(5000);
     });
 
+    it('sums benefit incomes into total_benefit', () => {
+      const result = compute(service, {
+        incomes: [makeIncome(5000), makeIncome(990, IncomeCategory.BENEFIT), makeIncome(200, IncomeCategory.BENEFIT)],
+      });
+
+      expect(result.total_benefit).toBe(1190);
+    });
+
     it('excludes from_benefit fixed expenses from total_fixed', () => {
       const result = compute(service, {
         incomes: [makeIncome(5000)],

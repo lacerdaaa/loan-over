@@ -34,6 +34,10 @@ export class SnapshotService {
       .filter((e) => !e.from_benefit)
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
+    const total_benefit = incomes
+      .filter((i) => i.category === IncomeCategory.BENEFIT)
+      .reduce((sum, i) => sum + netAmount(i), 0);
+
     const total_debt_balance = debts
       .filter((d) => !d.closed)
       .reduce((sum, d) => sum + (d.total_installments - d.paid_installments) * Number(d.installment_amount), 0);
@@ -45,6 +49,7 @@ export class SnapshotService {
       total_fixed,
       total_debts,
       total_occasional,
+      total_benefit,
       total_debt_balance,
       free_balance: total_income - total_fixed - total_debts - total_occasional,
     };
