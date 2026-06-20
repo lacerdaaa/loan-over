@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Debt } from '../debt/debt.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
+import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
 import { MonthlySnapshot } from '../shared/types';
 
@@ -15,7 +16,7 @@ interface ComputeInput {
 @Injectable()
 export class SnapshotService {
   compute({ month, year, incomes, fixedExpenses, debts }: ComputeInput): MonthlySnapshot {
-    const total_income = incomes.reduce((sum, i) => sum + Number(i.amount), 0);
+    const total_income = incomes.reduce((sum, i) => sum + netAmount(i), 0);
     const total_fixed = fixedExpenses
       .filter((e) => e.active)
       .reduce((sum, e) => sum + Number(e.amount), 0);

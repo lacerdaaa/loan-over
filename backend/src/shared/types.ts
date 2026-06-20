@@ -3,6 +3,12 @@ export enum IncomeType {
   VARIABLE = 'variable',
 }
 
+export enum IncomeCategory {
+  SALARY = 'salary',
+  RENT = 'rent',
+  OTHER = 'other',
+}
+
 export type ProjectionEventType = 'liberation' | 'alert';
 
 export interface ProjectionEvent {

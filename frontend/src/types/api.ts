@@ -1,12 +1,21 @@
 export type IncomeType = 'fixed' | 'variable';
+export type IncomeCategory = 'salary' | 'rent' | 'other';
+
+export interface IncomeDeduction {
+  id: string;
+  label: string;
+  amount: number;
+}
 
 export interface Income {
   id: string;
   type: IncomeType;
+  category: IncomeCategory;
   amount: number;
   month: number | null;
   year: number | null;
   description: string;
+  deductions: IncomeDeduction[];
 }
 
 export interface Debt {

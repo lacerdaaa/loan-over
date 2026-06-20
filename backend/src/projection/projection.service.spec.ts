@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Debt } from '../debt/debt.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { Income } from '../income/income.entity';
-import { IncomeType } from '../shared/types';
+import { IncomeCategory, IncomeType } from '../shared/types';
 import { ProjectionService } from './projection.service';
 
-const makeIncome = (amount: number): Income =>
-  ({ id: '1', type: IncomeType.FIXED, amount, month: null, year: null, description: 'Salary' }) as Income;
+const makeIncome = (amount: number, deductions: { amount: number }[] = []): Income =>
+  ({ id: '1', type: IncomeType.FIXED, category: IncomeCategory.OTHER, amount, month: null, year: null, description: 'Salary', deductions }) as Income;
 
 const makeExpense = (amount: number): FixedExpense =>
   ({ id: '1', name: 'Rent', amount, due_day: 5, active: true }) as FixedExpense;
@@ -45,6 +45,20 @@ describe('ProjectionService', () => {
       }, 12);
 
       expect(result).toHaveLength(12);
+    });
+
+    it('uses net income (gross minus deductions) in free_balance', () => {
+      const income = makeIncome(6000, [{ amount: 660 }, { amount: 420 }]);
+
+      const result = service.project({
+        incomes: [income],
+        fixedExpenses: [],
+        debts: [],
+        referenceMonth: 6,
+        referenceYear: 2026,
+      }, 1);
+
+      expect(result[0]?.free_balance).toBe(4920);
     });
 
     it('marks the month a debt finishes as a liberation event', () => {

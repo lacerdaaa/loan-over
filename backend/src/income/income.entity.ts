@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { IncomeType } from '../shared/types';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { IncomeCategory, IncomeType } from '../shared/types';
+import { IncomeDeduction } from './income-deduction.entity';
 
 @Entity('incomes')
 export class Income {
@@ -8,6 +9,9 @@ export class Income {
 
   @Column({ type: 'enum', enum: IncomeType })
   declare type: IncomeType;
+
+  @Column({ type: 'enum', enum: IncomeCategory, default: IncomeCategory.OTHER })
+  declare category: IncomeCategory;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   declare amount: number;
@@ -20,4 +24,7 @@ export class Income {
 
   @Column()
   declare description: string;
+
+  @OneToMany(() => IncomeDeduction, (d) => d.income, { cascade: true, eager: true })
+  declare deductions: IncomeDeduction[];
 }

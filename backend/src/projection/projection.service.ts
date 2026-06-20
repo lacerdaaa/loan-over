@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Debt } from '../debt/debt.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
+import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
 import { IncomeType, ProjectedMonth, ProjectionEvent } from '../shared/types';
 
@@ -40,7 +41,7 @@ export class ProjectionService {
   private sumFixedIncome(incomes: Income[]): number {
     return incomes
       .filter((i) => i.type === IncomeType.FIXED)
-      .reduce((sum, i) => sum + Number(i.amount), 0);
+      .reduce((sum, i) => sum + netAmount(i), 0);
   }
 
   private sumActiveExpenses(expenses: FixedExpense[]): number {
