@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 import { DebtModule } from './debt/debt.module';
 import { FixedExpenseModule } from './fixed-expense/fixed-expense.module';
 import { GoalModule } from './goal/goal.module';
@@ -27,6 +28,7 @@ import { SnapshotModule } from './snapshot/snapshot.module';
         synchronize: config.get<string>('NODE_ENV') === 'development',
       }),
     }),
+    AuthModule,
     IncomeModule,
     DebtModule,
     FixedExpenseModule,
