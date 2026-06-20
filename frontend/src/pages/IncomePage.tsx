@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Coins, X } from 'lucide-react';
 import { useState } from 'react';
 import { type CreateIncomePayload, useAddDeduction, useCreateIncome, useDeleteIncome, useIncome, useRemoveDeduction } from '../api/income';
 import { Modal } from '../components/ui/Modal';
@@ -143,11 +143,15 @@ export const IncomePage = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium text-base-content text-sm">{income.description}</p>
-                  <span className={`badge badge-xs capitalize ${income.category === 'benefit' ? 'badge-warning' : 'badge-outline'}`}>
-                    {CATEGORY_LABEL[income.category ?? 'other']}
-                  </span>
-                  {income.category === 'benefit' && (
-                    <span className="text-xs text-warning/70">restricted</span>
+                  {income.category === 'benefit' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-warning/15 text-warning border border-warning/25">
+                      <Coins size={11} />
+                      Benefit
+                    </span>
+                  ) : (
+                    <span className="badge badge-xs capitalize badge-outline">
+                      {CATEGORY_LABEL[income.category ?? 'other']}
+                    </span>
                   )}
                   {income.type === 'variable' && (
                     <span className="text-xs text-base-content/50">{income.month}/{income.year}</span>
