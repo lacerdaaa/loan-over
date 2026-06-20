@@ -177,18 +177,18 @@ export const DashboardPage = () => {
           </div>
         </div>
 
-        <Link to="/timeline">
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            className="card bg-primary/5 border border-primary/20 p-4 flex items-center justify-between cursor-pointer"
-          >
-            <div>
-              <p className="font-semibold text-primary">View 24-month projection</p>
-              <p className="text-sm text-base-content/50">See when each debt closes and your balance grows</p>
-            </div>
-            <ArrowRight size={20} className="text-primary" />
-          </motion.div>
+        <Link
+          to="/timeline"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-300 hover:border-primary/40 hover:bg-primary/5 transition-colors group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <TrendingUp size={15} className="text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-base-content">Projeção de 24 meses</p>
+            <p className="text-xs text-base-content/40">Veja quando cada dívida fecha e seu saldo cresce</p>
+          </div>
+          <ArrowRight size={15} className="text-base-content/25 group-hover:text-primary transition-colors shrink-0" />
         </Link>
       </div>
     </PageTransition>
