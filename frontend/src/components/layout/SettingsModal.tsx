@@ -1,7 +1,6 @@
 import { LogOut, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clearToken } from '../../lib/auth';
-import { useTheme } from '../../lib/theme';
 import { Modal } from '../ui/Modal';
 
 interface Props {
@@ -10,10 +9,11 @@ interface Props {
   name?: string;
   email?: string;
   avatar?: string;
+  dark: boolean;
+  onThemeToggle: () => void;
 }
 
-export const SettingsModal = ({ open, onClose, name, email, avatar }: Props) => {
-  const { dark, toggle } = useTheme();
+export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThemeToggle }: Props) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -28,7 +28,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar }: Props) => 
 
         {/* User info */}
         <div className="flex items-center gap-3 p-3 rounded-xl bg-base-200">
-          <div className="avatar">
+          <div className="avatar shrink-0">
             <div className="w-10 rounded-full">
               {avatar
                 ? <img src={avatar} alt={name ?? 'user'} referrerPolicy="no-referrer" />
@@ -47,14 +47,17 @@ export const SettingsModal = ({ open, onClose, name, email, avatar }: Props) => 
         {/* Theme toggle */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-3">
-            {dark ? <Moon size={16} className="text-base-content/60" /> : <Sun size={16} className="text-base-content/60" />}
+            {dark
+              ? <Moon size={16} className="text-base-content/60" />
+              : <Sun size={16} className="text-base-content/60" />
+            }
             <span className="text-sm text-base-content">{dark ? 'Dark mode' : 'Light mode'}</span>
           </div>
           <input
             type="checkbox"
             className="toggle toggle-primary toggle-sm"
             checked={dark}
-            onChange={toggle}
+            onChange={onThemeToggle}
           />
         </div>
 

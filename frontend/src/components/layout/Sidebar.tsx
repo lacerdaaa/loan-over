@@ -4,6 +4,7 @@ import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
+import { useTheme } from '../../lib/theme';
 import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
@@ -77,6 +78,7 @@ export const Sidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { data: me } = useMe();
+  const theme = useTheme();
 
   return (
     <div className="flex h-screen bg-base-100 overflow-hidden">
@@ -157,6 +159,8 @@ export const Sidebar = () => {
         name={me?.name}
         email={me?.email}
         avatar={me?.avatar}
+        dark={theme.dark}
+        onThemeToggle={theme.toggle}
       />
     </div>
   );
