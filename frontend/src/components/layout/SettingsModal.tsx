@@ -45,7 +45,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
         </div>
 
         {/* Theme toggle */}
-        <div className="flex items-center justify-between px-1">
+        <label className="flex items-center justify-between px-1 cursor-pointer">
           <div className="flex items-center gap-3">
             {dark
               ? <Moon size={16} className="text-base-content/60" />
@@ -55,11 +55,11 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
           </div>
           <input
             type="checkbox"
-            className="toggle toggle-primary toggle-sm"
+            className="toggle toggle-primary"
             checked={dark}
             onChange={onThemeToggle}
           />
-        </div>
+        </label>
 
         <div className="divider my-0" />
 
