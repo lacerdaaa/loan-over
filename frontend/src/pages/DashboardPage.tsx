@@ -156,7 +156,9 @@ export const DashboardPage = () => {
               >
                 <div className="flex-1">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-base-content">{debt.name}</span>
+                    <span className={`font-medium text-base-content transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>
+                      {debt.name}
+                    </span>
                     <span className="text-base-content/50">
                       {mask(formatCurrency(debt.installment_amount))}/mo · payoff {payoffMonth(debt.start_date, debt.total_installments)}
                     </span>

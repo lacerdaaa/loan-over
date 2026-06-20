@@ -52,6 +52,15 @@
   box-sizing: border-box;
 }
 
+[data-no-animations] *,
+[data-no-animations] *::before,
+[data-no-animations] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0.001ms !important;
+}
+
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, sans-serif;
