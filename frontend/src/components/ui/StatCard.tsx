@@ -1,6 +1,7 @@
 import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import { useEffect } from 'react';
 import { formatCurrency } from '../../lib/formatCurrency';
+import { MASK, usePrivacy } from '../../lib/privacy';
 
 interface Props {
   label: string;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const StatCard = ({ label, value, variant = 'default', delay = 0 }: Props) => {
+  const { hidden } = usePrivacy();
   const motionValue = useMotionValue(0);
   const display = useTransform(motionValue, (v) => formatCurrency(v));
 
@@ -31,7 +33,10 @@ export const StatCard = ({ label, value, variant = 'default', delay = 0 }: Props
       className="card bg-base-200 shadow-sm border border-base-300 p-6"
     >
       <p className="text-sm text-base-content/60 font-medium uppercase tracking-wider mb-1">{label}</p>
-      <motion.p className={`text-3xl font-bold tabular-nums ${colorClass}`}>{display}</motion.p>
+      {hidden
+        ? <p className={`text-3xl font-bold tracking-widest ${colorClass}`}>{MASK}</p>
+        : <motion.p className={`text-3xl font-bold tabular-nums ${colorClass}`}>{display}</motion.p>
+      }
     </motion.div>
   );
 };

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDebts } from '../api/debts';
@@ -8,6 +8,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
+import { usePrivacy } from '../lib/privacy';
 
 const now = new Date();
 const CURRENT_MONTH = now.getMonth() + 1;
@@ -27,6 +28,7 @@ const payoffMonth = (startDate: string, total: number) => {
 export const DashboardPage = () => {
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [year, setYear] = useState(CURRENT_YEAR);
+  const { hidden, toggle: togglePrivacy, mask } = usePrivacy();
 
   const snapshot = useSnapshot(month, year);
   const debts = useDebts();
@@ -50,6 +52,15 @@ export const DashboardPage = () => {
             <p className="text-base-content/50 text-sm mt-0.5">Monthly overview</p>
           </div>
           <div className="flex items-center gap-1">
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              className="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-base-content"
+              onClick={togglePrivacy}
+              aria-label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+            >
+              {hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+            </motion.button>
+            <div className="w-px h-4 bg-base-300 mx-0.5" />
             <motion.button
               whileTap={{ scale: 0.93 }}
               className="btn btn-ghost btn-sm btn-square"
@@ -106,19 +117,19 @@ export const DashboardPage = () => {
             {(snap.total_benefit ?? 0) > 0 && (
               <Link to="/income" className="card bg-base-200 border border-base-300 p-4 hover:border-warning/40 transition-colors">
                 <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Benefits (restricted)</p>
-                <p className="text-xl font-bold text-warning">{formatCurrency(snap.total_benefit)}</p>
+                <p className="text-xl font-bold text-warning">{mask(formatCurrency(snap.total_benefit))}</p>
               </Link>
             )}
             {(snap.total_occasional ?? 0) > 0 && (
               <Link to="/occasional-expenses" className="card bg-base-200 border border-base-300 p-4 hover:border-error/40 transition-colors">
                 <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Occasional this month</p>
-                <p className="text-xl font-bold text-error">{formatCurrency(snap.total_occasional)}</p>
+                <p className="text-xl font-bold text-error">{mask(formatCurrency(snap.total_occasional))}</p>
               </Link>
             )}
             {(snap.total_debt_balance ?? 0) > 0 && (
               <Link to="/debts" className="card bg-base-200 border border-base-300 p-4 hover:border-error/40 transition-colors">
                 <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Total debt remaining</p>
-                <p className="text-xl font-bold text-error">{formatCurrency(snap.total_debt_balance)}</p>
+                <p className="text-xl font-bold text-error">{mask(formatCurrency(snap.total_debt_balance))}</p>
               </Link>
             )}
           </div>
@@ -147,7 +158,7 @@ export const DashboardPage = () => {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-base-content">{debt.name}</span>
                     <span className="text-base-content/50">
-                      {formatCurrency(debt.installment_amount)}/mo · payoff {payoffMonth(debt.start_date, debt.total_installments)}
+                      {mask(formatCurrency(debt.installment_amount))}/mo · payoff {payoffMonth(debt.start_date, debt.total_installments)}
                     </span>
                   </div>
                   <progress
