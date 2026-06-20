@@ -67,7 +67,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
         <label className="flex items-center justify-between px-1 cursor-pointer">
           <div className="flex items-center gap-3">
             <Sparkles size={16} className="text-base-content/60" />
-            <span className="text-sm text-base-content">Animações</span>
+            <span className="text-sm text-base-content">{animations ? 'Animações ativas' : 'Animações desativadas'}</span>
           </div>
           <input
             type="checkbox"
