@@ -134,125 +134,153 @@ export const GoalPage = () => {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-5 w-full max-w-2xl">
+      <div className="flex flex-col gap-5 w-full">
 
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-base-content">Plano Financeiro</h1>
           <p className="text-base-content/50 text-sm mt-0.5">Quitar dívidas primeiro, depois poupar</p>
         </div>
 
-        {/* Stats */}
+        {/* Stats bar — full width */}
         <div className="stats stats-horizontal bg-base-200 border border-base-300 w-full shadow-none">
-          <div className="stat px-4 py-3">
+          <div className="stat">
             <div className="stat-title text-xs">Livre de dívidas</div>
-            <div className="stat-value text-lg text-primary">
+            <div className="stat-value text-xl text-primary">
               {result.debtFreeOffset !== null ? `${result.debtFreeOffset}m` : '—'}
             </div>
             <div className="stat-desc">{offsetToLabel(result.debtFreeOffset)}</div>
           </div>
-          <div className="stat px-4 py-3">
+          <div className="stat">
             <div className="stat-title text-xs">Poupança/mês</div>
-            <div className="stat-value text-lg text-success">
+            <div className="stat-value text-xl text-success">
               {monthlyMin > 0 ? formatCurrency(monthlyMin) : '—'}
             </div>
-            <div className="stat-desc">{monthlyMin > 0 ? 'enquanto quita' : 'não definido'}</div>
+            <div className="stat-desc">{monthlyMin > 0 ? 'enquanto quita dívidas' : 'não definido'}</div>
           </div>
-          <div className="stat px-4 py-3">
+          <div className="stat">
             <div className="stat-title text-xs">Meta atingida</div>
-            <div className="stat-value text-lg text-warning">
+            <div className="stat-value text-xl text-warning">
               {result.goalOffset !== null ? `${result.goalOffset}m` : '—'}
             </div>
-            <div className="stat-desc">{targetAmount > 0 ? offsetToLabel(result.goalOffset) : 'sem meta'}</div>
+            <div className="stat-desc">{targetAmount > 0 ? offsetToLabel(result.goalOffset) : 'sem meta definida'}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title text-xs">Saldo livre atual</div>
+            <div className="stat-value text-xl text-base-content">
+              {formatCurrency(freeBal)}
+            </div>
+            <div className="stat-desc">este mês</div>
           </div>
         </div>
 
-        {/* Snowball order */}
-        {openDebts.length > 0 && (
-          <div className="card bg-base-200 border border-base-300">
-            <div className="px-4 pt-4 pb-2">
-              <h2 className="font-semibold text-sm text-base-content">Ordem Snowball</h2>
-              <p className="text-xs text-base-content/40">Menor saldo primeiro — valor liberado vai para a próxima</p>
-            </div>
-            <div className="divide-y divide-base-300">
-              {result.debtOrder.map((d, i) => (
-                <motion.div
-                  key={d.name}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="flex items-center gap-3 px-4 py-2.5"
-                >
-                  <span className="text-xs text-base-content/25 w-4 shrink-0 tabular-nums">{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-base-content truncate">{d.name}</p>
-                    <p className="text-xs text-base-content/40 tabular-nums">
-                      {formatCurrency(d.remainingBalance)} · {formatCurrency(d.installment)}/mês
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {d.monthsSaved > 0 && (
-                      <span className="badge badge-success badge-xs">−{d.monthsSaved}m</span>
-                    )}
-                    <span className="text-xs text-base-content/40 tabular-nums w-8 text-right">
-                      {offsetToLabel(d.snowballPayoffOffset)}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Two-column body */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
 
-        {/* Savings phase summary */}
-        {targetAmount > 0 && result.debtFreeOffset !== null && (
-          <div className="card bg-base-200 border border-base-300 px-4 py-3 flex flex-col gap-2">
-            <p className="text-sm text-base-content/70">
-              A partir de <span className="font-semibold text-base-content">{offsetToLabel(result.debtFreeOffset)}</span>,
-              poupando <span className="font-semibold text-base-content">{formatCurrency(result.postDebtMonthlyFree)}/mês</span> →
-              meta de <span className="font-semibold text-base-content">{formatCurrency(targetAmount)}</span> em{' '}
-              <span className="font-semibold text-success">{offsetToLabel(result.goalOffset)}</span>
-            </p>
-            {result.goalOffset !== null && (
-              <progress className="progress progress-success w-full" value={1} max={result.goalOffset} />
-            )}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
-          <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="form-control col-span-2 sm:col-span-1">
-              <span className="label-text text-xs mb-1">Valor da meta (R$)</span>
-              <input type="number" step="0.01" className="input input-bordered input-sm"
-                placeholder="Ex: 10.000" value={form.target_amount || ''}
-                onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
-            </label>
-            <label className="form-control col-span-2 sm:col-span-1">
-              <span className="label-text text-xs mb-1">Poupança mínima/mês (R$)</span>
-              <input type="number" step="0.01" className="input input-bordered input-sm"
-                placeholder="Quanto guardar todo mês" value={form.monthly_min || ''}
-                onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
-            </label>
-            <label className="form-control">
-              <span className="label-text text-xs mb-1">Prazo — mês</span>
-              <select className="select select-bordered select-sm" value={form.deadline_month}
-                onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}</option>
+          {/* LEFT — Snowball list */}
+          {openDebts.length > 0 && (
+            <div className="card bg-base-200 border border-base-300">
+              <div className="px-5 pt-4 pb-2">
+                <h2 className="font-semibold text-sm text-base-content">Ordem Snowball</h2>
+                <p className="text-xs text-base-content/40 mt-0.5">
+                  Menor saldo primeiro — parcela liberada vai para a próxima dívida
+                </p>
+              </div>
+              <div className="divide-y divide-base-300">
+                {result.debtOrder.map((d, i) => (
+                  <motion.div
+                    key={d.name}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="flex items-center gap-3 px-5 py-3"
+                  >
+                    <span className="text-xs text-base-content/25 w-5 shrink-0 tabular-nums text-right">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-base-content truncate">{d.name}</p>
+                      <p className="text-xs text-base-content/40 tabular-nums mt-0.5">
+                        {formatCurrency(d.remainingBalance)} restante · {formatCurrency(d.installment)}/mês
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <span className="text-xs font-medium text-base-content tabular-nums">
+                        {offsetToLabel(d.snowballPayoffOffset)}
+                      </span>
+                      {d.monthsSaved > 0 && (
+                        <span className="badge badge-success badge-xs">−{d.monthsSaved}m</span>
+                      )}
+                    </div>
+                  </motion.div>
                 ))}
-              </select>
-            </label>
-            <label className="form-control">
-              <span className="label-text text-xs mb-1">Prazo — ano</span>
-              <input type="number" className="input input-bordered input-sm" value={form.deadline_year}
-                onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
-            </label>
+              </div>
+            </div>
+          )}
+
+          {/* RIGHT — Form + savings summary */}
+          <div className="flex flex-col gap-4">
+
+            {/* Savings phase */}
+            {targetAmount > 0 && result.debtFreeOffset !== null && (
+              <div className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
+                <h2 className="font-semibold text-sm text-base-content">Fase de poupança</h2>
+                <p className="text-xs text-base-content/60 leading-relaxed">
+                  A partir de{' '}
+                  <span className="font-semibold text-base-content">{offsetToLabel(result.debtFreeOffset)}</span>,
+                  poupando{' '}
+                  <span className="font-semibold text-base-content">{formatCurrency(result.postDebtMonthlyFree)}/mês</span>
+                  {' '}→ meta em{' '}
+                  <span className="font-semibold text-success">{offsetToLabel(result.goalOffset)}</span>
+                </p>
+                {result.goalOffset !== null && (
+                  <progress className="progress progress-success w-full" value={1} max={result.goalOffset} />
+                )}
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
+              <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
+
+              <label className="form-control">
+                <span className="label-text text-xs mb-1">Valor da meta (R$)</span>
+                <input type="number" step="0.01" className="input input-bordered input-sm"
+                  placeholder="Ex: 10.000" value={form.target_amount || ''}
+                  onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
+              </label>
+
+              <label className="form-control">
+                <span className="label-text text-xs mb-1">Poupança mínima/mês (R$)</span>
+                <input type="number" step="0.01" className="input input-bordered input-sm"
+                  placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
+                  onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="form-control">
+                  <span className="label-text text-xs mb-1">Prazo — mês</span>
+                  <select className="select select-bordered select-sm" value={form.deadline_month}
+                    onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {new Date(0, i).toLocaleString('pt-BR', { month: 'short' })}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="form-control">
+                  <span className="label-text text-xs mb-1">Prazo — ano</span>
+                  <input type="number" className="input input-bordered input-sm" value={form.deadline_year}
+                    onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
+                </label>
+              </div>
+
+              <motion.button whileTap={{ scale: 0.97 }} type="submit"
+                className="btn btn-primary btn-sm w-full" disabled={upsert.isPending}>
+                Salvar
+              </motion.button>
+            </form>
           </div>
-          <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm" disabled={upsert.isPending}>
-            Salvar
-          </motion.button>
-        </form>
+        </div>
       </div>
     </PageTransition>
   );
