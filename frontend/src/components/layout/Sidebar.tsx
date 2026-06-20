@@ -1,11 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, LayoutDashboard, ListChecks, LogOut, Menu, Receipt, Target, TrendingUp, Wallet, X } from 'lucide-react';
+import { CreditCard, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Wallet, X } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
-import { clearToken } from '../../lib/auth';
-import { ThemeToggle } from './ThemeToggle';
+import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
   { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
@@ -40,20 +39,15 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
   </nav>
 );
 
-const UserFooter = ({ collapsed }: { collapsed?: boolean }) => {
+const UserFooter = ({ collapsed, onSettingsOpen }: { collapsed?: boolean; onSettingsOpen: () => void }) => {
   const { data: me } = useMe();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    clearToken();
-    navigate('/login', { replace: true });
-  };
 
   return (
-    <div className="p-2 border-t border-base-300 flex flex-col gap-1">
-      <ThemeToggle collapsed={collapsed ?? false} />
-
-      <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${collapsed ? 'justify-center' : ''}`}>
+    <div className="p-2 border-t border-base-300">
+      <button
+        onClick={onSettingsOpen}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-base-300 transition-colors text-left ${collapsed ? 'justify-center' : ''}`}
+      >
         <div className="avatar shrink-0">
           <div className="w-7 rounded-full">
             {me?.avatar
@@ -65,21 +59,15 @@ const UserFooter = ({ collapsed }: { collapsed?: boolean }) => {
           </div>
         </div>
         {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-base-content truncate">{me?.name ?? '—'}</p>
-            <p className="text-xs text-base-content/40 truncate">{me?.email ?? ''}</p>
-          </div>
+          <>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-base-content truncate">{me?.name ?? '—'}</p>
+              <p className="text-xs text-base-content/40 truncate">{me?.email ?? ''}</p>
+            </div>
+            <Settings size={14} className="text-base-content/30 shrink-0" />
+          </>
         )}
-        {!collapsed && (
-          <button
-            className="btn btn-ghost btn-xs btn-square text-base-content/40 hover:text-error"
-            onClick={handleLogout}
-            title="Sair"
-          >
-            <LogOut size={14} />
-          </button>
-        )}
-      </div>
+      </button>
     </div>
   );
 };
@@ -87,6 +75,8 @@ const UserFooter = ({ collapsed }: { collapsed?: boolean }) => {
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { data: me } = useMe();
 
   return (
     <div className="flex h-screen bg-base-100 overflow-hidden">
@@ -106,19 +96,14 @@ export const Sidebar = () => {
             LO
           </motion.button>
           {!collapsed && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="font-semibold text-base-content whitespace-nowrap"
-            >
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-semibold text-base-content whitespace-nowrap">
               Loan Over
             </motion.span>
           )}
         </div>
 
         <NavItems collapsed={collapsed} />
-
-        <UserFooter collapsed={collapsed} />
+        <UserFooter collapsed={collapsed} onSettingsOpen={() => setSettingsOpen(true)} />
       </motion.aside>
 
       {/* Mobile drawer */}
@@ -127,23 +112,17 @@ export const Sidebar = () => {
           <>
             <motion.div
               className="fixed inset-0 bg-black/50 z-40 md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
               className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-base-200 border-r border-base-300 md:hidden"
-              initial={{ x: -256 }}
-              animate={{ x: 0 }}
-              exit={{ x: -256 }}
+              initial={{ x: -256 }} animate={{ x: 0 }} exit={{ x: -256 }}
               transition={{ type: 'spring', stiffness: 400, damping: 36 }}
             >
               <div className="flex items-center justify-between px-4 py-5 border-b border-base-300">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-content font-bold text-sm shrink-0">
-                    LO
-                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-content font-bold text-sm shrink-0">LO</div>
                   <span className="font-semibold text-base-content">Loan Over</span>
                 </div>
                 <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(false)}>
@@ -152,8 +131,7 @@ export const Sidebar = () => {
               </div>
 
               <NavItems onNavClick={() => setMobileOpen(false)} />
-
-              <UserFooter />
+              <UserFooter onSettingsOpen={() => { setMobileOpen(false); setSettingsOpen(true); }} />
             </motion.aside>
           </>
         )}
@@ -172,6 +150,14 @@ export const Sidebar = () => {
           <Outlet />
         </main>
       </div>
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        name={me?.name}
+        email={me?.email}
+        avatar={me?.avatar}
+      />
     </div>
   );
 };
