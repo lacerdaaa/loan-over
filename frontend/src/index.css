@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: loanover-light --default, loanover-dark --prefersdark;
+}
+
+@plugin "daisyui/theme" {
+  name: "loanover-light";
+  default: true;
+  color-scheme: light;
+  --color-primary: oklch(66% 0.179 155);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(57% 0.172 155);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(80% 0.157 155);
+  --color-accent-content: oklch(15% 0.03 155);
+  --color-neutral: oklch(37% 0.02 265);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-base-100: oklch(98.5% 0 0);
+  --color-base-200: oklch(95% 0 0);
+  --color-base-300: oklch(90% 0 0);
+  --color-base-content: oklch(25% 0.01 265);
+  --color-success: oklch(66% 0.179 155);
+  --color-error: oklch(62% 0.22 25);
+  --color-warning: oklch(75% 0.18 75);
+  --radius-btn: 0.5rem;
+  --radius-box: 0.75rem;
+}
+
+@plugin "daisyui/theme" {
+  name: "loanover-dark";
+  color-scheme: dark;
+  --color-primary: oklch(66% 0.179 155);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(57% 0.172 155);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(80% 0.157 155);
+  --color-accent-content: oklch(15% 0.03 155);
+  --color-neutral: oklch(45% 0.02 265);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-base-100: oklch(14% 0.02 265);
+  --color-base-200: oklch(19% 0.02 265);
+  --color-base-300: oklch(25% 0.02 265);
+  --color-base-content: oklch(88% 0.01 265);
+  --color-success: oklch(66% 0.179 155);
+  --color-error: oklch(62% 0.22 25);
+  --color-warning: oklch(75% 0.18 75);
+  --radius-btn: 0.5rem;
+  --radius-box: 0.75rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
