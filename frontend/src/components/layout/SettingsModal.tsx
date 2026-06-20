@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { LogOut, Moon, Sparkles, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clearToken } from '../../lib/auth';
@@ -66,7 +67,23 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
         {/* Animations toggle */}
         <label className="flex items-center justify-between px-1 cursor-pointer">
           <div className="flex items-center gap-3">
-            <Sparkles size={16} className="text-base-content/60" />
+            <div className="relative w-4 h-4">
+              <motion.span
+                className="block"
+                animate={{ rotate: animations ? 360 : 0 }}
+                transition={animations
+                  ? { repeat: Infinity, duration: 4, ease: 'linear' }
+                  : { duration: 0 }
+                }
+              >
+                <Sparkles size={16} className={animations ? 'text-primary' : 'text-base-content/30'} />
+              </motion.span>
+              {!animations && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-[18px] h-px bg-base-content/50 rotate-45 rounded-full" />
+                </div>
+              )}
+            </div>
             <span className="text-sm text-base-content">{animations ? 'Animações ativas' : 'Animações desativadas'}</span>
           </div>
           <input
