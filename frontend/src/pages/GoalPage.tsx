@@ -207,7 +207,9 @@ export const GoalPage = () => {
                         {offsetToLabel(d.snowballPayoffOffset)}
                       </span>
                       {d.monthsSaved > 0 && (
-                        <span className="badge badge-success badge-xs">−{d.monthsSaved}m</span>
+                        <div className="tooltip tooltip-left" data-tip={`${d.monthsSaved} meses mais rápido com o Snowball`}>
+                          <span className="badge badge-success badge-xs cursor-default">−{d.monthsSaved}m</span>
+                        </div>
                       )}
                     </div>
                   </motion.div>
