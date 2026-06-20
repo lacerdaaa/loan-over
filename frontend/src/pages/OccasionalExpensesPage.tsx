@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateOccasionalExpense, useDeleteOccasionalExpense, useOccasionalExpenses } from '../api/occasional-expenses';
 import { Modal } from '../components/ui/Modal';
@@ -75,7 +76,7 @@ export const OccasionalExpensesPage = () => {
                   className="btn btn-ghost btn-xs text-error"
                   onClick={() => remove.mutate(exp.id)}
                 >
-                  ✕
+                  <X size={14} />
                 </motion.button>
               </div>
             </motion.div>

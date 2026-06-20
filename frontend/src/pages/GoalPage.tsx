@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { PartyPopper } from 'lucide-react';
 import { useState } from 'react';
 import { useGoal, useUpsertGoal } from '../api/goal';
 import { useProjection } from '../api/projection';
@@ -63,7 +64,7 @@ export const GoalPage = () => {
             {liberationEvents.map((e, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                 className="alert bg-success/10 border border-success/30 text-sm">
-                <span>🎉 <strong>{e.description}</strong> — redirecting this amount could accelerate your goal.</span>
+                <span className="flex items-center gap-2"><PartyPopper size={16} className="shrink-0" /> <strong>{e.description}</strong> — redirecting this amount could accelerate your goal.</span>
               </motion.div>
             ))}
           </div>

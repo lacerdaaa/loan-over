@@ -1,3 +1,4 @@
+import { AlertTriangle, PartyPopper } from 'lucide-react';
 import { PageTransition } from '../components/ui/PageTransition';
 import { ProjectionChart } from '../components/ui/ProjectionChart';
 import { useProjection } from '../api/projection';
@@ -33,8 +34,9 @@ export const TimelinePage = () => {
                   key={`${m.month}-${m.year}-${i}`}
                   className={`card border p-4 text-sm ${e.type === 'liberation' ? 'bg-success/5 border-success/30' : 'bg-warning/5 border-warning/30'}`}
                 >
-                  <p className={`font-semibold ${e.type === 'liberation' ? 'text-success' : 'text-warning'}`}>
-                    {e.type === 'liberation' ? '🎉' : '⚠️'} {new Date(m.year, m.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  <p className={`font-semibold flex items-center gap-2 ${e.type === 'liberation' ? 'text-success' : 'text-warning'}`}>
+                    {e.type === 'liberation' ? <PartyPopper size={15} /> : <AlertTriangle size={15} />}
+                    {new Date(m.year, m.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </p>
                   <p className="text-base-content/70 mt-0.5">{e.description}</p>
                 </div>

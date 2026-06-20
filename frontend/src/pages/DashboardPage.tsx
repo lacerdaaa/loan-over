@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDebts } from '../api/debts';
 import { useSnapshot } from '../api/snapshot';
@@ -74,11 +75,11 @@ export const DashboardPage = () => {
         <div className="card bg-base-200 border border-base-300 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-base-content">Open Debts</h2>
-            <Link to="/debts" className="text-primary text-sm hover:underline">View all →</Link>
+            <Link to="/debts" className="text-primary text-sm hover:underline flex items-center gap-1">View all <ArrowRight size={14} /></Link>
           </div>
 
           {openDebts.length === 0 && (
-            <p className="text-base-content/50 text-sm">No open debts 🎉</p>
+            <p className="text-base-content/50 text-sm flex items-center gap-2"><CheckCircle2 size={16} className="text-success" /> No open debts</p>
           )}
 
           <div className="flex flex-col gap-3">
@@ -121,7 +122,7 @@ export const DashboardPage = () => {
               <p className="font-semibold text-primary">View 24-month projection</p>
               <p className="text-sm text-base-content/50">See when each debt closes and your balance grows</p>
             </div>
-            <span className="text-primary text-xl">→</span>
+            <ArrowRight size={20} className="text-primary" />
           </motion.div>
         </Link>
       </div>

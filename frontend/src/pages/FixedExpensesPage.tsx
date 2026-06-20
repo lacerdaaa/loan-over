@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateFixedExpense, useDeleteFixedExpense, useFixedExpenses, useUpdateFixedExpense } from '../api/fixed-expenses';
 import { Modal } from '../components/ui/Modal';
@@ -61,7 +62,7 @@ export const FixedExpensesPage = () => {
                     />
                   </td>
                   <td>
-                    <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(exp.id)}>✕</motion.button>
+                    <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(exp.id)}><X size={14} /></motion.button>
                   </td>
                 </motion.tr>
               ))}

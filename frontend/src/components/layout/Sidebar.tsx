@@ -1,16 +1,18 @@
 import { motion } from 'framer-motion';
+import { CreditCard, LayoutDashboard, ListChecks, Receipt, Target, TrendingUp, Wallet } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { ThemeToggle } from './ThemeToggle';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/timeline', label: 'Timeline', icon: '📈' },
-  { to: '/debts', label: 'Debts', icon: '💳' },
-  { to: '/income', label: 'Income', icon: '💰' },
-  { to: '/fixed-expenses', label: 'Fixed Expenses', icon: '📋' },
-  { to: '/occasional-expenses', label: 'Occasional', icon: '🧾' },
-  { to: '/goal', label: 'Goal', icon: '🎯' },
+const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
+  { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+  { to: '/timeline', label: 'Timeline', Icon: TrendingUp },
+  { to: '/debts', label: 'Debts', Icon: CreditCard },
+  { to: '/income', label: 'Income', Icon: Wallet },
+  { to: '/fixed-expenses', label: 'Fixed Expenses', Icon: ListChecks },
+  { to: '/occasional-expenses', label: 'Occasional', Icon: Receipt },
+  { to: '/goal', label: 'Goal', Icon: Target },
 ];
 
 export const Sidebar = () => {
@@ -43,7 +45,7 @@ export const Sidebar = () => {
         </div>
 
         <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
-          {NAV_ITEMS.map(({ to, label, icon, end }) => (
+          {NAV_ITEMS.map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -56,7 +58,7 @@ export const Sidebar = () => {
                 }`
               }
             >
-              <span className="text-lg shrink-0">{icon}</span>
+              <Icon size={18} className="shrink-0" />
               {!collapsed && <span>{label}</span>}
             </NavLink>
           ))}

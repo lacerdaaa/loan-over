@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { AlertTriangle, PartyPopper } from 'lucide-react';
 import {
   Bar,
   CartesianGrid,
@@ -32,8 +33,8 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
       <p className="font-semibold mb-1">{monthLabel(d.month, d.year)}</p>
       <p className="text-base-content/70">Free balance: <span className="font-medium text-base-content">{formatCurrency(d.free_balance)}</span></p>
       {d.events.map((e, i) => (
-        <p key={i} className={e.type === 'liberation' ? 'text-success font-medium mt-1' : 'text-warning mt-1'}>
-          {e.type === 'liberation' ? '🎉' : '⚠️'} {e.description}
+        <p key={i} className={`flex items-center gap-1 mt-1 ${e.type === 'liberation' ? 'text-success font-medium' : 'text-warning'}`}>
+          {e.type === 'liberation' ? <PartyPopper size={13} /> : <AlertTriangle size={13} />} {e.description}
         </p>
       ))}
     </div>
@@ -53,7 +54,7 @@ export const ProjectionChart = ({ data }: Props) => {
           animate={{ opacity: 1, y: 0 }}
           className="alert bg-success/10 border border-success/30 text-success text-sm"
         >
-          🎉 Next liberation: <strong>{monthLabel(nextLiberation.month, nextLiberation.year)}</strong>
+          <PartyPopper size={15} className="shrink-0" /> Next liberation: <strong>{monthLabel(nextLiberation.month, nextLiberation.year)}</strong>
           {' — '}{nextLiberation.events.find((e) => e.type === 'liberation')?.description}
         </motion.div>
       )}

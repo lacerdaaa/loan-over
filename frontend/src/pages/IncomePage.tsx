@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { type CreateIncomePayload, useAddDeduction, useCreateIncome, useDeleteIncome, useIncome, useRemoveDeduction } from '../api/income';
 import { Modal } from '../components/ui/Modal';
@@ -48,7 +49,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
               className="btn btn-ghost btn-xs text-error h-4 min-h-0 px-1"
               onClick={() => removeDeduction.mutate(d.id)}
             >
-              ✕
+              <X size={14} />
             </button>
           </div>
         </div>
@@ -78,7 +79,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
             onChange={(e) => setDeductionForm({ ...deductionForm, amount: e.target.value })}
           />
           <button type="submit" className="btn btn-primary btn-xs" disabled={addDeduction.isPending}>Add</button>
-          <button type="button" className="btn btn-ghost btn-xs" onClick={() => setShowForm(false)}>✕</button>
+          <button type="button" className="btn btn-ghost btn-xs" onClick={() => setShowForm(false)}><X size={14} /></button>
         </form>
       ) : (
         <button className="text-xs text-primary/70 hover:text-primary mt-1" onClick={() => setShowForm(true)}>
@@ -156,7 +157,7 @@ export const IncomePage = () => {
                   <span className="font-semibold text-success text-sm">
                     {formatCurrency(deductions(income).length > 0 ? netAmount(income) : income.amount)}
                   </span>
-                  <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}>✕</motion.button>
+                  <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}><X size={14} /></motion.button>
                 </div>
               </div>
               <DeductionRow income={income} month={month} year={year} />
