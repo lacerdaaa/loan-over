@@ -26,7 +26,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Settings">
+    <Modal open={open} onClose={onClose} title="Configurações">
       <div className="flex flex-col gap-4">
 
         {/* User info */}
@@ -54,7 +54,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
               ? <Moon size={16} className="text-base-content/60" />
               : <Sun size={16} className="text-base-content/60" />
             }
-            <span className="text-sm text-base-content">{dark ? 'Dark mode' : 'Light mode'}</span>
+            <span className="text-sm text-base-content">{dark ? 'Modo escuro' : 'Modo claro'}</span>
           </div>
           <input
             type="checkbox"

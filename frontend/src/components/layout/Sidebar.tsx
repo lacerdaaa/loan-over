@@ -10,12 +10,12 @@ import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
   { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
-  { to: '/timeline', label: 'Timeline', Icon: TrendingUp },
-  { to: '/debts', label: 'Debts', Icon: CreditCard },
-  { to: '/income', label: 'Income', Icon: Wallet },
-  { to: '/fixed-expenses', label: 'Fixed Expenses', Icon: ListChecks },
-  { to: '/occasional-expenses', label: 'Occasional', Icon: Receipt },
-  { to: '/goal', label: 'Goal', Icon: Target },
+  { to: '/timeline', label: 'Cronograma', Icon: TrendingUp },
+  { to: '/debts', label: 'Dívidas', Icon: CreditCard },
+  { to: '/income', label: 'Renda', Icon: Wallet },
+  { to: '/fixed-expenses', label: 'Gastos Fixos', Icon: ListChecks },
+  { to: '/occasional-expenses', label: 'Ocasionais', Icon: Receipt },
+  { to: '/goal', label: 'Meta', Icon: Target },
 ];
 
 const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) => (

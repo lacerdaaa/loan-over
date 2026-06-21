@@ -31,7 +31,7 @@ export const DebtCard = ({ debt }: Props) => {
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-semibold text-base-content">{debt.name}</h3>
-          <p className="text-sm text-base-content/60">{formatCurrency(debt.installment_amount)}/month</p>
+          <p className="text-sm text-base-content/60">{formatCurrency(debt.installment_amount)}/mês</p>
         </div>
         <AnimatePresence>
           {debt.closed && (
@@ -40,7 +40,7 @@ export const DebtCard = ({ debt }: Props) => {
               animate={{ scale: 1 }}
               className="badge badge-success gap-1"
             >
-              ✓ Paid off
+              ✓ Quitado
             </motion.span>
           )}
         </AnimatePresence>
@@ -53,8 +53,8 @@ export const DebtCard = ({ debt }: Props) => {
           max={100}
         />
         <div className="flex justify-between text-xs text-base-content/50 mt-1">
-          <span>{debt.paid_installments} of {debt.total_installments} paid</span>
-          <span>payoff: {payoffDate(debt)}</span>
+          <span>{debt.paid_installments} de {debt.total_installments} pagas</span>
+          <span>quitação: {payoffDate(debt)}</span>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export const DebtCard = ({ debt }: Props) => {
           onClick={() => pay.mutate(debt.id)}
         >
           {pay.isPending ? <span className="loading loading-spinner loading-xs" /> : null}
-          Pay installment · {remaining} left
+          Pagar parcela · {remaining} restantes
         </motion.button>
       )}
     </motion.div>

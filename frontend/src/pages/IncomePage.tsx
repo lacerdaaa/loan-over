@@ -8,7 +8,7 @@ import { formatCurrency } from '../lib/formatCurrency';
 import type { Income, IncomeCategory, IncomeType } from '../types/api';
 
 const now = new Date();
-const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salary', rent: 'Rent', benefit: 'Benefit', other: 'Other' };
+const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salário', rent: 'Aluguel', benefit: 'Benefício', other: 'Outro' };
 
 const deductions = (income: Income) => income.deductions ?? [];
 const netAmount = (income: Income) =>
@@ -36,7 +36,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
     <div className="mt-2 space-y-1">
       {hasDeductions && (
         <div className="text-xs text-base-content/60 flex justify-between pr-1">
-          <span>Gross</span>
+          <span>Bruto</span>
           <span>{formatCurrency(income.amount)}</span>
         </div>
       )}
@@ -56,14 +56,14 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
       ))}
       {hasDeductions && (
         <div className="flex justify-between text-xs font-semibold text-success border-t border-base-300 pt-1 pr-1">
-          <span>Net</span>
+          <span>Líquido</span>
           <span>{formatCurrency(net)}</span>
         </div>
       )}
       {showForm ? (
         <form onSubmit={submitDeduction} className="flex gap-2 mt-1">
           <input
-            placeholder="Label"
+            placeholder="Descrição"
             className="input input-bordered input-xs flex-1"
             required
             value={deductionForm.label}
@@ -72,18 +72,18 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
           <input
             type="number"
             step="0.01"
-            placeholder="Amount"
+            placeholder="Valor"
             className="input input-bordered input-xs w-24"
             required
             value={deductionForm.amount}
             onChange={(e) => setDeductionForm({ ...deductionForm, amount: e.target.value })}
           />
-          <button type="submit" className="btn btn-primary btn-xs" disabled={addDeduction.isPending}>Add</button>
+          <button type="submit" className="btn btn-primary btn-xs" disabled={addDeduction.isPending}>Adicionar</button>
           <button type="button" className="btn btn-ghost btn-xs" onClick={() => setShowForm(false)}><X size={14} /></button>
         </form>
       ) : (
         <button className="text-xs text-primary/70 hover:text-primary mt-1" onClick={() => setShowForm(true)}>
-          + Add deduction
+          + Adicionar desconto
         </button>
       )}
     </div>
@@ -115,22 +115,22 @@ export const IncomePage = () => {
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold text-base-content">Income</h1>
+          <h1 className="text-2xl font-bold text-base-content">Renda</h1>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">
-            + Add income
+            + Adicionar renda
           </motion.button>
         </div>
 
         <div className="tabs tabs-boxed w-fit">
-          <button className={`tab ${tab === 'fixed' ? 'tab-active' : ''}`} onClick={() => setTab('fixed')}>Fixed</button>
-          <button className={`tab ${tab === 'variable' ? 'tab-active' : ''}`} onClick={() => setTab('variable')}>Variable</button>
+          <button className={`tab ${tab === 'fixed' ? 'tab-active' : ''}`} onClick={() => setTab('fixed')}>Fixo</button>
+          <button className={`tab ${tab === 'variable' ? 'tab-active' : ''}`} onClick={() => setTab('variable')}>Variável</button>
         </div>
 
         {tab === 'variable' && (
           <div className="flex gap-3">
             <select className="select select-bordered select-sm" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
               {Array.from({ length: 12 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('en', { month: 'long' })}</option>
+                <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}</option>
               ))}
             </select>
             <input type="number" className="input input-bordered input-sm w-24" value={year} onChange={(e) => setYear(Number(e.target.value))} />
@@ -146,7 +146,7 @@ export const IncomePage = () => {
                   {income.category === 'benefit' ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-warning/15 text-warning border border-warning/25">
                       <Coins size={11} />
-                      Benefit
+                      Benefício
                     </span>
                   ) : (
                     <span className="badge badge-xs capitalize badge-outline">
@@ -167,32 +167,32 @@ export const IncomePage = () => {
               <DeductionRow income={income} month={month} year={year} />
             </motion.div>
           ))}
-          {filtered.length === 0 && <p className="text-base-content/40 text-sm">No {tab} incomes registered.</p>}
+          {filtered.length === 0 && <p className="text-base-content/40 text-sm">Nenhuma renda {tab === 'fixed' ? 'fixa' : 'variável'} registrada.</p>}
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add income">
+      <Modal open={open} onClose={() => setOpen(false)} title="Nova renda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="form-control">
-            <span className="label-text text-xs mb-1">Description</span>
+            <span className="label-text text-xs mb-1">Descrição</span>
             <input className="input input-bordered input-sm" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </label>
           <label className="form-control">
-            <span className="label-text text-xs mb-1">Category</span>
+            <span className="label-text text-xs mb-1">Categoria</span>
             <select className="select select-bordered select-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as IncomeCategory })}>
-              <option value="salary">Salary</option>
-              <option value="rent">Rent</option>
-              <option value="benefit">Benefit (food card, transport, etc.)</option>
-              <option value="other">Other</option>
+              <option value="salary">Salário</option>
+              <option value="rent">Aluguel</option>
+              <option value="benefit">Benefício (vale-refeição, transporte, etc.)</option>
+              <option value="other">Outro</option>
             </select>
           </label>
           <label className="form-control">
-            <span className="label-text text-xs mb-1">Gross amount (R$)</span>
+            <span className="label-text text-xs mb-1">Valor bruto (R$)</span>
             <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
           </label>
           <div className="flex gap-2 mt-2">
-            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancel</button>
-            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Save</motion.button>
+            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
+            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>
           </div>
         </form>
       </Modal>

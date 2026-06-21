@@ -26,17 +26,17 @@ export const FixedExpensesPage = () => {
       <div className="flex flex-col gap-6 w-full">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold text-base-content">Fixed Expenses</h1>
-            <p className="text-base-content/50 text-sm mt-0.5">{expenses.filter((e) => e.active).length} active</p>
+            <h1 className="text-2xl font-bold text-base-content">Gastos Fixos</h1>
+            <p className="text-base-content/50 text-sm mt-0.5">{expenses.filter((e) => e.active).length} ativo(s)</p>
           </div>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">+ Add expense</motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">+ Adicionar gasto</motion.button>
         </div>
 
         <div className="overflow-x-auto card bg-base-200 border border-base-300">
           <table className="table table-sm">
             <thead>
               <tr className="text-base-content/50 text-xs uppercase">
-                <th>Name</th><th>Amount</th><th>Due day</th><th>Source</th><th>Active</th><th></th>
+                <th>Nome</th><th>Valor</th><th>Vencimento</th><th>Origem</th><th>Ativo</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -45,13 +45,13 @@ export const FixedExpensesPage = () => {
                   <td className={`font-medium ${exp.active ? '' : 'line-through'}`}>
                     {exp.name}
                     {exp.from_benefit && (
-                      <span className="badge badge-warning badge-xs ml-2">benefit</span>
+                      <span className="badge badge-warning badge-xs ml-2">benefício</span>
                     )}
                   </td>
                   <td className="tabular-nums">{formatCurrency(exp.amount)}</td>
-                  <td>Day {exp.due_day}</td>
+                  <td>Dia {exp.due_day}</td>
                   <td className="text-xs text-base-content/50">
-                    {exp.from_benefit ? 'Restricted' : 'Salary'}
+                    {exp.from_benefit ? 'Restrito' : 'Salário'}
                   </td>
                   <td>
                     <input
@@ -67,26 +67,26 @@ export const FixedExpensesPage = () => {
                 </motion.tr>
               ))}
               {expenses.length === 0 && (
-                <tr><td colSpan={6} className="text-center text-base-content/40 py-6">No fixed expenses yet.</td></tr>
+                <tr><td colSpan={6} className="text-center text-base-content/40 py-6">Nenhum gasto fixo cadastrado.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add fixed expense">
+      <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto fixo">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="form-control">
-            <span className="label-text text-xs mb-1">Name</span>
+            <span className="label-text text-xs mb-1">Nome</span>
             <input className="input input-bordered input-sm" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="form-control">
-              <span className="label-text text-xs mb-1">Amount (R$)</span>
+              <span className="label-text text-xs mb-1">Valor (R$)</span>
               <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
             </label>
             <label className="form-control">
-              <span className="label-text text-xs mb-1">Due day</span>
+              <span className="label-text text-xs mb-1">Dia de vencimento</span>
               <input type="number" min={1} max={31} className="input input-bordered input-sm" required value={form.due_day} onChange={(e) => setForm({ ...form, due_day: Number(e.target.value) })} />
             </label>
           </div>
@@ -97,14 +97,14 @@ export const FixedExpensesPage = () => {
               checked={form.from_benefit}
               onChange={(e) => setForm({ ...form, from_benefit: e.target.checked })}
             />
-            <span className="text-sm">Paid from benefit (food card, transport, etc.)</span>
+            <span className="text-sm">Pago com benefício (vale-refeição, transporte, etc.)</span>
           </label>
           {form.from_benefit && (
-            <p className="text-xs text-warning/80 -mt-1">This expense won't deduct from your free balance — it's covered by restricted funds.</p>
+            <p className="text-xs text-warning/80 -mt-1">Este gasto não deduz do saldo livre — é coberto por fundos restritos.</p>
           )}
           <div className="flex gap-2 mt-2">
-            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancel</button>
-            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Save</motion.button>
+            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
+            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>
           </div>
         </form>
       </Modal>

@@ -34,11 +34,11 @@ export const OccasionalExpensesPage = () => {
       <div className="flex flex-col gap-6 w-full">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold text-base-content">Occasional Expenses</h1>
-            <p className="text-base-content/50 text-sm mt-0.5">One-time costs for a specific month</p>
+            <h1 className="text-2xl font-bold text-base-content">Gastos Ocasionais</h1>
+            <p className="text-base-content/50 text-sm mt-0.5">Custos pontuais de um mês específico</p>
           </div>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">
-            + Add expense
+            + Adicionar gasto
           </motion.button>
         </div>
 
@@ -49,7 +49,7 @@ export const OccasionalExpensesPage = () => {
             onChange={(e) => setMonth(Number(e.target.value))}
           >
             {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('en', { month: 'long' })}</option>
+              <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}</option>
             ))}
           </select>
           <input
@@ -65,7 +65,7 @@ export const OccasionalExpensesPage = () => {
             <motion.div key={exp.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between card bg-base-200 border border-base-300 px-4 py-3">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-base-content text-sm">{exp.description}</p>
-                {exp.from_benefit && <span className="badge badge-warning badge-xs">benefit</span>}
+                {exp.from_benefit && <span className="badge badge-warning badge-xs">benefício</span>}
               </div>
               <div className="flex items-center gap-3">
                 <span className={`font-semibold text-sm ${exp.from_benefit ? 'text-warning' : 'text-error'}`}>
@@ -82,32 +82,32 @@ export const OccasionalExpensesPage = () => {
             </motion.div>
           ))}
           {expenses.length === 0 && (
-            <p className="text-base-content/40 text-sm">No occasional expenses for this month.</p>
+            <p className="text-base-content/40 text-sm">Nenhum gasto ocasional neste mês.</p>
           )}
         </div>
 
         {expenses.length > 0 && (
           <div className="flex justify-between items-center border-t border-base-300 pt-4">
-            <span className="text-sm text-base-content/60">Total deducted from free balance</span>
+            <span className="text-sm text-base-content/60">Total deduzido do saldo livre</span>
             <span className="font-bold text-error">{formatCurrency(total)}</span>
           </div>
         )}
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add occasional expense">
+      <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto ocasional">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="form-control">
-            <span className="label-text text-xs mb-1">Description</span>
+            <span className="label-text text-xs mb-1">Descrição</span>
             <input
               className="input input-bordered input-sm"
               required
-              placeholder="e.g. Car repair, Doctor visit"
+              placeholder="Ex.: Conserto do carro, Consulta médica"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </label>
           <label className="form-control">
-            <span className="label-text text-xs mb-1">Amount (R$)</span>
+            <span className="label-text text-xs mb-1">Valor (R$)</span>
             <input
               type="number"
               step="0.01"
@@ -124,11 +124,11 @@ export const OccasionalExpensesPage = () => {
               checked={form.from_benefit}
               onChange={(e) => setForm({ ...form, from_benefit: e.target.checked })}
             />
-            <span className="text-sm">Paid from benefit (food card, etc.)</span>
+            <span className="text-sm">Pago com benefício (vale-refeição, etc.)</span>
           </label>
           <div className="flex gap-2 mt-2">
-            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancel</button>
-            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Save</motion.button>
+            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
+            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>
           </div>
         </form>
       </Modal>
