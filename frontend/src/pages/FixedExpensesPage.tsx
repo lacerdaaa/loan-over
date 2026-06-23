@@ -5,6 +5,7 @@ import { useCreateFixedExpense, useDeleteFixedExpense, useFixedExpenses, useUpda
 import { Modal } from '../components/ui/Modal';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
+import { usePrivacy } from '../lib/privacy';
 
 const EMPTY = { name: '', amount: 0, due_day: 1, active: true, from_benefit: false };
 
@@ -15,6 +16,7 @@ export const FixedExpensesPage = () => {
   const remove = useDeleteFixedExpense();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const { hidden, mask } = usePrivacy();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,12 +45,12 @@ export const FixedExpensesPage = () => {
               {expenses.map((exp) => (
                 <motion.tr key={exp.id} layout className={exp.active ? '' : 'opacity-40'}>
                   <td className={`font-medium ${exp.active ? '' : 'line-through'}`}>
-                    {exp.name}
+                    <span className={`transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{exp.name}</span>
                     {exp.from_benefit && (
                       <span className="badge badge-warning badge-xs ml-2">benefício</span>
                     )}
                   </td>
-                  <td className="tabular-nums">{formatCurrency(exp.amount)}</td>
+                  <td className="tabular-nums">{mask(formatCurrency(exp.amount))}</td>
                   <td>Dia {exp.due_day}</td>
                   <td className="text-xs text-base-content/50">
                     {exp.from_benefit ? 'Restrito' : 'Salário'}

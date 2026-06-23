@@ -5,6 +5,7 @@ import { useCreateOccasionalExpense, useDeleteOccasionalExpense, useOccasionalEx
 import { Modal } from '../components/ui/Modal';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
+import { usePrivacy } from '../lib/privacy';
 
 const now = new Date();
 const EMPTY = { description: '', amount: 0, from_benefit: false };
@@ -18,6 +19,7 @@ export const OccasionalExpensesPage = () => {
   const { data: expenses = [] } = useOccasionalExpenses(month, year);
   const create = useCreateOccasionalExpense(month, year);
   const remove = useDeleteOccasionalExpense(month, year);
+  const { hidden, mask } = usePrivacy();
 
   const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
 
@@ -64,12 +66,12 @@ export const OccasionalExpensesPage = () => {
           {expenses.map((exp) => (
             <motion.div key={exp.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between card bg-base-200 border border-base-300 px-4 py-3">
               <div className="flex items-center gap-2">
-                <p className="font-medium text-base-content text-sm">{exp.description}</p>
+                <p className={`font-medium text-base-content text-sm transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{exp.description}</p>
                 {exp.from_benefit && <span className="badge badge-warning badge-xs">benefício</span>}
               </div>
               <div className="flex items-center gap-3">
                 <span className={`font-semibold text-sm ${exp.from_benefit ? 'text-warning' : 'text-error'}`}>
-                  {formatCurrency(exp.amount)}
+                  {mask(formatCurrency(exp.amount))}
                 </span>
                 <motion.button
                   whileTap={{ scale: 0.93 }}
@@ -89,7 +91,7 @@ export const OccasionalExpensesPage = () => {
         {expenses.length > 0 && (
           <div className="flex justify-between items-center border-t border-base-300 pt-4">
             <span className="text-sm text-base-content/60">Total deduzido do saldo livre</span>
-            <span className="font-bold text-error">{formatCurrency(total)}</span>
+            <span className="font-bold text-error">{mask(formatCurrency(total))}</span>
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import { type CreateIncomePayload, useAddDeduction, useCreateIncome, useDeleteIn
 import { Modal } from '../components/ui/Modal';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
+import { usePrivacy } from '../lib/privacy';
 import type { Income, IncomeCategory, IncomeType } from '../types/api';
 
 const now = new Date();
@@ -21,6 +22,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
   const [deductionForm, setDeductionForm] = useState<DeductionFormState>({ incomeId: income.id, label: '', amount: '' });
   const addDeduction = useAddDeduction(income.id, month, year);
   const removeDeduction = useRemoveDeduction(income.id, month, year);
+  const { mask } = usePrivacy();
   const net = netAmount(income);
   const hasDeductions = deductions(income).length > 0;
 
@@ -37,14 +39,14 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
       {hasDeductions && (
         <div className="text-xs text-base-content/60 flex justify-between pr-1">
           <span>Bruto</span>
-          <span>{formatCurrency(income.amount)}</span>
+          <span>{mask(formatCurrency(income.amount))}</span>
         </div>
       )}
       {deductions(income).map((d) => (
         <div key={d.id} className="flex items-center justify-between text-xs text-error/80 pr-1">
           <span>– {d.label}</span>
           <div className="flex items-center gap-2">
-            <span>({formatCurrency(d.amount)})</span>
+            <span>({mask(formatCurrency(d.amount))})</span>
             <button
               className="btn btn-ghost btn-xs text-error h-4 min-h-0 px-1"
               onClick={() => removeDeduction.mutate(d.id)}
@@ -57,7 +59,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
       {hasDeductions && (
         <div className="flex justify-between text-xs font-semibold text-success border-t border-base-300 pt-1 pr-1">
           <span>Líquido</span>
-          <span>{formatCurrency(net)}</span>
+          <span>{mask(formatCurrency(net))}</span>
         </div>
       )}
       {showForm ? (
@@ -96,6 +98,7 @@ export const IncomePage = () => {
   const [year, setYear] = useState(now.getFullYear());
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ description: '', amount: 0, type: tab, category: 'other' as IncomeCategory });
+  const { hidden, mask } = usePrivacy();
 
   const { data: incomes = [] } = useIncome(month, year);
   const create = useCreateIncome(month, year);
@@ -142,7 +145,7 @@ export const IncomePage = () => {
             <motion.div key={income.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card bg-base-200 border border-base-300 px-4 py-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-medium text-base-content text-sm">{income.description}</p>
+                  <p className={`font-medium text-base-content text-sm transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{income.description}</p>
                   {income.category === 'benefit' ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-warning/15 text-warning border border-warning/25">
                       <Coins size={11} />
@@ -159,7 +162,7 @@ export const IncomePage = () => {
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-3">
                   <span className="font-semibold text-success text-sm">
-                    {formatCurrency(deductions(income).length > 0 ? netAmount(income) : income.amount)}
+                    {mask(formatCurrency(deductions(income).length > 0 ? netAmount(income) : income.amount))}
                   </span>
                   <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}><X size={14} /></motion.button>
                 </div>

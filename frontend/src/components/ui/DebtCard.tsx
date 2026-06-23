@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { usePayInstallment } from '../../api/debts';
 import { formatCurrency } from '../../lib/formatCurrency';
 import { monthLabel } from '../../lib/monthLabel';
+import { usePrivacy } from '../../lib/privacy';
 import type { Debt } from '../../types/api';
 
 interface Props {
@@ -16,6 +17,7 @@ const payoffDate = (debt: Debt) => {
 
 export const DebtCard = ({ debt }: Props) => {
   const pay = usePayInstallment();
+  const { hidden, mask } = usePrivacy();
   const progress = debt.total_installments > 0
     ? (debt.paid_installments / debt.total_installments) * 100
     : 0;
@@ -30,8 +32,8 @@ export const DebtCard = ({ debt }: Props) => {
     >
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-semibold text-base-content">{debt.name}</h3>
-          <p className="text-sm text-base-content/60">{formatCurrency(debt.installment_amount)}/mês</p>
+          <h3 className={`font-semibold text-base-content transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{debt.name}</h3>
+          <p className="text-sm text-base-content/60">{mask(formatCurrency(debt.installment_amount))}/mês</p>
         </div>
         <AnimatePresence>
           {debt.closed && (

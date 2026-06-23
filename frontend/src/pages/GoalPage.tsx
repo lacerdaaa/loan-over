@@ -6,6 +6,7 @@ import { useSnapshot } from '../api/snapshot';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
+import { usePrivacy } from '../lib/privacy';
 import type { Debt } from '../types/api';
 
 const now = new Date();
@@ -109,6 +110,7 @@ export const GoalPage = () => {
   const { data: allDebts = [] } = useDebts();
   const upsert = useUpsertGoal();
 
+  const { hidden, mask } = usePrivacy();
   const openDebts = allDebts.filter((d) => !d.closed);
   const freeBal = snapshot?.free_balance ?? 0;
   const targetAmount = goal?.target_amount ?? 0;
@@ -206,7 +208,7 @@ export const GoalPage = () => {
           <div className="stat">
             <div className="stat-title text-xs">Poupança/mês</div>
             <div className="stat-value text-xl text-success">
-              {monthlyMin > 0 ? formatCurrency(monthlyMin) : '—'}
+              {monthlyMin > 0 ? mask(formatCurrency(monthlyMin)) : '—'}
             </div>
             <div className="stat-desc">{monthlyMin > 0 ? 'enquanto quita dívidas' : 'não definido'}</div>
           </div>
@@ -220,7 +222,7 @@ export const GoalPage = () => {
           <div className="stat">
             <div className="stat-title text-xs">Saldo livre atual</div>
             <div className="stat-value text-xl text-base-content">
-              {formatCurrency(freeBal)}
+              {mask(formatCurrency(freeBal))}
             </div>
             <div className="stat-desc">este mês</div>
           </div>
@@ -249,9 +251,9 @@ export const GoalPage = () => {
                   >
                     <span className="text-xs text-base-content/25 w-5 shrink-0 tabular-nums text-right">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-base-content truncate">{d.name}</p>
+                      <p className={`text-sm font-medium text-base-content truncate transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{d.name}</p>
                       <p className="text-xs text-base-content/40 tabular-nums mt-0.5">
-                        {formatCurrency(d.remainingBalance)} restante · {formatCurrency(d.installment)}/mês
+                        {mask(formatCurrency(d.remainingBalance))} restante · {mask(formatCurrency(d.installment))}/mês
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-0.5 shrink-0">
@@ -281,7 +283,7 @@ export const GoalPage = () => {
                   A partir de{' '}
                   <span className="font-semibold text-base-content">{offsetToLabel(result.debtFreeOffset)}</span>,
                   poupando{' '}
-                  <span className="font-semibold text-base-content">{formatCurrency(result.postDebtMonthlyFree)}/mês</span>
+                  <span className="font-semibold text-base-content">{mask(formatCurrency(result.postDebtMonthlyFree))}/mês</span>
                   {' '}→ meta em{' '}
                   <span className="font-semibold text-success">{offsetToLabel(result.goalOffset)}</span>
                 </p>
