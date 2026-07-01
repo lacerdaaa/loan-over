@@ -5,7 +5,7 @@ import { DebtCard } from '../components/ui/DebtCard';
 import { Modal } from '../components/ui/Modal';
 import { PageTransition } from '../components/ui/PageTransition';
 
-const EMPTY_FORM = { name: '', installment_amount: 0, total_installments: 0, paid_installments: 0, start_date: '' };
+const EMPTY_FORM = { name: '', installment_amount: 0, principal: 0, monthly_rate: 0, total_installments: 0, paid_installments: 0, start_date: '', hasInterest: false };
 
 export const DebtsPage = () => {
   const { data: debts = [], isLoading } = useDebts();
@@ -15,7 +15,10 @@ export const DebtsPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    create.mutate(form, { onSuccess: () => { setOpen(false); setForm(EMPTY_FORM); } });
+    const payload = form.hasInterest
+      ? { name: form.name, principal: form.principal, monthly_rate: form.monthly_rate / 100, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date }
+      : { name: form.name, installment_amount: form.installment_amount, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date };
+    create.mutate(payload as Parameters<typeof create.mutate>[0], { onSuccess: () => { setOpen(false); setForm(EMPTY_FORM); } });
   };
 
   return (
@@ -48,26 +51,51 @@ export const DebtsPage = () => {
             <span className="label-text text-xs mb-1">Nome</span>
             <input className="input input-bordered input-sm" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-warning checkbox-sm"
+              checked={form.hasInterest}
+              onChange={(e) => setForm({ ...form, hasInterest: e.target.checked })}
+            />
+            <span className="text-sm">Tem juros (Tabela Price)</span>
+          </label>
+
+          {form.hasInterest ? (
+            <div className="grid grid-cols-2 gap-3">
+              <label className="form-control">
+                <span className="label-text text-xs mb-1">Principal (R$)</span>
+                <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.principal || ''} onChange={(e) => setForm({ ...form, principal: Number(e.target.value) })} />
+              </label>
+              <label className="form-control">
+                <span className="label-text text-xs mb-1">Taxa (% a.m.)</span>
+                <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.monthly_rate || ''} onChange={(e) => setForm({ ...form, monthly_rate: Number(e.target.value) })} />
+              </label>
+            </div>
+          ) : (
             <label className="form-control">
               <span className="label-text text-xs mb-1">Parcela (R$)</span>
               <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.installment_amount || ''} onChange={(e) => setForm({ ...form, installment_amount: Number(e.target.value) })} />
             </label>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
             <label className="form-control">
               <span className="label-text text-xs mb-1">Total de parcelas</span>
               <input type="number" className="input input-bordered input-sm" required value={form.total_installments || ''} onChange={(e) => setForm({ ...form, total_installments: Number(e.target.value) })} />
             </label>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
             <label className="form-control">
               <span className="label-text text-xs mb-1">Já pagas</span>
               <input type="number" className="input input-bordered input-sm" value={form.paid_installments} onChange={(e) => setForm({ ...form, paid_installments: Number(e.target.value) })} />
             </label>
-            <label className="form-control">
-              <span className="label-text text-xs mb-1">Data de início</span>
-              <input type="date" className="input input-bordered input-sm" required value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
-            </label>
           </div>
+
+          <label className="form-control">
+            <span className="label-text text-xs mb-1">Data de início</span>
+            <input type="date" className="input input-bordered input-sm" required value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+          </label>
+
           <div className="flex gap-2 mt-2">
             <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
             <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>

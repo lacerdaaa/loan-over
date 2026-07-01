@@ -4,6 +4,7 @@ import { useDebts } from '../api/debts';
 import { useGoal, useUpsertGoal } from '../api/goal';
 import { useSnapshot } from '../api/snapshot';
 import { PageTransition } from '../components/ui/PageTransition';
+import { remainingBalance } from '../lib/debt';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
@@ -17,9 +18,9 @@ const MAX_MONTHS = 120;
 interface DebtResult {
   name: string;
   installment: number;
-  remainingBalance: number;
-  naturalMonths: number;
+  trueRemainingBalance: number;
   snowballPayoffOffset: number;
+  naturalPayoffOffset: number;
   monthsSaved: number;
 }
 
@@ -30,17 +31,46 @@ interface SimResult {
   postDebtMonthlyFree: number;
 }
 
+interface DebtState {
+  name: string;
+  installment: number;
+  rate: number;
+  balance: number;
+  initialBalance: number;
+  freed: boolean;
+  snowballPayoffOffset: number;
+  naturalPayoffOffset: number;
+}
+
+function naturalPayoffOffset(installment: number, rate: number, balance: number): number {
+  if (rate === 0) return Math.ceil(balance / installment);
+  let b = balance;
+  let months = 0;
+  while (b > 0.01 && months < MAX_MONTHS) {
+    b -= installment - b * rate;
+    months++;
+  }
+  return months;
+}
+
 function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number, targetAmount: number): SimResult {
-  const states = openDebts
-    .map((d) => ({
-      name: d.name,
-      installment: Number(d.installment_amount),
-      naturalRemaining: d.total_installments - d.paid_installments,
-      snowballRemaining: d.total_installments - d.paid_installments,
-      freed: false,
-      snowballPayoffOffset: 0,
-    }))
-    .sort((a, b) => a.naturalRemaining * a.installment - b.naturalRemaining * b.installment);
+  const states: DebtState[] = openDebts
+    .map((d) => {
+      const installment = Number(d.installment_amount);
+      const rate = Number(d.monthly_rate ?? 0);
+      const balance = remainingBalance(d);
+      return {
+        name: d.name,
+        installment,
+        rate,
+        balance,
+        initialBalance: balance,
+        freed: false,
+        snowballPayoffOffset: 0,
+        naturalPayoffOffset: naturalPayoffOffset(installment, rate, balance),
+      };
+    })
+    .sort((a, b) => a.balance - b.balance);
 
   let freeBal = baseFreeBalance;
   let cumSavings = 0;
@@ -48,31 +78,31 @@ function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number
   let goalOffset: number | null = null;
 
   for (let offset = 1; offset <= MAX_MONTHS; offset++) {
-    const allDone = states.every((d) => d.snowballRemaining <= 0);
+    const allDone = states.every((d) => d.freed);
 
     if (!allDone) {
       const saved = Math.min(monthlyMin, Math.max(0, freeBal));
       cumSavings += saved;
       const extra = Math.max(0, freeBal - saved);
 
-      for (const d of states) {
-        if (d.snowballRemaining > 0) d.snowballRemaining -= 1;
-      }
+      // Apply extra to the smallest active debt
+      const target = states.find((d) => !d.freed);
+      if (target) target.balance -= extra;
 
-      const target = states.find((d) => d.snowballRemaining > 0);
-      if (target && target.installment > 0) {
-        target.snowballRemaining -= extra / target.installment;
-      }
-
+      // Advance every active debt by one installment (with amortization)
       for (const d of states) {
-        if (d.snowballRemaining <= 0 && !d.freed) {
+        if (d.freed) continue;
+        const interest = d.rate > 0 ? d.balance * d.rate : 0;
+        d.balance -= d.installment - interest;
+
+        if (d.balance <= 0.01 && !d.freed) {
           d.freed = true;
           d.snowballPayoffOffset = offset;
           freeBal += d.installment;
         }
       }
 
-      if (states.every((d) => d.snowballRemaining <= 0) && debtFreeOffset === null) {
+      if (states.every((d) => d.freed) && debtFreeOffset === null) {
         debtFreeOffset = offset;
       }
     } else {
@@ -89,10 +119,10 @@ function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number
   const debtOrder: DebtResult[] = states.map((d) => ({
     name: d.name,
     installment: d.installment,
-    remainingBalance: d.naturalRemaining * d.installment,
-    naturalMonths: d.naturalRemaining,
-    snowballPayoffOffset: d.snowballPayoffOffset || d.naturalRemaining,
-    monthsSaved: Math.max(0, d.naturalRemaining - (d.snowballPayoffOffset || d.naturalRemaining)),
+    trueRemainingBalance: d.initialBalance,
+    snowballPayoffOffset: d.snowballPayoffOffset || d.naturalPayoffOffset,
+    naturalPayoffOffset: d.naturalPayoffOffset,
+    monthsSaved: Math.max(0, d.naturalPayoffOffset - (d.snowballPayoffOffset || d.naturalPayoffOffset)),
   }));
 
   return { debtFreeOffset, goalOffset, debtOrder, postDebtMonthlyFree: freeBal };
@@ -253,7 +283,7 @@ export const GoalPage = () => {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium text-base-content truncate transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{d.name}</p>
                       <p className="text-xs text-base-content/40 tabular-nums mt-0.5">
-                        {mask(formatCurrency(d.remainingBalance))} restante · {mask(formatCurrency(d.installment))}/mês
+                        {mask(formatCurrency(d.trueRemainingBalance))} restante · {mask(formatCurrency(d.installment))}/mês
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-0.5 shrink-0">

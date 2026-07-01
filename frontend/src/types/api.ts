@@ -26,6 +26,8 @@ export interface Debt {
   paid_installments: number;
   start_date: string;
   closed: boolean;
+  principal?: number | null;
+  monthly_rate?: number | null;
 }
 
 export interface FixedExpense {

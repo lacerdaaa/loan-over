@@ -22,4 +22,10 @@ export class Debt {
 
   @Column({ default: false })
   declare closed: boolean;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  declare principal: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
+  declare monthly_rate: number | null;
 }
