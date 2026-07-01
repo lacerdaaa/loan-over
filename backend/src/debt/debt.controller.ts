@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateDebtDto } from './dto/create-debt.dto';
+import { UpdateDebtDto } from './dto/update-debt.dto';
 import { Debt } from './debt.entity';
 import { DebtService } from './debt.service';
 
@@ -21,6 +22,13 @@ export class DebtController {
   @ApiOkResponse({ type: Debt })
   create(@Body() dto: CreateDebtDto): Promise<Debt> {
     return this.service.create(dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a debt' })
+  @ApiOkResponse({ type: Debt })
+  update(@Param('id') id: string, @Body() dto: UpdateDebtDto): Promise<Debt> {
+    return this.service.update(id, dto);
   }
 
   @Patch(':id/pay')

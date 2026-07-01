@@ -46,6 +46,15 @@ export const usePayInstallment = () => {
   });
 };
 
+export const useUpdateDebt = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<Omit<Debt, 'closed'>> & { id: string }) =>
+      client.patch<Debt>(`/debts/${id}`, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+  });
+};
+
 export const useDeleteDebt = () => {
   const qc = useQueryClient();
   return useMutation({
