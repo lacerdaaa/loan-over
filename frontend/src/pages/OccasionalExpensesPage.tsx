@@ -23,6 +23,14 @@ export const OccasionalExpensesPage = () => {
 
   const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
 
+  const navigate = (delta: number) => {
+    const d = new Date(year, month - 1 + delta, 1);
+    setMonth(d.getMonth() + 1);
+    setYear(d.getFullYear());
+  };
+
+  const periodLabel = new Date(year, month - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     create.mutate(
@@ -37,63 +45,69 @@ export const OccasionalExpensesPage = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold text-base-content">Gastos Ocasionais</h1>
-            <p className="text-base-content/50 text-sm mt-0.5">Custos pontuais de um mês específico</p>
+            <div className="flex items-center gap-1 mt-1">
+              <button
+                onClick={() => navigate(-1)}
+                className="btn btn-ghost btn-xs text-base-content/50 hover:text-base-content px-1"
+              >
+                ‹
+              </button>
+              <span className="text-sm text-base-content/60 capitalize w-32 text-center">{periodLabel}</span>
+              <button
+                onClick={() => navigate(1)}
+                className="btn btn-ghost btn-xs text-base-content/50 hover:text-base-content px-1"
+              >
+                ›
+              </button>
+            </div>
           </div>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">
             + Adicionar gasto
           </motion.button>
         </div>
 
-        <div className="flex gap-3">
-          <select
-            className="select select-bordered select-sm"
-            value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-          >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}</option>
-            ))}
-          </select>
-          <input
-            type="number"
-            className="input input-bordered input-sm w-24"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {expenses.map((exp) => (
-            <motion.div key={exp.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between card bg-base-200 border border-base-300 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <p className={`font-medium text-base-content text-sm transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>{exp.description}</p>
-                {exp.from_benefit && <span className="badge badge-warning badge-xs">benefício</span>}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className={`font-semibold text-sm ${exp.from_benefit ? 'text-warning' : 'text-error'}`}>
-                  {mask(formatCurrency(exp.amount))}
-                </span>
-                <motion.button
-                  whileTap={{ scale: 0.93 }}
-                  className="btn btn-ghost btn-xs text-error"
-                  onClick={() => remove.mutate(exp.id)}
+        <div className="card bg-base-200 border border-base-300 divide-y divide-base-300">
+          {expenses.length === 0 ? (
+            <p className="px-4 py-8 text-sm text-base-content/40 text-center">Nenhum gasto neste mês.</p>
+          ) : (
+            <>
+              {expenses.map((exp) => (
+                <motion.div
+                  key={exp.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center justify-between px-4 py-3"
                 >
-                  <X size={14} />
-                </motion.button>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className={`text-sm font-medium text-base-content truncate transition-[filter] ${hidden ? 'blur-sm select-none' : ''}`}>
+                      {exp.description}
+                    </p>
+                    {exp.from_benefit && (
+                      <span className="badge badge-warning badge-xs shrink-0">benefício</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-sm font-semibold tabular-nums ${exp.from_benefit ? 'text-warning' : 'text-base-content'}`}>
+                      {mask(formatCurrency(exp.amount))}
+                    </span>
+                    <motion.button
+                      whileTap={{ scale: 0.93 }}
+                      className="btn btn-ghost btn-xs text-base-content/30 hover:text-error"
+                      onClick={() => remove.mutate(exp.id)}
+                    >
+                      <X size={14} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+              <div className="flex justify-between items-center px-4 py-3">
+                <span className="text-xs text-base-content/50">Total deduzido do saldo livre</span>
+                <span className="text-sm font-bold text-base-content tabular-nums">{mask(formatCurrency(total))}</span>
               </div>
-            </motion.div>
-          ))}
-          {expenses.length === 0 && (
-            <p className="text-base-content/40 text-sm">Nenhum gasto ocasional neste mês.</p>
+            </>
           )}
         </div>
-
-        {expenses.length > 0 && (
-          <div className="flex justify-between items-center border-t border-base-300 pt-4">
-            <span className="text-sm text-base-content/60">Total deduzido do saldo livre</span>
-            <span className="font-bold text-error">{mask(formatCurrency(total))}</span>
-          </div>
-        )}
       </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto ocasional">
