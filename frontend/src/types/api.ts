@@ -37,6 +37,8 @@ export interface FixedExpense {
   due_day: number;
   active: boolean;
   from_benefit: boolean;
+  valid_from_month?: number | null;
+  valid_from_year?: number | null;
 }
 
 export interface Goal {

@@ -27,4 +27,17 @@ export class CreateFixedExpenseDto {
   @IsOptional()
   @IsBoolean()
   from_benefit?: boolean;
+
+  @ApiPropertyOptional({ example: 8, description: 'Month (1–12) from which this expense starts counting. Null = always active.' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  valid_from_month?: number;
+
+  @ApiPropertyOptional({ example: 2026 })
+  @IsOptional()
+  @IsInt()
+  @Min(2024)
+  valid_from_year?: number;
 }

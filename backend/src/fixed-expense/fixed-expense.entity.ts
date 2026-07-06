@@ -19,4 +19,10 @@ export class FixedExpense {
 
   @Column({ default: false })
   declare from_benefit: boolean;
+
+  @Column({ type: 'int', nullable: true, default: null })
+  declare valid_from_month: number | null;
+
+  @Column({ type: 'int', nullable: true, default: null })
+  declare valid_from_year: number | null;
 }

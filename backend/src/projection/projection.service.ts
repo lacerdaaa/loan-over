@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Debt } from '../debt/debt.entity';
+import { isExpenseActiveForMonth } from '../fixed-expense/fixed-expense.utils';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
@@ -18,20 +19,20 @@ export class ProjectionService {
   project(input: ProjectionInput, horizonMonths: number): ProjectedMonth[] {
     const months: ProjectedMonth[] = [];
     const baseIncome = this.sumFixedIncome(input.incomes);
-    const baseFixed = this.sumActiveExpenses(input.fixedExpenses);
 
     for (let offset = 0; offset < horizonMonths; offset++) {
       const { month, year } = this.addMonths(input.referenceMonth, input.referenceYear, offset + 1);
+      const monthFixed = this.sumActiveExpensesForMonth(input.fixedExpenses, month, year);
       const events = this.buildEvents(input.debts, offset);
       const activeDebtTotal = this.sumActiveDebtInstallments(input.debts, offset);
 
       months.push({
         month,
         year,
-        free_balance: baseIncome - baseFixed - activeDebtTotal,
+        free_balance: baseIncome - monthFixed - activeDebtTotal,
         events,
         active_debts: this.countActiveDebts(input.debts, offset),
-        total_outflow: baseFixed + activeDebtTotal,
+        total_outflow: monthFixed + activeDebtTotal,
       });
     }
 
@@ -44,9 +45,9 @@ export class ProjectionService {
       .reduce((sum, i) => sum + netAmount(i), 0);
   }
 
-  private sumActiveExpenses(expenses: FixedExpense[]): number {
+  private sumActiveExpensesForMonth(expenses: FixedExpense[], month: number, year: number): number {
     return expenses
-      .filter((e) => e.active && !e.from_benefit)
+      .filter((e) => e.active && !e.from_benefit && isExpenseActiveForMonth(e, month, year))
       .reduce((sum, e) => sum + Number(e.amount), 0);
   }
 
@@ -77,7 +78,7 @@ export class ProjectionService {
     if (offset === remaining) {
       return [{
         type: 'liberation',
-        description: `${debt.name} fully paid — R$${debt.installment_amount}/month freed`,
+        description: `${debt.name} quitada — R$${debt.installment_amount}/mês liberados`,
         amount: Number(debt.installment_amount),
       }];
     }
@@ -85,7 +86,7 @@ export class ProjectionService {
     if (offset === remaining - 1) {
       return [{
         type: 'alert',
-        description: `${debt.name} — last installment next month`,
+        description: `${debt.name} — última parcela no próximo mês`,
         amount: Number(debt.installment_amount),
       }];
     }

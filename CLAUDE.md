@@ -1,33 +1,87 @@
-# Loan Over — Claude Instructions
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project overview
 Personal finance app for debt tracking and cash-flow projection. Core differentiator: a stateless projection engine that simulates N months forward, detects debt payoff moments, and surfaces them as cash-liberation events. See `docs/plan.md` for full business rules.
 
 ---
 
-## Stack
+## Commands
 
-### Backend
-- **NestJS** (framework)
-- **PostgreSQL** (database)
-- **TypeORM** (ORM)
-- `class-validator` + `class-transformer` (DTO validation)
-- **Jest** (unit + e2e tests, already bundled with NestJS)
-
-### Frontend (discussed later)
-- React + TypeScript (Vite)
-
-### Monorepo layout
-```
-loan-over/
-  backend/
-  frontend/      ← not started yet
-  docs/
-  CLAUDE.md
-  README.md
+### Backend (`backend/`)
+```bash
+npm run start:dev       # watch mode
+npm run test            # all unit tests
+npm run test:e2e        # e2e tests
+npx jest snapshot       # run a single spec by name pattern
+npm run migration:generate -- src/migrations/DescriptiveName
+npm run migration:run
+npm run migration:revert
 ```
 
-Deployment strategy is not yet defined. Do not make assumptions about environment, containerization, or CI/CD. Keep configuration flexible (env vars for everything that varies between environments).
+### Frontend (`frontend/`)
+```bash
+npm run dev             # Vite dev server (requires VITE_API_URL in .env)
+npm run build           # tsc + vite build
+npm run lint            # eslint
+```
+
+### Infrastructure
+```bash
+docker compose up -d    # start PostgreSQL (port 5432)
+```
+
+Backend env vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FRONTEND_URL`.
+Frontend env: `VITE_API_URL` (e.g. `http://localhost:3000`).
+
+---
+
+## Architecture
+
+### Stack
+- **Backend**: NestJS + TypeORM + PostgreSQL, `class-validator` DTOs, Swagger at `/api`
+- **Frontend**: React 19 + TypeScript + Vite, TanStack Query v5, DaisyUI v5 (Tailwind), Framer Motion v12, Recharts
+
+### Domain modules (backend)
+Each module owns its entity, service, controller, and DTOs. Cross-module access goes through the module's exported service only.
+
+| Module | Responsibility |
+|--------|---------------|
+| `income` | Fixed and variable incomes with deductions |
+| `fixed-expense` | Recurring monthly expenses with `active` toggle |
+| `debt` | Installment debts; supports Tabela Price (principal + monthly_rate → computes PMT) |
+| `occasional-expense` | One-off expenses scoped to a specific month/year |
+| `snapshot` | **Pure computation** — `SnapshotService.compute()` receives all entities and returns `MonthlySnapshot` with no I/O |
+| `projection` | **Pure computation** — `ProjectionService.project()` simulates N months forward, emits `liberation` events when debts are paid off |
+| `goal` | User's savings target (amount + deadline) |
+| `auth` | Google OAuth2 → JWT. `JwtAuthGuard` on all routes. Token carries `sub` (userId), `email`, `name`, `avatar` |
+| `user` | Minimal user record (google_id, email, name, avatar) |
+
+`SnapshotService` and `ProjectionService` are intentionally stateless and repository-free — keep them that way. They are the only services with 100% branch-coverage unit tests.
+
+### Data flow
+```
+GET /snapshot?month=&year=
+  → SnapshotController gathers [incomes, debts, fixedExpenses, occasionalExpenses]
+  → SnapshotService.compute() → MonthlySnapshot (pure, tested)
+
+GET /projection?months=
+  → ProjectionController gathers same inputs (minus occasionalExpenses)
+  → ProjectionService.project() → ProjectedMonth[] (pure, tested)
+```
+
+### Auth flow
+Google OAuth (`/auth/google`) → callback issues JWT → stored in `localStorage` as `loanover_token` → Axios interceptor in `frontend/src/api/client.ts` attaches `Authorization: Bearer` on every request → 401 redirects to `/login`.
+
+### Frontend patterns
+- **API hooks**: one file per domain in `frontend/src/api/` wrapping TanStack Query. Mutations invalidate the relevant query key on success.
+- **Privacy mode**: `usePrivacy()` context (`frontend/src/lib/privacy.tsx`). Use `mask(formatCurrency(x))` for amounts and `blur-sm select-none` CSS class for names/descriptions.
+- **Animations**: `useAnimations()` context (`frontend/src/lib/animations.tsx`). Gate Framer Motion animations on `enabled`.
+- **TypeORM decimal columns**: PostgreSQL returns `DECIMAL` as strings. Always wrap with `Number()` before sending back from the frontend or computing in the service.
+
+### Migrations
+Always generate via `npm run migration:generate` — never write migrations by hand. Timestamp prefix is auto-assigned. Run `migration:run` after generating.
 
 ---
 

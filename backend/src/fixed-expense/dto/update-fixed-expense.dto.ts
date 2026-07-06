@@ -24,4 +24,17 @@ export class UpdateFixedExpenseDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @ApiPropertyOptional({ example: 8 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  valid_from_month?: number | null;
+
+  @ApiPropertyOptional({ example: 2026 })
+  @IsOptional()
+  @IsInt()
+  @Min(2024)
+  valid_from_year?: number | null;
 }
