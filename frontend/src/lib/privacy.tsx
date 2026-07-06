@@ -18,6 +18,17 @@ export const PrivacyProvider = ({ children }: { children: React.ReactNode }) => 
     localStorage.setItem(PRIVACY_KEY, hidden ? 'true' : 'false');
   }, [hidden]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setHidden((h) => !h);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const mask = (formatted: string) => (hidden ? MASK : formatted);
 
   return (

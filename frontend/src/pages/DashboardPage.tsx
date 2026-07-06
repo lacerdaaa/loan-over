@@ -57,6 +57,7 @@ export const DashboardPage = () => {
               className="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-base-content"
               onClick={togglePrivacy}
               aria-label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+              title={`${hidden ? 'Mostrar' : 'Ocultar'} valores (⌘⇧H)`}
             >
               {hidden ? <EyeOff size={16} /> : <Eye size={16} />}
             </motion.button>
