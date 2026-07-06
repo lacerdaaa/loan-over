@@ -8,8 +8,13 @@ import { ProjectionService } from './projection.service';
 const makeIncome = (amount: number, category = IncomeCategory.OTHER, deductions: { amount: number }[] = []): Income =>
   ({ id: '1', type: IncomeType.FIXED, category, amount, month: null, year: null, description: 'Salary', deductions }) as Income;
 
-const makeExpense = (amount: number, from_benefit = false): FixedExpense =>
-  ({ id: '1', name: 'Rent', amount, due_day: 5, active: true, from_benefit }) as FixedExpense;
+const makeExpense = (
+  amount: number,
+  from_benefit = false,
+  valid_from_month: number | null = null,
+  valid_from_year: number | null = null,
+): FixedExpense =>
+  ({ id: '1', name: 'Rent', amount, due_day: 5, active: true, from_benefit, valid_from_month, valid_from_year }) as FixedExpense;
 
 const makeDebt = (overrides: Partial<Debt>): Debt =>
   ({
@@ -114,6 +119,26 @@ describe('ProjectionService', () => {
       }, 3);
 
       expect(result[0]?.total_outflow).toBe(0);
+    });
+
+    it('excludes a fixed expense with future valid_from from months before it starts', () => {
+      // referenceMonth=6, valid_from=8 → expense absent in months 7 and 8 projected (offsets 1,2), present from month 9 (offset 3)
+      const result = service.project({
+        incomes: [makeIncome(5000)],
+        fixedExpenses: [makeExpense(1000, false, 8, 2026)],
+        debts: [],
+        referenceMonth: 6,
+        referenceYear: 2026,
+      }, 4);
+
+      // month 7 (offset 1): valid_from=8/2026 not yet → no expense
+      expect(result[0]?.total_outflow).toBe(0);
+      expect(result[0]?.free_balance).toBe(5000);
+      // month 8 (offset 2): valid_from=8/2026 → included
+      expect(result[1]?.total_outflow).toBe(1000);
+      expect(result[1]?.free_balance).toBe(4000);
+      // month 9 (offset 3): still included
+      expect(result[2]?.total_outflow).toBe(1000);
     });
 
     it('compounds freed installment into free_balance from liberation month onward', () => {

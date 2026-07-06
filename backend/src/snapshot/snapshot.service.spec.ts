@@ -10,8 +10,14 @@ import { SnapshotService } from './snapshot.service';
 const makeIncome = (amount: number, category = IncomeCategory.OTHER, deductions: Partial<IncomeDeduction>[] = []): Income =>
   ({ id: '1', type: IncomeType.FIXED, category, amount, month: null, year: null, description: 'test', deductions }) as Income;
 
-const makeExpense = (amount: number, active = true, from_benefit = false): FixedExpense =>
-  ({ id: '1', name: 'test', amount, due_day: 5, active, from_benefit }) as FixedExpense;
+const makeExpense = (
+  amount: number,
+  active = true,
+  from_benefit = false,
+  valid_from_month: number | null = null,
+  valid_from_year: number | null = null,
+): FixedExpense =>
+  ({ id: '1', name: 'test', amount, due_day: 5, active, from_benefit, valid_from_month, valid_from_year }) as FixedExpense;
 
 const makeDebt = (installment_amount: number, closed = false, total = 10, paid = 0): Debt =>
   ({ id: '1', name: 'test', installment_amount, total_installments: total, paid_installments: paid, start_date: new Date(), closed }) as Debt;
@@ -119,6 +125,46 @@ describe('SnapshotService', () => {
 
       expect(result.total_fixed).toBe(0);
       expect(result.free_balance).toBe(5000);
+    });
+
+    it('excludes a fixed expense whose valid_from is in the future', () => {
+      const result = compute(service, {
+        incomes: [makeIncome(5000)],
+        fixedExpenses: [makeExpense(1000, true, false, 8, 2026)], // snapshot is month 6
+      });
+
+      expect(result.total_fixed).toBe(0);
+      expect(result.free_balance).toBe(5000);
+    });
+
+    it('includes a fixed expense whose valid_from equals the snapshot month', () => {
+      const result = compute(service, {
+        incomes: [makeIncome(5000)],
+        fixedExpenses: [makeExpense(1000, true, false, 6, 2026)], // snapshot is month 6
+      });
+
+      expect(result.total_fixed).toBe(1000);
+      expect(result.free_balance).toBe(4000);
+    });
+
+    it('includes a fixed expense whose valid_from is in the past', () => {
+      const result = compute(service, {
+        incomes: [makeIncome(5000)],
+        fixedExpenses: [makeExpense(1000, true, false, 3, 2026)], // snapshot is month 6
+      });
+
+      expect(result.total_fixed).toBe(1000);
+      expect(result.free_balance).toBe(4000);
+    });
+
+    it('includes a fixed expense with no valid_from (null)', () => {
+      const result = compute(service, {
+        incomes: [makeIncome(5000)],
+        fixedExpenses: [makeExpense(1000)],
+      });
+
+      expect(result.total_fixed).toBe(1000);
+      expect(result.free_balance).toBe(4000);
     });
 
     it('excludes closed debts from monthly total_debts', () => {

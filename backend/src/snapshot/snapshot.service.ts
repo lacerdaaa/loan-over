@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Debt } from '../debt/debt.entity';
+import { isExpenseActiveForMonth } from '../fixed-expense/fixed-expense.utils';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
@@ -23,7 +24,7 @@ export class SnapshotService {
       .reduce((sum, i) => sum + netAmount(i), 0);
 
     const total_fixed = fixedExpenses
-      .filter((e) => e.active && !e.from_benefit)
+      .filter((e) => e.active && !e.from_benefit && isExpenseActiveForMonth(e, month, year))
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
     const total_debts = debts
