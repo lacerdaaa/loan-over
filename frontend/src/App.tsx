@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Sidebar } from './components/layout/Sidebar';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { LandingPage } from './pages/LandingPage';
 import { DebtsPage } from './pages/DebtsPage';
 import { FixedExpensesPage } from './pages/FixedExpensesPage';
 import { GoalPage } from './pages/GoalPage';
@@ -22,7 +23,7 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/timeline" element={<TimelinePage />} />
         <Route path="/debts" element={<DebtsPage />} />
         <Route path="/income" element={<IncomePage />} />
@@ -40,6 +41,7 @@ export const App = () => (
   <QueryClientProvider client={queryClient}>
     <Router>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route element={<ProtectedRoute />}>

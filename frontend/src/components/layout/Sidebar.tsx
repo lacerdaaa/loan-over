@@ -1,15 +1,16 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Wallet, X } from 'lucide-react';
+import { CreditCard, Eye, EyeOff, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Wallet, X } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
 import { useAnimations } from '../../lib/animations';
+import { usePrivacy } from '../../lib/privacy';
 import { useTheme } from '../../lib/theme';
 import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
-  { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+  { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/timeline', label: 'Cronograma', Icon: TrendingUp },
   { to: '/debts', label: 'Dívidas', Icon: CreditCard },
   { to: '/income', label: 'Renda', Icon: Wallet },
@@ -40,6 +41,26 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
     ))}
   </nav>
 );
+
+const PrivacyToggle = ({ collapsed }: { collapsed?: boolean }) => {
+  const { hidden, toggle } = usePrivacy();
+  const Icon = hidden ? EyeOff : Eye;
+  const label = hidden ? 'Mostrar valores' : 'Ocultar valores';
+
+  return (
+    <div className="px-2 pb-1">
+      <button
+        onClick={toggle}
+        title={`${label} (⌘⇧H)`}
+        aria-label={label}
+        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-base-300 transition-colors text-sm text-base-content/60 hover:text-base-content ${collapsed ? 'justify-center' : ''}`}
+      >
+        <Icon size={16} className="shrink-0" />
+        {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+      </button>
+    </div>
+  );
+};
 
 const UserFooter = ({ collapsed, onSettingsOpen }: { collapsed?: boolean; onSettingsOpen: () => void }) => {
   const { data: me } = useMe();
@@ -108,6 +129,7 @@ export const Sidebar = () => {
         </div>
 
         <NavItems collapsed={collapsed} />
+        <PrivacyToggle collapsed={collapsed} />
         <UserFooter collapsed={collapsed} onSettingsOpen={() => setSettingsOpen(true)} />
       </motion.aside>
 
@@ -136,6 +158,7 @@ export const Sidebar = () => {
               </div>
 
               <NavItems onNavClick={() => setMobileOpen(false)} />
+              <PrivacyToggle />
               <UserFooter onSettingsOpen={() => { setMobileOpen(false); setSettingsOpen(true); }} />
             </motion.aside>
           </>
