@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Zap } from 'lucide-react';
 import { useProjection } from '../api/projection';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { ProjectionChart } from '../components/ui/ProjectionChart';
 import { useAnimations } from '../lib/animations';
@@ -75,12 +76,12 @@ export const TimelinePage = () => {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
-        <div>
-          <h1 className="text-2xl font-bold text-base-content">Projeção 24 meses</h1>
-          <p className="text-base-content/50 text-sm mt-0.5">Fluxo de caixa futuro com base nas dívidas e renda atuais</p>
-        </div>
+        <PageHeader
+          title="Projeção 24 meses"
+          subtitle="Fluxo de caixa futuro com base nas dívidas e renda atuais"
+        />
 
-        <div className="card bg-base-200 border border-base-300 p-5">
+        <div className="card bg-base-200 border border-primary/15 p-5">
           {isLoading
             ? <div className="h-64 animate-pulse bg-base-300 rounded-lg" />
             : data
@@ -91,7 +92,7 @@ export const TimelinePage = () => {
 
         {months.length > 0 && (
           <div className="card bg-base-200 border border-base-300 p-5 flex flex-col gap-5">
-            <h2 className="text-sm font-semibold text-base-content">Marcos</h2>
+            <h2 className="font-mono text-[11px] font-semibold text-base-content/50 uppercase tracking-[0.15em]">Marcos</h2>
             {months.map((m, i) => (
               <MonthGroup key={`${m.year}-${m.month}`} m={m} index={i} />
             ))}

@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateFixedExpense, useDeleteFixedExpense, useFixedExpenses, useUpdateFixedExpense } from '../api/fixed-expenses';
+import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { usePrivacy } from '../lib/privacy';
@@ -48,13 +50,15 @@ export const FixedExpensesPage = () => {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-base-content">Gastos Fixos</h1>
-            <p className="text-base-content/50 text-sm mt-0.5">{expenses.filter((e) => e.active).length} ativo(s)</p>
-          </div>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">+ Adicionar gasto</motion.button>
-        </div>
+        <PageHeader
+          title="Gastos Fixos"
+          subtitle={`${expenses.filter((e) => e.active).length} ativo(s)`}
+          action={
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
+              <Plus size={14} /> Adicionar gasto
+            </motion.button>
+          }
+        />
 
         <div className="overflow-x-auto card bg-base-200 border border-base-300">
           <table className="table table-sm">
@@ -95,7 +99,7 @@ export const FixedExpensesPage = () => {
                     </button>
                   </td>
                   <td>
-                    <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(exp.id)}><X size={14} /></motion.button>
+                    <motion.button whileTap={{ scale: 0.93 }} aria-label="Excluir gasto" className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(exp.id)}><X size={14} /></motion.button>
                   </td>
                 </motion.tr>
               ))}
@@ -109,19 +113,16 @@ export const FixedExpensesPage = () => {
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto fixo">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="form-control">
-            <span className="label-text text-xs mb-1">Nome</span>
+          <Field label="Nome">
             <input className="input input-bordered input-sm" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </label>
+          </Field>
           <div className="grid grid-cols-2 gap-3">
-            <label className="form-control">
-              <span className="label-text text-xs mb-1">Valor (R$)</span>
+            <Field label="Valor (R$)">
               <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
-            </label>
-            <label className="form-control">
-              <span className="label-text text-xs mb-1">Dia de vencimento</span>
+            </Field>
+            <Field label="Dia de vencimento">
               <input type="number" min={1} max={31} className="input input-bordered input-sm" required value={form.due_day} onChange={(e) => setForm({ ...form, due_day: Number(e.target.value) })} />
-            </label>
+            </Field>
           </div>
 
           <div className="flex flex-col gap-1.5">

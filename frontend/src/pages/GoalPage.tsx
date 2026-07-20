@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
+import { HelpCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useDebts } from '../api/debts';
 import { useGoal, useUpsertGoal } from '../api/goal';
 import { useSnapshot } from '../api/snapshot';
+import { Field } from '../components/ui/Field';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { remainingBalance } from '../lib/debt';
 import { formatCurrency } from '../lib/formatCurrency';
@@ -153,10 +156,11 @@ export const GoalPage = () => {
     monthly_min: goal?.monthly_min ?? 0,
   });
 
+  const debtsKey = JSON.stringify(openDebts);
   const result = useMemo(
     () => simulate(openDebts, freeBal, monthlyMin, targetAmount),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(openDebts), freeBal, monthlyMin, targetAmount],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debtsKey is the stable stand-in for openDebts
+    [debtsKey, freeBal, monthlyMin, targetAmount],
   );
 
   const infoRef = useRef<HTMLDialogElement>(null);
@@ -171,19 +175,20 @@ export const GoalPage = () => {
       <div className="flex flex-col gap-5 w-full">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-base-content">Plano Financeiro</h1>
-            <p className="text-base-content/50 text-sm mt-0.5">Quitar dívidas primeiro, depois poupar</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => infoRef.current?.showModal()}
-            className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-base-content mt-1 shrink-0"
-          >
-            ?
-          </button>
-        </div>
+        <PageHeader
+          title="Plano Financeiro"
+          subtitle="Quitar dívidas primeiro, depois poupar"
+          action={
+            <button
+              type="button"
+              aria-label="Como funciona o Snowball"
+              onClick={() => infoRef.current?.showModal()}
+              className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-base-content mt-1 shrink-0"
+            >
+              <HelpCircle size={16} />
+            </button>
+          }
+        />
 
         {/* Methodology modal */}
         <dialog ref={infoRef} className="modal">
@@ -230,28 +235,28 @@ export const GoalPage = () => {
         <div className="stats stats-horizontal bg-base-200 border border-base-300 w-full shadow-none">
           <div className="stat">
             <div className="stat-title text-xs">Livre de dívidas</div>
-            <div className="stat-value text-xl text-primary">
+            <div className="stat-value font-mono tabular-nums text-xl text-primary">
               {result.debtFreeOffset !== null ? `${result.debtFreeOffset}m` : '—'}
             </div>
             <div className="stat-desc">{offsetToLabel(result.debtFreeOffset)}</div>
           </div>
           <div className="stat">
             <div className="stat-title text-xs">Poupança/mês</div>
-            <div className="stat-value text-xl text-success">
+            <div className="stat-value font-mono tabular-nums text-xl text-success">
               {monthlyMin > 0 ? mask(formatCurrency(monthlyMin)) : '—'}
             </div>
             <div className="stat-desc">{monthlyMin > 0 ? 'enquanto quita dívidas' : 'não definido'}</div>
           </div>
           <div className="stat">
             <div className="stat-title text-xs">Meta atingida</div>
-            <div className="stat-value text-xl text-warning">
+            <div className="stat-value font-mono tabular-nums text-xl text-warning">
               {result.goalOffset !== null ? `${result.goalOffset}m` : '—'}
             </div>
             <div className="stat-desc">{targetAmount > 0 ? offsetToLabel(result.goalOffset) : 'sem meta definida'}</div>
           </div>
           <div className="stat">
             <div className="stat-title text-xs">Saldo livre atual</div>
-            <div className="stat-value text-xl text-base-content">
+            <div className="stat-value font-mono tabular-nums text-xl text-base-content">
               {mask(formatCurrency(freeBal))}
             </div>
             <div className="stat-desc">este mês</div>
@@ -327,23 +332,20 @@ export const GoalPage = () => {
             <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
               <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
 
-              <label className="form-control">
-                <span className="label-text text-xs mb-1">Valor da meta (R$)</span>
+              <Field label="Valor da meta (R$)">
                 <input type="number" step="0.01" className="input input-bordered input-sm"
                   placeholder="Ex: 10.000" value={form.target_amount || ''}
                   onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
-              </label>
+              </Field>
 
-              <label className="form-control">
-                <span className="label-text text-xs mb-1">Poupança mínima/mês (R$)</span>
+              <Field label="Poupança mínima/mês (R$)">
                 <input type="number" step="0.01" className="input input-bordered input-sm"
                   placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
                   onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
-              </label>
+              </Field>
 
               <div className="grid grid-cols-2 gap-2">
-                <label className="form-control">
-                  <span className="label-text text-xs mb-1">Prazo — mês</span>
+                <Field label="Prazo — mês">
                   <select className="select select-bordered select-sm" value={form.deadline_month}
                     onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
                     {Array.from({ length: 12 }, (_, i) => (
@@ -352,12 +354,11 @@ export const GoalPage = () => {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label className="form-control">
-                  <span className="label-text text-xs mb-1">Prazo — ano</span>
+                </Field>
+                <Field label="Prazo — ano">
                   <input type="number" className="input input-bordered input-sm" value={form.deadline_year}
                     onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
-                </label>
+                </Field>
               </div>
 
               <motion.button whileTap={{ scale: 0.97 }} type="submit"

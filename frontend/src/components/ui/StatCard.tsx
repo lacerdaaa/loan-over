@@ -36,12 +36,12 @@ export const StatCard = ({ label, value, variant = 'default', delay = 0 }: Props
       initial={{ opacity: 0, y: animationsEnabled ? 12 : 0 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: animationsEnabled ? 0.3 : 0, delay: animationsEnabled ? delay : 0 }}
-      className="card bg-base-200 shadow-sm border border-base-300 p-6"
+      className="card bg-base-200 shadow-sm border border-primary/15 p-6"
     >
-      <p className="text-sm text-base-content/60 font-medium uppercase tracking-wider mb-1">{label}</p>
+      <p className="font-mono text-[11px] text-base-content/50 uppercase tracking-[0.15em] mb-1.5">{label}</p>
       {hidden
-        ? <p className={`text-3xl font-bold tracking-widest ${colorClass}`}>{MASK}</p>
-        : <motion.p className={`text-3xl font-bold tabular-nums ${colorClass}`}>{display}</motion.p>
+        ? <p className={`font-mono text-3xl font-bold tracking-widest ${colorClass}`}>{MASK}</p>
+        : <motion.p className={`font-mono text-3xl font-bold tabular-nums ${colorClass}`}>{display}</motion.p>
       }
     </motion.div>
   );

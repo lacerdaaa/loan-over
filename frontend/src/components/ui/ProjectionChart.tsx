@@ -43,7 +43,8 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
   );
 };
 
-const barColor = (value: number) => (value >= 0 ? '#10b981' : '#ef4444');
+const barColor = (value: number) =>
+  value >= 0 ? 'var(--color-primary)' : 'var(--color-error)';
 
 export const ProjectionChart = ({ data }: Props) => {
   const { hidden } = usePrivacy();
@@ -80,8 +81,16 @@ export const ProjectionChart = ({ data }: Props) => {
                 axisLine={false}
                 width={52}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(16,185,129,0.06)' }} />
-              <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="4 2" />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'var(--color-primary)', fillOpacity: 0.06 }}
+              />
+              <ReferenceLine
+                y={0}
+                stroke="var(--color-base-content)"
+                strokeOpacity={0.4}
+                strokeDasharray="4 2"
+              />
               <Bar dataKey="free_balance" radius={[4, 4, 0, 0]} label={false}>
                 {data.map((d, i) => (
                   <Cell key={i} fill={barColor(d.free_balance)} />

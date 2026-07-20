@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateOccasionalExpense, useDeleteOccasionalExpense, useOccasionalExpenses } from '../api/occasional-expenses';
+import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
+import { MonthNav } from '../components/ui/MonthNav';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { usePrivacy } from '../lib/privacy';
@@ -23,14 +26,6 @@ export const OccasionalExpensesPage = () => {
 
   const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
 
-  const navigate = (delta: number) => {
-    const d = new Date(year, month - 1 + delta, 1);
-    setMonth(d.getMonth() + 1);
-    setYear(d.getFullYear());
-  };
-
-  const periodLabel = new Date(year, month - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     create.mutate(
@@ -42,29 +37,15 @@ export const OccasionalExpensesPage = () => {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-base-content">Gastos Ocasionais</h1>
-            <div className="flex items-center gap-1 mt-1">
-              <button
-                onClick={() => navigate(-1)}
-                className="btn btn-ghost btn-xs text-base-content/50 hover:text-base-content px-1"
-              >
-                ‹
-              </button>
-              <span className="text-sm text-base-content/60 capitalize w-32 text-center">{periodLabel}</span>
-              <button
-                onClick={() => navigate(1)}
-                className="btn btn-ghost btn-xs text-base-content/50 hover:text-base-content px-1"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">
-            + Adicionar gasto
-          </motion.button>
-        </div>
+        <PageHeader
+          title="Gastos Ocasionais"
+          subtitle={<MonthNav month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />}
+          action={
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
+              <Plus size={14} /> Adicionar gasto
+            </motion.button>
+          }
+        />
 
         <div className="card bg-base-200 border border-base-300 divide-y divide-base-300">
           {expenses.length === 0 ? (
@@ -93,6 +74,7 @@ export const OccasionalExpensesPage = () => {
                     </span>
                     <motion.button
                       whileTap={{ scale: 0.93 }}
+                      aria-label="Excluir gasto"
                       className="btn btn-ghost btn-xs text-base-content/30 hover:text-error"
                       onClick={() => remove.mutate(exp.id)}
                     >
@@ -112,8 +94,7 @@ export const OccasionalExpensesPage = () => {
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto ocasional">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="form-control">
-            <span className="label-text text-xs mb-1">Descrição</span>
+          <Field label="Descrição">
             <input
               className="input input-bordered input-sm"
               required
@@ -121,9 +102,8 @@ export const OccasionalExpensesPage = () => {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
-          </label>
-          <label className="form-control">
-            <span className="label-text text-xs mb-1">Valor (R$)</span>
+          </Field>
+          <Field label="Valor (R$)">
             <input
               type="number"
               step="0.01"
@@ -132,7 +112,7 @@ export const OccasionalExpensesPage = () => {
               value={form.amount || ''}
               onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
             />
-          </label>
+          </Field>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"

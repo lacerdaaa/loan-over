@@ -34,4 +34,5 @@ export const AnimationsProvider = ({ children }: { children: React.ReactNode }) 
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- provider + hook are one cohesive context module
 export const useAnimations = () => useContext(Ctx);

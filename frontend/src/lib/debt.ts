@@ -1,4 +1,11 @@
 import type { Debt } from '../types/api';
+import { monthLabel } from './monthLabel';
+
+export const payoffMonth = (startDate: string, totalInstallments: number): string => {
+  const d = new Date(startDate);
+  d.setMonth(d.getMonth() + totalInstallments);
+  return monthLabel(d.getMonth() + 1, d.getFullYear());
+};
 
 export const remainingBalance = (debt: Debt): number => {
   const n = debt.total_installments - debt.paid_installments;

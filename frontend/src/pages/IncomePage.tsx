@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
-import { Coins, X } from 'lucide-react';
+import { Coins, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { type CreateIncomePayload, useAddDeduction, useCreateIncome, useDeleteIncome, useIncome, useRemoveDeduction } from '../api/income';
+import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
+import { MonthNav } from '../components/ui/MonthNav';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { usePrivacy } from '../lib/privacy';
@@ -48,6 +51,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
           <div className="flex items-center gap-2">
             <span>({mask(formatCurrency(d.amount))})</span>
             <button
+              aria-label="Remover desconto"
               className="btn btn-ghost btn-xs text-error h-4 min-h-0 px-1"
               onClick={() => removeDeduction.mutate(d.id)}
             >
@@ -117,12 +121,14 @@ export const IncomePage = () => {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
-        <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold text-base-content">Renda</h1>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm">
-            + Adicionar renda
-          </motion.button>
-        </div>
+        <PageHeader
+          title="Renda"
+          action={
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
+              <Plus size={14} /> Adicionar renda
+            </motion.button>
+          }
+        />
 
         <div className="tabs tabs-boxed w-fit">
           <button className={`tab ${tab === 'fixed' ? 'tab-active' : ''}`} onClick={() => setTab('fixed')}>Fixo</button>
@@ -130,14 +136,7 @@ export const IncomePage = () => {
         </div>
 
         {tab === 'variable' && (
-          <div className="flex gap-3">
-            <select className="select select-bordered select-sm" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}</option>
-              ))}
-            </select>
-            <input type="number" className="input input-bordered input-sm w-24" value={year} onChange={(e) => setYear(Number(e.target.value))} />
-          </div>
+          <MonthNav month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         )}
 
         <div className="flex flex-col gap-2">
@@ -164,7 +163,7 @@ export const IncomePage = () => {
                   <span className="font-semibold text-success text-sm">
                     {mask(formatCurrency(deductions(income).length > 0 ? netAmount(income) : income.amount))}
                   </span>
-                  <motion.button whileTap={{ scale: 0.93 }} className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}><X size={14} /></motion.button>
+                  <motion.button whileTap={{ scale: 0.93 }} aria-label="Remover renda" className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}><X size={14} /></motion.button>
                 </div>
               </div>
               <DeductionRow income={income} month={month} year={year} />
@@ -176,23 +175,20 @@ export const IncomePage = () => {
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nova renda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="form-control">
-            <span className="label-text text-xs mb-1">Descrição</span>
+          <Field label="Descrição">
             <input className="input input-bordered input-sm" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          </label>
-          <label className="form-control">
-            <span className="label-text text-xs mb-1">Categoria</span>
+          </Field>
+          <Field label="Categoria">
             <select className="select select-bordered select-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as IncomeCategory })}>
               <option value="salary">Salário</option>
               <option value="rent">Aluguel</option>
               <option value="benefit">Benefício (vale-refeição, transporte, etc.)</option>
               <option value="other">Outro</option>
             </select>
-          </label>
-          <label className="form-control">
-            <span className="label-text text-xs mb-1">Valor bruto (R$)</span>
+          </Field>
+          <Field label="Valor bruto (R$)">
             <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
-          </label>
+          </Field>
           <div className="flex gap-2 mt-2">
             <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
             <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>

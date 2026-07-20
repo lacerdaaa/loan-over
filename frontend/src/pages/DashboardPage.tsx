@@ -6,6 +6,8 @@ import { useDebts } from '../api/debts';
 import { useSnapshot } from '../api/snapshot';
 import { StatCard } from '../components/ui/StatCard';
 import { PageTransition } from '../components/ui/PageTransition';
+import { addMonths } from '../lib/date';
+import { payoffMonth } from '../lib/debt';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
@@ -13,17 +15,6 @@ import { usePrivacy } from '../lib/privacy';
 const now = new Date();
 const CURRENT_MONTH = now.getMonth() + 1;
 const CURRENT_YEAR = now.getFullYear();
-
-const addMonths = (month: number, year: number, delta: number) => {
-  const d = new Date(year, month - 1 + delta, 1);
-  return { month: d.getMonth() + 1, year: d.getFullYear() };
-};
-
-const payoffMonth = (startDate: string, total: number) => {
-  const d = new Date(startDate);
-  d.setMonth(d.getMonth() + total);
-  return monthLabel(d.getMonth() + 1, d.getFullYear());
-};
 
 export const DashboardPage = () => {
   const [month, setMonth] = useState(CURRENT_MONTH);
@@ -116,21 +107,21 @@ export const DashboardPage = () => {
         {snap && ((snap.total_occasional ?? 0) > 0 || (snap.total_debt_balance ?? 0) > 0 || (snap.total_benefit ?? 0) > 0) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(snap.total_benefit ?? 0) > 0 && (
-              <Link to="/income" className="card bg-base-200 border border-base-300 p-4 hover:border-warning/40 transition-colors">
-                <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Benefícios (restritos)</p>
-                <p className="text-xl font-bold text-warning">{mask(formatCurrency(snap.total_benefit))}</p>
+              <Link to="/income" className="card bg-base-200 border border-base-300 p-5 hover:border-warning/40 transition-colors">
+                <p className="font-mono text-[11px] text-base-content/50 uppercase tracking-[0.15em] mb-1">Benefícios (restritos)</p>
+                <p className="font-mono text-xl font-bold tabular-nums text-warning">{mask(formatCurrency(snap.total_benefit))}</p>
               </Link>
             )}
             {(snap.total_occasional ?? 0) > 0 && (
-              <Link to="/occasional-expenses" className="card bg-base-200 border border-base-300 p-4 hover:border-error/40 transition-colors">
-                <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Ocasionais do mês</p>
-                <p className="text-xl font-bold text-error">{mask(formatCurrency(snap.total_occasional))}</p>
+              <Link to="/occasional-expenses" className="card bg-base-200 border border-base-300 p-5 hover:border-primary/40 transition-colors">
+                <p className="font-mono text-[11px] text-base-content/50 uppercase tracking-[0.15em] mb-1">Ocasionais do mês</p>
+                <p className="font-mono text-xl font-bold tabular-nums text-base-content">{mask(formatCurrency(snap.total_occasional))}</p>
               </Link>
             )}
             {(snap.total_debt_balance ?? 0) > 0 && (
-              <Link to="/debts" className="card bg-base-200 border border-base-300 p-4 hover:border-error/40 transition-colors">
-                <p className="text-xs text-base-content/50 uppercase tracking-wide mb-1">Saldo devedor total</p>
-                <p className="text-xl font-bold text-error">{mask(formatCurrency(snap.total_debt_balance))}</p>
+              <Link to="/debts" className="card bg-base-200 border border-base-300 p-5 hover:border-primary/40 transition-colors">
+                <p className="font-mono text-[11px] text-base-content/50 uppercase tracking-[0.15em] mb-1">Saldo devedor total</p>
+                <p className="font-mono text-xl font-bold tabular-nums text-base-content">{mask(formatCurrency(snap.total_debt_balance))}</p>
               </Link>
             )}
           </div>
