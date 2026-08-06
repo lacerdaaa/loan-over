@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
 import { useAnimations } from '../../lib/animations';
+import { hasDoneTutorial, markTutorialDone } from '../../lib/tutorial';
 import { useTheme } from '../../lib/theme';
+import { TutorialModal } from '../ui/TutorialModal';
 import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
@@ -79,6 +81,12 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(!hasDoneTutorial());
+
+  const handleTutorialClose = () => {
+    markTutorialDone();
+    setTutorialOpen(false);
+  };
   const { data: me } = useMe();
   const theme = useTheme();
   const animations = useAnimations();
@@ -150,6 +158,8 @@ export const Sidebar = () => {
           <Outlet />
         </main>
       </div>
+
+      <TutorialModal open={tutorialOpen} onClose={handleTutorialClose} />
 
       <SettingsModal
         open={settingsOpen}
