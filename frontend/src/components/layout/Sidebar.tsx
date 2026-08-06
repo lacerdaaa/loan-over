@@ -1,11 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, Eye, EyeOff, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Wallet, X } from 'lucide-react';
+import { CreditCard, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Wallet, X } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
 import { useAnimations } from '../../lib/animations';
-import { usePrivacy } from '../../lib/privacy';
 import { useTheme } from '../../lib/theme';
 import { SettingsModal } from './SettingsModal';
 
@@ -42,25 +41,6 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
   </nav>
 );
 
-const PrivacyToggle = ({ collapsed }: { collapsed?: boolean }) => {
-  const { hidden, toggle } = usePrivacy();
-  const Icon = hidden ? EyeOff : Eye;
-  const label = hidden ? 'Mostrar valores' : 'Ocultar valores';
-
-  return (
-    <div className="px-2 pb-1">
-      <button
-        onClick={toggle}
-        title={`${label} (⌘⇧H)`}
-        aria-label={label}
-        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-base-300 transition-colors text-sm text-base-content/60 hover:text-base-content ${collapsed ? 'justify-center' : ''}`}
-      >
-        <Icon size={16} className="shrink-0" />
-        {!collapsed && <span className="whitespace-nowrap">{label}</span>}
-      </button>
-    </div>
-  );
-};
 
 const UserFooter = ({ collapsed, onSettingsOpen }: { collapsed?: boolean; onSettingsOpen: () => void }) => {
   const { data: me } = useMe();
@@ -117,19 +97,13 @@ export const Sidebar = () => {
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => setCollapsed((c) => !c)}
-            className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-content font-bold text-sm shrink-0"
+            className="font-mono font-bold text-primary text-sm whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity"
           >
-            LO
+            {collapsed ? '//' : '// loan over'}
           </motion.button>
-          {!collapsed && (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-semibold text-base-content whitespace-nowrap">
-              Loan Over
-            </motion.span>
-          )}
         </div>
 
         <NavItems collapsed={collapsed} />
-        <PrivacyToggle collapsed={collapsed} />
         <UserFooter collapsed={collapsed} onSettingsOpen={() => setSettingsOpen(true)} />
       </motion.aside>
 
@@ -149,8 +123,7 @@ export const Sidebar = () => {
             >
               <div className="flex items-center justify-between px-4 py-5 border-b border-base-300">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-content font-bold text-sm shrink-0">LO</div>
-                  <span className="font-semibold text-base-content">Loan Over</span>
+                  <span className="font-mono font-bold text-primary text-sm">// loan over</span>
                 </div>
                 <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(false)}>
                   <X size={18} />
@@ -158,7 +131,6 @@ export const Sidebar = () => {
               </div>
 
               <NavItems onNavClick={() => setMobileOpen(false)} />
-              <PrivacyToggle />
               <UserFooter onSettingsOpen={() => { setMobileOpen(false); setSettingsOpen(true); }} />
             </motion.aside>
           </>
@@ -171,7 +143,7 @@ export const Sidebar = () => {
           <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(true)}>
             <Menu size={20} />
           </button>
-          <span className="font-semibold text-base-content">Loan Over</span>
+          <span className="font-mono font-bold text-primary text-sm">// loan over</span>
         </div>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
