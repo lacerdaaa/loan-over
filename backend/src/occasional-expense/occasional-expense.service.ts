@@ -11,17 +11,21 @@ export class OccasionalExpenseService {
     private readonly repo: Repository<OccasionalExpense>,
   ) {}
 
-  findForMonth(month: number, year: number): Promise<OccasionalExpense[]> {
-    return this.repo.find({ where: { month, year } });
+  findForMonth(userId: string, month: number, year: number): Promise<OccasionalExpense[]> {
+    return this.repo.find({ where: { month, year, user: { id: userId } } });
   }
 
-  async create(dto: CreateOccasionalExpenseDto): Promise<OccasionalExpense> {
-    const expense = this.repo.create({ ...dto, from_benefit: dto.from_benefit ?? false });
+  async create(userId: string, dto: CreateOccasionalExpenseDto): Promise<OccasionalExpense> {
+    const expense = this.repo.create({
+      user: { id: userId },
+      ...dto,
+      from_benefit: dto.from_benefit ?? false,
+    });
     return this.repo.save(expense);
   }
 
-  async remove(id: string): Promise<void> {
-    const exists = await this.repo.findOneBy({ id });
+  async remove(id: string, userId: string): Promise<void> {
+    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!exists) throw new NotFoundException(`OccasionalExpense ${id} not found`);
     await this.repo.delete(id);
   }

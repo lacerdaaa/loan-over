@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateOccasionalExpenseDto } from './dto/create-occasional-expense.dto';
 import { OccasionalExpense } from './occasional-expense.entity';
 import { OccasionalExpenseService } from './occasional-expense.service';
@@ -15,25 +16,26 @@ export class OccasionalExpenseController {
   @ApiQuery({ name: 'year', required: true, example: 2026 })
   @ApiOkResponse({ type: [OccasionalExpense] })
   findForMonth(
+    @CurrentUser() userId: string,
     @Query('month') month: number,
     @Query('year') year: number,
   ): Promise<OccasionalExpense[]> {
-    return this.service.findForMonth(Number(month), Number(year));
+    return this.service.findForMonth(userId, Number(month), Number(year));
   }
 
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Register an occasional expense for a specific month' })
   @ApiCreatedResponse({ type: OccasionalExpense })
-  create(@Body() dto: CreateOccasionalExpenseDto): Promise<OccasionalExpense> {
-    return this.service.create(dto);
+  create(@CurrentUser() userId: string, @Body() dto: CreateOccasionalExpenseDto): Promise<OccasionalExpense> {
+    return this.service.create(userId, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete an occasional expense' })
   @ApiNoContentResponse()
-  remove(@Param('id') id: string): Promise<void> {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+    return this.service.remove(id, userId);
   }
 }

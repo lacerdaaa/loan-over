@@ -16,9 +16,9 @@ export class IncomeService {
     private readonly deductionRepo: Repository<IncomeDeduction>,
   ) {}
 
-  async findForMonth(month: number, year: number): Promise<Income[]> {
-    const fixedWhere: FindOptionsWhere<Income> = { type: IncomeType.FIXED };
-    const variableWhere: FindOptionsWhere<Income> = { type: IncomeType.VARIABLE, month, year };
+  async findForMonth(userId: string, month: number, year: number): Promise<Income[]> {
+    const fixedWhere: FindOptionsWhere<Income> = { type: IncomeType.FIXED, user: { id: userId } };
+    const variableWhere: FindOptionsWhere<Income> = { type: IncomeType.VARIABLE, month, year, user: { id: userId } };
 
     const [fixed, variable] = await Promise.all([
       this.repo.find({ where: fixedWhere }),
@@ -33,8 +33,9 @@ export class IncomeService {
       (income.deductions ?? []).reduce((sum, d) => sum + Number(d.amount), 0);
   }
 
-  async create(dto: CreateIncomeDto): Promise<Income> {
+  async create(userId: string, dto: CreateIncomeDto): Promise<Income> {
     const income = this.repo.create({
+      user: { id: userId },
       type: dto.type,
       category: dto.category,
       amount: dto.amount,
@@ -46,8 +47,8 @@ export class IncomeService {
     return this.repo.save(income);
   }
 
-  async addDeduction(incomeId: string, dto: CreateDeductionDto): Promise<IncomeDeduction> {
-    const income = await this.repo.findOne({ where: { id: incomeId } });
+  async addDeduction(userId: string, incomeId: string, dto: CreateDeductionDto): Promise<IncomeDeduction> {
+    const income = await this.repo.findOne({ where: { id: incomeId, user: { id: userId } } });
     if (!income) throw new NotFoundException(`Income ${incomeId} not found`);
 
     const deduction = this.deductionRepo.create({ ...dto, income });
@@ -60,8 +61,8 @@ export class IncomeService {
     await this.deductionRepo.delete(deductionId);
   }
 
-  async remove(id: string): Promise<void> {
-    const exists = await this.repo.findOneBy({ id });
+  async remove(id: string, userId: string): Promise<void> {
+    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!exists) throw new NotFoundException(`Income ${id} not found`);
     await this.repo.delete(id);
   }

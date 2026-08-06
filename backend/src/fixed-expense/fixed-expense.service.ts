@@ -12,25 +12,30 @@ export class FixedExpenseService {
     private readonly repo: Repository<FixedExpense>,
   ) {}
 
-  findAll(): Promise<FixedExpense[]> {
-    return this.repo.find();
+  findAll(userId: string): Promise<FixedExpense[]> {
+    return this.repo.find({ where: { user: { id: userId } } });
   }
 
-  async create(dto: CreateFixedExpenseDto): Promise<FixedExpense> {
-    const expense = this.repo.create({ ...dto, active: dto.active ?? true, from_benefit: dto.from_benefit ?? false });
+  async create(userId: string, dto: CreateFixedExpenseDto): Promise<FixedExpense> {
+    const expense = this.repo.create({
+      user: { id: userId },
+      ...dto,
+      active: dto.active ?? true,
+      from_benefit: dto.from_benefit ?? false,
+    });
     return this.repo.save(expense);
   }
 
-  async update(id: string, dto: UpdateFixedExpenseDto): Promise<FixedExpense> {
-    const expense = await this.repo.findOneBy({ id });
+  async update(id: string, userId: string, dto: UpdateFixedExpenseDto): Promise<FixedExpense> {
+    const expense = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!expense) throw new NotFoundException(`FixedExpense ${id} not found`);
 
     Object.assign(expense, dto);
     return this.repo.save(expense);
   }
 
-  async remove(id: string): Promise<void> {
-    const exists = await this.repo.findOneBy({ id });
+  async remove(id: string, userId: string): Promise<void> {
+    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!exists) throw new NotFoundException(`FixedExpense ${id} not found`);
     await this.repo.delete(id);
   }

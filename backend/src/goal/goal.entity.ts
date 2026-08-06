@@ -1,9 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../user/user.entity';
 
 @Entity('goals')
 export class Goal {
   @PrimaryGeneratedColumn('uuid')
   declare id: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  declare user: User;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   declare target_amount: number;

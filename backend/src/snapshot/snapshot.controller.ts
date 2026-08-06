@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { DebtService } from '../debt/debt.service';
 import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
 import { IncomeService } from '../income/income.service';
@@ -29,6 +30,7 @@ export class SnapshotController {
   @ApiQuery({ name: 'year', required: true, example: 2026 })
   @ApiOkResponse({ description: 'MonthlySnapshot' })
   async get(
+    @CurrentUser() userId: string,
     @Query('month') month: number,
     @Query('year') year: number,
   ): Promise<MonthlySnapshot> {
@@ -36,10 +38,10 @@ export class SnapshotController {
     const y = Number(year);
 
     const [incomes, debts, fixedExpenses, occasionalExpenses] = await Promise.all([
-      this.incomeService.findForMonth(m, y),
-      this.debtService.findAll(),
-      this.fixedExpenseService.findAll(),
-      this.occasionalExpenseService.findForMonth(m, y),
+      this.incomeService.findForMonth(userId, m, y),
+      this.debtService.findAll(userId),
+      this.fixedExpenseService.findAll(userId),
+      this.occasionalExpenseService.findForMonth(userId, m, y),
     ]);
 
     return this.snapshotService.compute({ month: m, year: y, incomes, debts, fixedExpenses, occasionalExpenses });

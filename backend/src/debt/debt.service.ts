@@ -13,16 +13,17 @@ export class DebtService {
     private readonly repo: Repository<Debt>,
   ) {}
 
-  findAll(): Promise<Debt[]> {
-    return this.repo.find();
+  findAll(userId: string): Promise<Debt[]> {
+    return this.repo.find({ where: { user: { id: userId } } });
   }
 
-  async create(dto: CreateDebtDto): Promise<Debt> {
+  async create(userId: string, dto: CreateDebtDto): Promise<Debt> {
     const installment_amount = (dto.principal != null && dto.monthly_rate != null)
       ? this.priceInstallment(dto.principal, dto.monthly_rate, dto.total_installments)
       : dto.installment_amount!;
 
     const debt = this.repo.create({
+      user: { id: userId },
       name: dto.name,
       installment_amount,
       total_installments: dto.total_installments,
@@ -39,8 +40,8 @@ export class DebtService {
     return (principal * rate) / (1 - Math.pow(1 + rate, -n));
   }
 
-  async payInstallment(id: string): Promise<Debt> {
-    const debt = await this.repo.findOneBy({ id });
+  async payInstallment(id: string, userId: string): Promise<Debt> {
+    const debt = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
     if (debt.closed) throw new BadRequestException(`Debt ${id} is already closed`);
 
@@ -50,8 +51,8 @@ export class DebtService {
     return this.repo.save(debt);
   }
 
-  async update(id: string, dto: UpdateDebtDto): Promise<Debt> {
-    const debt = await this.repo.findOneBy({ id });
+  async update(id: string, userId: string, dto: UpdateDebtDto): Promise<Debt> {
+    const debt = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
 
     if (dto.name !== undefined) debt.name = dto.name;
@@ -76,8 +77,8 @@ export class DebtService {
     return this.repo.save(debt);
   }
 
-  async remove(id: string): Promise<void> {
-    const exists = await this.repo.findOneBy({ id });
+  async remove(id: string, userId: string): Promise<void> {
+    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!exists) throw new NotFoundException(`Debt ${id} not found`);
     await this.repo.delete(id);
   }

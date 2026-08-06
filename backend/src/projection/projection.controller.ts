@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { DebtService } from '../debt/debt.service';
 import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
 import { IncomeService } from '../income/income.service';
@@ -31,6 +32,7 @@ export class ProjectionController {
   @ApiQuery({ name: 'horizon', required: false, example: 24, description: 'Number of months to project (default 24)' })
   @ApiOkResponse({ description: 'Array of ProjectedMonth' })
   async get(
+    @CurrentUser() userId: string,
     @Query('month') month: number,
     @Query('year') year: number,
     @Query('horizon') horizon?: number,
@@ -41,9 +43,9 @@ export class ProjectionController {
     const horizonMonths = Number(horizon) || DEFAULT_HORIZON;
 
     const [incomes, debts, fixedExpenses] = await Promise.all([
-      this.incomeService.findForMonth(refMonth, refYear),
-      this.debtService.findAll(),
-      this.fixedExpenseService.findAll(),
+      this.incomeService.findForMonth(userId, refMonth, refYear),
+      this.debtService.findAll(userId),
+      this.fixedExpenseService.findAll(userId),
     ]);
 
     return this.projectionService.project(

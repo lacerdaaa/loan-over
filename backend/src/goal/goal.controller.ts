@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Post } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UpsertGoalDto } from './dto/upsert-goal.dto';
 import { Goal } from './goal.entity';
 import { GoalService } from './goal.service';
@@ -12,22 +13,25 @@ export class GoalController {
   @Get()
   @ApiOperation({ summary: 'Get the savings goal' })
   @ApiOkResponse({ type: Goal })
-  find(): Promise<Goal | null> {
-    return this.service.find();
+  find(@CurrentUser() userId: string): Promise<Goal | null> {
+    return this.service.find(userId);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create or update the savings goal', description: 'Single-record upsert — there is only one goal at a time.' })
+  @ApiOperation({
+    summary: 'Create or update the savings goal',
+    description: 'Single-record upsert — there is only one goal per user.',
+  })
   @ApiOkResponse({ type: Goal })
-  upsert(@Body() dto: UpsertGoalDto): Promise<Goal> {
-    return this.service.upsert(dto);
+  upsert(@CurrentUser() userId: string, @Body() dto: UpsertGoalDto): Promise<Goal> {
+    return this.service.upsert(userId, dto);
   }
 
   @Delete()
   @HttpCode(204)
   @ApiOperation({ summary: 'Remove the savings goal' })
   @ApiNoContentResponse()
-  remove(): Promise<void> {
-    return this.service.remove();
+  remove(@CurrentUser() userId: string): Promise<void> {
+    return this.service.remove(userId);
   }
 }

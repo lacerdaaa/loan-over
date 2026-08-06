@@ -11,25 +11,24 @@ export class GoalService {
     private readonly repo: Repository<Goal>,
   ) {}
 
-  async find(): Promise<Goal | null> {
-    const goals = await this.repo.find({ take: 1 });
-    return goals[0] ?? null;
+  find(userId: string): Promise<Goal | null> {
+    return this.repo.findOne({ where: { user: { id: userId } } });
   }
 
-  async upsert(dto: UpsertGoalDto): Promise<Goal> {
-    const existing = await this.find();
+  async upsert(userId: string, dto: UpsertGoalDto): Promise<Goal> {
+    const existing = await this.find(userId);
 
     if (existing) {
       Object.assign(existing, dto);
       return this.repo.save(existing);
     }
 
-    const goal = this.repo.create(dto);
+    const goal = this.repo.create({ user: { id: userId }, ...dto });
     return this.repo.save(goal);
   }
 
-  async remove(): Promise<void> {
-    const goal = await this.find();
+  async remove(userId: string): Promise<void> {
+    const goal = await this.find(userId);
     if (!goal) throw new NotFoundException('No goal found');
     await this.repo.delete(goal.id);
   }

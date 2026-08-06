@@ -6,9 +6,11 @@ import { Debt } from './debt.entity';
 import { DebtService } from './debt.service';
 import { CreateDebtDto } from './dto/create-debt.dto';
 
+const USER_ID = 'user-uuid';
+
 const mockRepository = () => ({
   find: jest.fn(),
-  findOneBy: jest.fn(),
+  findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
   delete: jest.fn(),
@@ -54,7 +56,7 @@ describe('DebtService', () => {
       repo.create.mockReturnValue(saved);
       repo.save.mockResolvedValue(saved);
 
-      const result = await service.create(dto);
+      const result = await service.create(USER_ID, dto);
 
       expect(result.closed).toBe(false);
       expect(result.paid_installments).toBe(0);
@@ -64,20 +66,20 @@ describe('DebtService', () => {
   describe('payInstallment', () => {
     it('increments paid_installments by 1', async () => {
       const debt = makeDebt({ paid_installments: 2, total_installments: 12 });
-      repo.findOneBy.mockResolvedValue(debt);
+      repo.findOne.mockResolvedValue(debt);
       repo.save.mockResolvedValue({ ...debt, paid_installments: 3 });
 
-      const result = await service.payInstallment('uuid-1');
+      const result = await service.payInstallment('uuid-1', USER_ID);
 
       expect(result.paid_installments).toBe(3);
     });
 
     it('sets closed=true when last installment is paid', async () => {
       const debt = makeDebt({ paid_installments: 11, total_installments: 12 });
-      repo.findOneBy.mockResolvedValue(debt);
+      repo.findOne.mockResolvedValue(debt);
       repo.save.mockResolvedValue({ ...debt, paid_installments: 12, closed: true });
 
-      const result = await service.payInstallment('uuid-1');
+      const result = await service.payInstallment('uuid-1', USER_ID);
 
       expect(result.closed).toBe(true);
       expect(result.paid_installments).toBe(12);
@@ -85,23 +87,23 @@ describe('DebtService', () => {
 
     it('throws BadRequestException when debt is already closed', async () => {
       const debt = makeDebt({ paid_installments: 12, total_installments: 12, closed: true });
-      repo.findOneBy.mockResolvedValue(debt);
+      repo.findOne.mockResolvedValue(debt);
 
-      await expect(service.payInstallment('uuid-1')).rejects.toThrow(BadRequestException);
+      await expect(service.payInstallment('uuid-1', USER_ID)).rejects.toThrow(BadRequestException);
     });
 
     it('throws NotFoundException when debt does not exist', async () => {
-      repo.findOneBy.mockResolvedValue(null);
+      repo.findOne.mockResolvedValue(null);
 
-      await expect(service.payInstallment('ghost')).rejects.toThrow(NotFoundException);
+      await expect(service.payInstallment('ghost', USER_ID)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
     it('throws NotFoundException when debt does not exist', async () => {
-      repo.findOneBy.mockResolvedValue(null);
+      repo.findOne.mockResolvedValue(null);
 
-      await expect(service.remove('ghost')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('ghost', USER_ID)).rejects.toThrow(NotFoundException);
     });
   });
 });

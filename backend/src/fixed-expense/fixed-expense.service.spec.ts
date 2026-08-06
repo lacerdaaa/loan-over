@@ -5,9 +5,11 @@ import { Repository } from 'typeorm';
 import { FixedExpense } from './fixed-expense.entity';
 import { FixedExpenseService } from './fixed-expense.service';
 
+const USER_ID = 'user-uuid';
+
 const mockRepository = () => ({
   find: jest.fn(),
-  findOneBy: jest.fn(),
+  findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
   delete: jest.fn(),
@@ -45,7 +47,7 @@ describe('FixedExpenseService', () => {
       const inactive = makeExpense({ id: 'uuid-2', active: false });
       repo.find.mockResolvedValue([active, inactive]);
 
-      const result = await service.findAll();
+      const result = await service.findAll(USER_ID);
 
       expect(result).toContainEqual(active);
       expect(result).toContainEqual(inactive);
@@ -57,26 +59,26 @@ describe('FixedExpenseService', () => {
       const expense = makeExpense({ active: true });
       const updated = { ...expense, active: false };
 
-      repo.findOneBy.mockResolvedValue(expense);
+      repo.findOne.mockResolvedValue(expense);
       repo.save.mockResolvedValue(updated);
 
-      const result = await service.update('uuid-1', { active: false });
+      const result = await service.update('uuid-1', USER_ID, { active: false });
 
       expect(result.active).toBe(false);
     });
 
     it('throws NotFoundException when expense does not exist', async () => {
-      repo.findOneBy.mockResolvedValue(null);
+      repo.findOne.mockResolvedValue(null);
 
-      await expect(service.update('ghost', { active: false })).rejects.toThrow(NotFoundException);
+      await expect(service.update('ghost', USER_ID, { active: false })).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
     it('throws NotFoundException when expense does not exist', async () => {
-      repo.findOneBy.mockResolvedValue(null);
+      repo.findOne.mockResolvedValue(null);
 
-      await expect(service.remove('ghost')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('ghost', USER_ID)).rejects.toThrow(NotFoundException);
     });
   });
 });

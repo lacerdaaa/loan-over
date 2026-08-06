@@ -1,11 +1,16 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { IncomeCategory, IncomeType } from '../shared/types';
 import { IncomeDeduction } from './income-deduction.entity';
+import { User } from '../user/user.entity';
 
 @Entity('incomes')
 export class Income {
   @PrimaryGeneratedColumn('uuid')
   declare id: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  declare user: User;
 
   @Column({ type: 'enum', enum: IncomeType })
   declare type: IncomeType;

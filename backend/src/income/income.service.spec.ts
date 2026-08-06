@@ -8,6 +8,8 @@ import { IncomeDeduction } from './income-deduction.entity';
 import { Income } from './income.entity';
 import { IncomeService } from './income.service';
 
+const USER_ID = 'user-uuid';
+
 const mockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
@@ -56,7 +58,7 @@ describe('IncomeService', () => {
       const fixed = makeIncome({ type: IncomeType.FIXED });
       repo.find.mockResolvedValue([fixed]);
 
-      const result = await service.findForMonth(6, 2026);
+      const result = await service.findForMonth(USER_ID, 6, 2026);
 
       expect(result).toContainEqual(fixed);
     });
@@ -65,7 +67,7 @@ describe('IncomeService', () => {
       const variable = makeIncome({ type: IncomeType.VARIABLE, month: 6, year: 2026 });
       repo.find.mockResolvedValue([variable]);
 
-      const result = await service.findForMonth(6, 2026);
+      const result = await service.findForMonth(USER_ID, 6, 2026);
 
       expect(result).toContainEqual(variable);
     });
@@ -94,7 +96,7 @@ describe('IncomeService', () => {
       repo.create.mockReturnValue(saved);
       repo.save.mockResolvedValue(saved);
 
-      const result = await service.create(dto);
+      const result = await service.create(USER_ID, dto);
 
       expect(result.category).toBe(IncomeCategory.SALARY);
       expect(repo.save).toHaveBeenCalledWith(saved);
@@ -110,7 +112,7 @@ describe('IncomeService', () => {
       deductionRepo.create.mockReturnValue(deduction);
       deductionRepo.save.mockResolvedValue(deduction);
 
-      const result = await service.addDeduction('1', { label: 'INSS', amount: 660 });
+      const result = await service.addDeduction(USER_ID, '1', { label: 'INSS', amount: 660 });
 
       expect(result.label).toBe('INSS');
       expect(deductionRepo.save).toHaveBeenCalled();
@@ -119,7 +121,7 @@ describe('IncomeService', () => {
     it('throws NotFoundException when income does not exist', async () => {
       repo.findOne.mockResolvedValue(null);
 
-      await expect(service.addDeduction('ghost', { label: 'INSS', amount: 660 })).rejects.toThrow(NotFoundException);
+      await expect(service.addDeduction(USER_ID, 'ghost', { label: 'INSS', amount: 660 })).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -141,9 +143,9 @@ describe('IncomeService', () => {
 
   describe('remove', () => {
     it('throws NotFoundException when income does not exist', async () => {
-      repo.findOneBy.mockResolvedValue(null);
+      repo.findOne.mockResolvedValue(null);
 
-      await expect(service.remove('ghost')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('ghost', USER_ID)).rejects.toThrow(NotFoundException);
     });
   });
 });

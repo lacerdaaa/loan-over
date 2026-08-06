@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { IncomeDeduction } from './income-deduction.entity';
@@ -12,31 +13,40 @@ export class IncomeController {
   constructor(private readonly service: IncomeService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List incomes for a given month', description: 'Returns all fixed incomes plus variable incomes registered for the specified month/year. Amounts are gross; deductions are included in each income.' })
+  @ApiOperation({
+    summary: 'List incomes for a given month',
+    description:
+      'Returns all fixed incomes plus variable incomes registered for the specified month/year. ' +
+      'Amounts are gross; deductions are included in each income.',
+  })
   @ApiQuery({ name: 'month', required: true, example: 6 })
   @ApiQuery({ name: 'year', required: true, example: 2026 })
   @ApiOkResponse({ type: [Income] })
   findForMonth(
+    @CurrentUser() userId: string,
     @Query('month') month: number,
     @Query('year') year: number,
   ): Promise<Income[]> {
-    return this.service.findForMonth(Number(month), Number(year));
+    return this.service.findForMonth(userId, Number(month), Number(year));
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create an income source', description: 'Pass optional deductions to create them atomically with the income.' })
+  @ApiOperation({
+    summary: 'Create an income source',
+    description: 'Pass optional deductions to create them atomically with the income.',
+  })
   @ApiCreatedResponse({ type: Income })
   @HttpCode(201)
-  create(@Body() dto: CreateIncomeDto): Promise<Income> {
-    return this.service.create(dto);
+  create(@CurrentUser() userId: string, @Body() dto: CreateIncomeDto): Promise<Income> {
+    return this.service.create(userId, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete an income source and all its deductions' })
   @ApiNoContentResponse()
-  remove(@Param('id') id: string): Promise<void> {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+    return this.service.remove(id, userId);
   }
 
   @Post(':id/deductions')
@@ -44,10 +54,11 @@ export class IncomeController {
   @ApiCreatedResponse({ type: IncomeDeduction })
   @HttpCode(201)
   addDeduction(
+    @CurrentUser() userId: string,
     @Param('id') id: string,
     @Body() dto: CreateDeductionDto,
   ): Promise<IncomeDeduction> {
-    return this.service.addDeduction(id, dto);
+    return this.service.addDeduction(userId, id, dto);
   }
 
   @Delete(':id/deductions/:deductionId')
