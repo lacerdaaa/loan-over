@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Income } from './income.entity';
 
 @Entity('income_deductions')
@@ -13,5 +13,6 @@ export class IncomeDeduction {
   declare amount: number;
 
   @ManyToOne(() => Income, (i) => i.deductions, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'income_id' })
   declare income: Income;
 }
