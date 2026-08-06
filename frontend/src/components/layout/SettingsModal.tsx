@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Braces, ChevronRight, Download, FileText, LogOut, Moon, Sparkles, Sun } from 'lucide-react';
+import { Braces, ChevronRight, Download, Eye, EyeOff, FileText, LogOut, Moon, Sparkles, Sun } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebts } from '../../api/debts';
@@ -10,6 +10,7 @@ import { useOccasionalExpenses } from '../../api/occasional-expenses';
 import { useSnapshot } from '../../api/snapshot';
 import { clearToken } from '../../lib/auth';
 import { buildJsonExport, buildTextExport, downloadFile } from '../../lib/export';
+import { usePrivacy } from '../../lib/privacy';
 import { Modal } from '../ui/Modal';
 
 const now = new Date();
@@ -30,6 +31,7 @@ interface Props {
 
 export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThemeToggle, animations, onAnimationsToggle }: Props) => {
   const navigate = useNavigate();
+  const { hidden, toggle: togglePrivacy } = usePrivacy();
 
   const [exportOpen, setExportOpen] = useState(false);
   const [exportMonth, setExportMonth] = useState(CURRENT_MONTH);
@@ -126,6 +128,25 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
             className="toggle toggle-primary"
             checked={animations}
             onChange={onAnimationsToggle}
+          />
+        </label>
+
+        {/* Privacy toggle */}
+        <label className="flex items-center justify-between px-1 cursor-pointer">
+          <div className="flex items-center gap-3">
+            {hidden
+              ? <EyeOff size={16} className="text-base-content/60" />
+              : <Eye size={16} className="text-base-content/60" />
+            }
+            <span className="text-sm text-base-content">
+              {hidden ? 'Valores ocultos' : 'Mostrar valores'}
+            </span>
+          </div>
+          <input
+            type="checkbox"
+            className="toggle toggle-primary"
+            checked={!hidden}
+            onChange={togglePrivacy}
           />
         </label>
 
