@@ -34,7 +34,7 @@ const STEPS: TutorialStep[] = [
   {
     navigateTo: '/occasional-expenses',
     selector: '[data-tutorial="add-occasional"]',
-    title: 'Registre saídas ocasionais',
+    title: 'Registre os gastos do mês',
     body: 'Clique aqui para adicionar gastos pontuais — uma viagem, um conserto, uma compra fora do orçamento fixo.',
   },
 ];
