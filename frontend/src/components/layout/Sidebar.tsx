@@ -16,7 +16,7 @@ const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean; t
   { to: '/debts', label: 'Dívidas', Icon: CreditCard, tutorialId: 'debts' },
   { to: '/income', label: 'Renda', Icon: Wallet, tutorialId: 'income' },
   { to: '/fixed-expenses', label: 'Gastos Fixos', Icon: ListChecks },
-  { to: '/occasional-expenses', label: 'Ocasionais', Icon: Receipt },
+  { to: '/occasional-expenses', label: 'Gastos do Mês', Icon: Receipt },
   { to: '/goal', label: 'Meta', Icon: Target },
 ];
 

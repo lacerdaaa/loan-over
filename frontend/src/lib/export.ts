@@ -101,7 +101,7 @@ export function buildTextExport(data: ExportData): string {
   // Occasional expenses
   if (occasionalExpenses.length > 0) {
     const totalOccasional = occasionalExpenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
-    lines.push(`## Gastos Ocasionais — ${monthLabel(month, year)} (total: ${formatCurrency(totalOccasional)})`);
+    lines.push(`## Gastos do Mês — ${monthLabel(month, year)} (total: ${formatCurrency(totalOccasional)})`);
     for (const e of occasionalExpenses) {
       const tag = e.from_benefit ? ' [benefício]' : '';
       lines.push(`- ${e.description} — ${formatCurrency(e.amount)}${tag}`);

@@ -114,7 +114,7 @@ export const DashboardPage = () => {
             )}
             {(snap.total_occasional ?? 0) > 0 && (
               <Link to="/occasional-expenses" className="card bg-base-200 border border-base-300 p-5 hover:border-primary/40 transition-colors">
-                <p className="font-mono text-[11px] text-base-content/50 uppercase tracking-[0.15em] mb-1">Ocasionais do mês</p>
+                <p className="font-mono text-[11px] text-base-content/50 uppercase tracking-[0.15em] mb-1">Gastos do mês</p>
                 <p className="font-mono text-xl font-bold tabular-nums text-base-content">{mask(formatCurrency(snap.total_occasional))}</p>
               </Link>
             )}

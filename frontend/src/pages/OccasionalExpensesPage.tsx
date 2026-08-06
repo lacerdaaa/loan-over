@@ -38,7 +38,7 @@ export const OccasionalExpensesPage = () => {
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Gastos Ocasionais"
+          title="Gastos do Mês"
           subtitle={<MonthNav month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />}
           action={
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-occasional">
@@ -92,7 +92,7 @@ export const OccasionalExpensesPage = () => {
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto ocasional">
+      <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto do mês">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Field label="Descrição">
             <input
