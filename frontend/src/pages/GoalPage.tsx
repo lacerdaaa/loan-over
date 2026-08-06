@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { HelpCircle } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { ArrowRight, HelpCircle, Snowflake, Target, Zap } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useDebts } from '../api/debts';
 import { useGoal, useUpsertGoal } from '../api/goal';
 import { useSnapshot } from '../api/snapshot';
 import { Field } from '../components/ui/Field';
+import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { remainingBalance } from '../lib/debt';
@@ -163,7 +164,34 @@ export const GoalPage = () => {
     [debtsKey, freeBal, monthlyMin, targetAmount],
   );
 
-  const infoRef = useRef<HTMLDialogElement>(null);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const TUTORIAL_STEPS = [
+    {
+      icon: <Snowflake size={22} className="text-primary" />,
+      title: 'O método Snowball',
+      body: 'Criado por Dave Ramsey, o Snowball é uma estratégia para quitar dívidas mais rápido usando o próprio dinheiro que você libera ao longo do tempo. A ideia central: cada dívida quitada libera uma parcela que turbina a próxima.',
+    },
+    {
+      icon: <ArrowRight size={22} className="text-primary" />,
+      title: 'Fase 1 — Quitação',
+      body: 'Liste suas dívidas do menor para o maior saldo devedor. Todo mês, pague o mínimo de todas, reserve a poupança mínima que você definiu, e jogue o restante do saldo livre na menor dívida. Quando ela zerar, a parcela que era paga todo mês fica livre.',
+      highlight: 'Menor saldo primeiro — não menor parcela, não maior juros.',
+    },
+    {
+      icon: <Zap size={22} className="text-success" />,
+      title: 'O efeito bola de neve',
+      body: 'A parcela liberada vai inteira para a próxima dívida. Ela quita mais rápido. Libera mais dinheiro. Que vai para a próxima. O ritmo de quitação cresce cada vez mais — como uma bola de neve descendo a montanha.',
+      highlight: 'O badge −3m na lista mostra quantos meses mais cedo cada dívida fecha com o Snowball vs. pagamento mínimo.',
+    },
+    {
+      icon: <Target size={22} className="text-warning" />,
+      title: 'Fase 2 — Meta',
+      body: 'Quando a última dívida fecha, todo o dinheiro que ia para parcelas passa a ir para a sua meta de poupança. Você chega à fase de acumulação com um fluxo livre muito maior do que tinha no início.',
+      highlight: 'Configure o valor da meta e a poupança mínima mensal no formulário abaixo.',
+    },
+  ] as const;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +210,7 @@ export const GoalPage = () => {
             <button
               type="button"
               aria-label="Como funciona o Snowball"
-              onClick={() => infoRef.current?.showModal()}
+              onClick={() => { setTutorialStep(0); setTutorialOpen(true); }}
               className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-base-content mt-1 shrink-0"
             >
               <HelpCircle size={16} />
@@ -190,46 +218,61 @@ export const GoalPage = () => {
           }
         />
 
-        {/* Methodology modal */}
-        <dialog ref={infoRef} className="modal">
-          <div className="modal-box max-w-md">
-            <h3 className="font-bold text-lg mb-4">Como funciona o Snowball</h3>
-            <div className="flex flex-col gap-4 text-sm text-base-content/80">
-              <div className="flex gap-3">
-                <span className="badge badge-primary badge-sm mt-0.5 shrink-0">1</span>
-                <p>
-                  <strong className="text-base-content">Fase de quitação</strong> — enquanto houver dívidas abertas,
-                  você reserva a <strong>poupança mínima</strong> que definiu e joga o restante do saldo livre
-                  na dívida com o <strong>menor saldo devedor</strong> primeiro.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <span className="badge badge-primary badge-sm mt-0.5 shrink-0">2</span>
-                <p>
-                  Quando essa dívida é quitada, a parcela que era paga todo mês fica <strong>livre</strong> e
-                  passa a turbinar a próxima da lista. O efeito cresce como uma bola de neve.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <span className="badge badge-success badge-sm mt-0.5 shrink-0">3</span>
-                <p>
-                  <strong className="text-base-content">Fase de poupança</strong> — com todas as dívidas zeradas,
-                  o saldo inteiro vai para a sua meta. Sem dívida, todo o dinheiro é seu.
-                </p>
-              </div>
-              <div className="bg-base-200 rounded-lg p-3 text-xs text-base-content/60">
-                O badge <span className="badge badge-success badge-xs">−3m</span> indica quantos meses mais cedo
-                essa dívida será quitada em comparação com o pagamento mínimo normal.
-              </div>
+        {/* Snowball tutorial */}
+        <Modal open={tutorialOpen} onClose={() => setTutorialOpen(false)} title="Como funciona o Snowball">
+          <div className="flex flex-col gap-5">
+            <div className="flex gap-1.5 mb-1">
+              {TUTORIAL_STEPS.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setTutorialStep(i)}
+                  className="h-1 flex-1 rounded-full transition-colors"
+                  style={{ background: i === tutorialStep ? 'oklch(66% 0.179 155)' : 'oklch(66% 0.179 155 / 0.2)' }}
+                />
+              ))}
             </div>
-            <div className="modal-action">
-              <form method="dialog">
-                <button className="btn btn-sm btn-ghost">Fechar</button>
-              </form>
+
+            <motion.div
+              key={tutorialStep}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.18 }}
+              className="flex flex-col gap-4"
+            >
+              <div className="w-11 h-11 rounded-xl bg-base-200 flex items-center justify-center">
+                {TUTORIAL_STEPS[tutorialStep].icon}
+              </div>
+              <div>
+                <p className="font-bold text-base text-base-content">{TUTORIAL_STEPS[tutorialStep].title}</p>
+                <p className="text-sm leading-relaxed text-base-content/60 mt-2">{TUTORIAL_STEPS[tutorialStep].body}</p>
+              </div>
+              {'highlight' in TUTORIAL_STEPS[tutorialStep] && (
+                <div className="bg-base-200 rounded-lg px-3 py-2.5 text-xs text-base-content/60 leading-relaxed">
+                  {TUTORIAL_STEPS[tutorialStep].highlight}
+                </div>
+              )}
+            </motion.div>
+
+            <div className="flex items-center justify-between pt-1">
+              <button
+                className="btn btn-ghost btn-sm"
+                disabled={tutorialStep === 0}
+                onClick={() => setTutorialStep((s) => s - 1)}
+              >
+                ← anterior
+              </button>
+              {tutorialStep < TUTORIAL_STEPS.length - 1 ? (
+                <button className="btn btn-primary btn-sm" onClick={() => setTutorialStep((s) => s + 1)}>
+                  próximo →
+                </button>
+              ) : (
+                <button className="btn btn-primary btn-sm" onClick={() => setTutorialOpen(false)}>
+                  entendi ✓
+                </button>
+              )}
             </div>
           </div>
-          <form method="dialog" className="modal-backdrop"><button>fechar</button></form>
-        </dialog>
+        </Modal>
 
         {/* Stats bar — full width */}
         <div className="stats stats-horizontal bg-base-200 border border-base-300 w-full shadow-none">
