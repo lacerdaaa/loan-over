@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus, X } from 'lucide-react';
+import { ListChecks, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateFixedExpense, useDeleteFixedExpense, useFixedExpenses, useUpdateFixedExpense } from '../api/fixed-expenses';
 import { Field } from '../components/ui/Field';
@@ -60,6 +60,20 @@ export const FixedExpensesPage = () => {
           }
         />
 
+        {expenses.length === 0 ? (
+          <div className="card bg-base-200 border border-primary/15 p-10 flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <ListChecks size={22} className="text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-base-content">Nenhum gasto fixo cadastrado</p>
+              <p className="text-sm text-base-content/50 mt-1 max-w-xs">Aluguel, internet, academia — gastos que se repetem todo mês.</p>
+            </div>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5 mt-1">
+              <Plus size={14} /> Adicionar gasto
+            </motion.button>
+          </div>
+        ) : (
         <div className="overflow-x-auto card bg-base-200 border border-base-300">
           <table className="table table-sm">
             <thead>
@@ -103,12 +117,10 @@ export const FixedExpensesPage = () => {
                   </td>
                 </motion.tr>
               ))}
-              {expenses.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-base-content/40 py-6">Nenhum gasto fixo cadastrado.</td></tr>
-              )}
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto fixo">

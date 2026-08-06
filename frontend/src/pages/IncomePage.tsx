@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Coins, Plus, X } from 'lucide-react';
+import { Coins, Plus, Wallet, X } from 'lucide-react';
 import { useState } from 'react';
 import { type CreateIncomePayload, useAddDeduction, useCreateIncome, useDeleteIncome, useIncome, useRemoveDeduction } from '../api/income';
 import { Field } from '../components/ui/Field';
@@ -169,7 +169,24 @@ export const IncomePage = () => {
               <DeductionRow income={income} month={month} year={year} />
             </motion.div>
           ))}
-          {filtered.length === 0 && <p className="text-base-content/40 text-sm">Nenhuma renda {tab === 'fixed' ? 'fixa' : 'variável'} registrada.</p>}
+          {filtered.length === 0 && (
+            <div className="card bg-base-200 border border-primary/15 p-10 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Wallet size={22} className="text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-base-content">Nenhuma renda {tab === 'fixed' ? 'fixa' : 'variável'} registrada</p>
+                <p className="text-sm text-base-content/50 mt-1 max-w-xs">
+                  {tab === 'fixed'
+                    ? 'Adicione salário, aluguel ou qualquer renda que entra todo mês.'
+                    : 'Registre freelances, comissões ou qualquer entrada pontual.'}
+                </p>
+              </div>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5 mt-1">
+                <Plus size={14} /> Adicionar renda
+              </motion.button>
+            </div>
+          )}
         </div>
       </div>
 

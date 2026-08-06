@@ -90,6 +90,20 @@ export const TimelinePage = () => {
           }
         </div>
 
+        {!isLoading && months.length === 0 && (
+          <div className="card bg-base-200 border border-base-300 p-10 flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Zap size={22} className="text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-base-content">Nenhum marco nos próximos 24 meses</p>
+              <p className="text-sm text-base-content/50 mt-1 max-w-xs">
+                Cadastre dívidas para ver as datas de quitação e os meses em que o saldo fica livre.
+              </p>
+            </div>
+          </div>
+        )}
+
         {months.length > 0 && (
           <div className="card bg-base-200 border border-base-300 p-5 flex flex-col gap-5">
             <h2 className="font-mono text-[11px] font-semibold text-base-content/50 uppercase tracking-[0.15em]">Marcos</h2>

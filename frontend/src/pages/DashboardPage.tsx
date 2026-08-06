@@ -81,6 +81,16 @@ export const DashboardPage = () => {
           </div>
         </div>
 
+        {snap && snap.total_income === 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-base-300 text-sm text-base-content/50">
+            <ArrowRight size={14} className="text-primary shrink-0" />
+            <span>Comece cadastrando sua{' '}
+              <a href="/income" className="text-primary hover:underline">renda</a>
+              {' '}para ver o saldo projetado.
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {snap ? (
             <>
