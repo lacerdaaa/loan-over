@@ -4,15 +4,12 @@ import {
   BarChart2,
   CalendarClock,
   CreditCard,
-  ShieldCheck,
-  TrendingUp,
-  Zap,
 } from 'lucide-react';
 import { useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { BlueprintGrid } from '../components/ui/BlueprintGrid';
 import { isAuthenticated } from '../lib/auth';
-import { CREAM, GREEN, GREEN_DEEP, GREEN_TINT, INK, INK_MUTED, LINE } from '../lib/brand';
+import { CREAM, GREEN, GREEN_DEEP, INK, INK_MUTED, LINE } from '../lib/brand';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 const AUTH_URL = `${API_URL}/auth/google`;
@@ -61,37 +58,33 @@ const FloatingChip = ({ label, className, rotate, delay }: ChipProps) => (
   </motion.span>
 );
 
-interface FeatureCardProps {
-  icon: React.ElementType;
+interface FeatureRowProps {
+  n: string;
   title: string;
   desc: string;
   delay: number;
 }
 
-const FeatureCard = ({ icon: Icon, title, desc, delay }: FeatureCardProps) => {
+const FeatureRow = ({ n, title, desc, delay }: FeatureRowProps) => {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const inView = useInView(ref, { once: true, margin: '-40px' });
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.55, delay, ease: EASE }}
-      className="rounded-2xl bg-white p-6 flex flex-col gap-4 transition-all hover:-translate-y-1 hover:shadow-lg"
-      style={{ border: `1px solid ${LINE}` }}
+      initial={{ opacity: 0 }}
+      animate={inView ? { opacity: 1 } : {}}
+      transition={{ duration: 0.4, delay, ease: EASE }}
+      className="grid grid-cols-[40px_1fr] md:grid-cols-[40px_1fr_1fr] items-baseline gap-x-8 py-7 border-t"
+      style={{ borderColor: LINE }}
     >
-      <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: GREEN_TINT, color: GREEN }}
+      <span className="font-mono text-[11px] tracking-widest" style={{ color: GREEN }}>{n}</span>
+      <h3 className="font-semibold text-[15px]" style={{ color: INK }}>{title}</h3>
+      <p
+        className="text-sm leading-relaxed mt-2 md:mt-0 col-start-2 md:col-start-auto"
+        style={{ color: INK_MUTED }}
       >
-        <Icon size={20} />
-      </div>
-      <div>
-        <h3 className="font-semibold" style={{ color: INK }}>{title}</h3>
-        <p className="text-sm mt-1 leading-relaxed" style={{ color: INK_MUTED }}>
-          {desc}
-        </p>
-      </div>
+        {desc}
+      </p>
     </motion.div>
   );
 };
@@ -155,66 +148,63 @@ const CTASection = () => {
         >
           Começar gratuitamente <ArrowRight size={18} />
         </a>
-        <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-white/50 mt-5">
-          Sem cartão de crédito · Login com Google
-        </p>
       </motion.div>
     </section>
   );
 };
 
-const FEATURES: FeatureCardProps[] = [
+const FEATURES: FeatureRowProps[] = [
   {
-    icon: CreditCard,
-    title: 'Rastreio de dívidas',
-    desc: 'Suporte a Tabela Price (juros compostos). Veja o saldo devedor real, não só o número de parcelas restantes.',
+    n: '01',
+    title: 'Saldo devedor real',
+    desc: 'Suporte a Tabela Price e juros compostos. Veja o quanto você ainda deve de verdade — não só o número de parcelas restantes.',
     delay: 0,
   },
   {
-    icon: TrendingUp,
+    n: '02',
     title: 'Projeção de 24 meses',
     desc: 'Simule seu fluxo de caixa mês a mês. Veja quando o saldo livre começa a crescer de verdade.',
-    delay: 0.08,
+    delay: 0.06,
   },
   {
-    icon: Zap,
+    n: '03',
     title: 'Eventos de liberação',
-    desc: 'Saiba exatamente em qual mês uma dívida acaba e quanto dinheiro volta para o seu orçamento.',
-    delay: 0.16,
+    desc: 'Saiba exatamente em qual mês cada dívida acaba e quanto dinheiro volta para o seu orçamento — automaticamente.',
+    delay: 0.12,
   },
   {
-    icon: BarChart2,
-    title: 'Método Snowball',
-    desc: 'Ordem otimizada de quitação. Veja quantos meses você economiza ao direcionar o saldo para a menor dívida primeiro.',
-    delay: 0.24,
+    n: '04',
+    title: 'Meta de poupança',
+    desc: 'Defina um valor e um prazo. Veja o aporte mensal necessário e se a projeção atual te leva lá.',
+    delay: 0.18,
   },
 ];
 
 const STEPS: StepProps[] = [
   {
     n: '01',
-    title: 'Conecte sua conta Google',
-    desc: 'Login seguro via OAuth 2.0. Nenhuma senha armazenada.',
+    title: 'Cadastre sua renda',
+    desc: 'Salário fixo, renda variável, deduções como INSS e IRRF. O app calcula o que de fato sobra no seu bolso antes de qualquer conta chegar.',
     delay: 0,
   },
   {
     n: '02',
-    title: 'Cadastre sua situação',
-    desc: 'Renda, gastos fixos e dívidas. Leva menos de 5 minutos.',
+    title: 'Registre suas dívidas',
+    desc: 'Parcelas, taxa de juros, data de início. O sistema usa juros compostos para mostrar o saldo devedor real — não só quantas parcelas ainda faltam.',
     delay: 0.12,
   },
   {
     n: '03',
-    title: 'Descubra quando você fica livre',
-    desc: 'Veja a projeção completa e o mês exato em que cada dívida termina.',
+    title: 'Saiba exatamente quando você fica livre',
+    desc: 'Veja uma projeção de 24 meses, mês a mês. Descubra em qual data cada dívida termina e quanto dinheiro é liberado para o seu orçamento a cada quitação.',
     delay: 0.24,
   },
 ];
 
 const HERO_STATS = [
-  { icon: CalendarClock, value: '24', label: 'meses de projeção' },
-  { icon: ShieldCheck, value: '100%', label: 'dados ficam com você' },
-  { icon: Zap, value: 'OAuth', label: 'login seguro' },
+  { icon: CalendarClock, value: '24', label: 'meses projetados' },
+  { icon: CreditCard, value: 'Real', label: 'saldo devedor com juros' },
+  { icon: BarChart2, value: 'Mês a mês', label: 'data de quitação por dívida' },
 ];
 
 export const LandingPage = () => {
@@ -234,21 +224,13 @@ export const LandingPage = () => {
           className="max-w-5xl mx-auto flex items-center justify-between rounded-2xl px-4 py-2.5 backdrop-blur-lg shadow-lg"
           style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.25)' }}
         >
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-xs"
-              style={{ color: GREEN_DEEP }}
-            >
-              LO
-            </div>
-            <span className="font-bold text-white">Loan Over</span>
-          </div>
+          <span className="font-mono font-bold text-white tracking-tight">// loan over</span>
           <a
             href={AUTH_URL}
             className="font-mono text-[11px] uppercase tracking-[0.2em] text-white rounded-full px-4 py-2 transition-colors hover:bg-white/15"
             style={{ border: '1px solid rgba(255,255,255,0.35)' }}
           >
-            ( entrar )
+            entrar
           </a>
         </div>
       </motion.nav>
@@ -267,7 +249,7 @@ export const LandingPage = () => {
           className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-white rounded-full px-4 py-2 mb-8"
           style={{ border: '1px solid rgba(255,255,255,0.35)' }}
         >
-          ( projeção financeira pessoal )
+          projeção financeira pessoal
         </motion.div>
 
         <motion.h1
@@ -310,7 +292,7 @@ export const LandingPage = () => {
               Monte sua primeira projeção: renda, gastos e dívidas
             </p>
             <p className="text-white/50 text-xs mt-0.5">
-              Sem configuração — entre com Google, cadastre e veja o resultado na hora.
+              Leva menos de 5 minutos — e você sai sabendo exatamente quando fica livre.
             </p>
           </div>
           <span
@@ -346,7 +328,7 @@ export const LandingPage = () => {
           style={{ borderLeft: `1px solid ${LINE}`, borderRight: `1px solid ${LINE}` }}
         >
           <FloatingChip label="Tabela Price" className="left-4 top-24" rotate={-6} delay={0.1} />
-          <FloatingChip label="Snowball" className="right-8 top-16" rotate={5} delay={0.2} />
+          <FloatingChip label="Meta de poupança" className="right-8 top-16" rotate={5} delay={0.2} />
           <FloatingChip label="Juros compostos" className="left-10 top-52" rotate={4} delay={0.3} />
           <FloatingChip label="24 meses" className="right-4 top-48" rotate={-4} delay={0.4} />
 
@@ -375,8 +357,8 @@ export const LandingPage = () => {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
+          <div className="border-b" style={{ borderColor: LINE }}>
+            {FEATURES.map((f) => <FeatureRow key={f.n} {...f} />)}
           </div>
         </div>
       </section>
@@ -415,17 +397,9 @@ export const LandingPage = () => {
         className="px-6 lg:px-12 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50"
         style={{ background: GREEN_DEEP }}
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-5 h-5 rounded bg-white flex items-center justify-center font-bold"
-            style={{ fontSize: 8, color: GREEN_DEEP }}
-          >
-            LO
-          </div>
-          Loan Over
-        </div>
+        <span className="font-mono font-bold tracking-tight">// loan over</span>
         <span className="font-mono text-[10px] uppercase tracking-wider">
-          © {new Date().getFullYear()} — seus dados são seus.
+          © {new Date().getFullYear()} — projeção financeira pessoal.
         </span>
       </footer>
     </div>

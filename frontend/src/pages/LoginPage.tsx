@@ -12,15 +12,7 @@ export const LoginPage = () => (
     <BlueprintGrid />
 
     <div className="relative w-full max-w-sm flex flex-col items-center gap-6">
-      <div className="flex items-center gap-2.5">
-        <div
-          className="w-9 h-9 rounded-lg bg-white flex items-center justify-center font-bold text-xs"
-          style={{ color: GREEN_DEEP }}
-        >
-          LO
-        </div>
-        <span className="font-bold text-white text-lg">Loan Over</span>
-      </div>
+      <span className="font-mono font-bold text-white text-lg tracking-tight">// loan over</span>
 
       <div
         className="w-full rounded-2xl p-6 flex flex-col gap-5 backdrop-blur-lg shadow-2xl"
@@ -45,16 +37,13 @@ export const LoginPage = () => (
           Entrar com Google
         </a>
 
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/45 text-center">
-          acesso seguro via OAuth 2.0 · nenhuma senha armazenada
-        </p>
       </div>
 
       <Link
         to="/"
         className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/60 hover:text-white transition-colors"
       >
-        ( voltar ao início )
+        voltar ao início
       </Link>
     </div>
   </div>
