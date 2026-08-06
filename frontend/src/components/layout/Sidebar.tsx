@@ -10,11 +10,11 @@ import { useTheme } from '../../lib/theme';
 import { TutorialModal } from '../ui/TutorialModal';
 import { SettingsModal } from './SettingsModal';
 
-const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
+const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean; tutorialId?: string }[] = [
   { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/timeline', label: 'Cronograma', Icon: TrendingUp },
-  { to: '/debts', label: 'Dívidas', Icon: CreditCard },
-  { to: '/income', label: 'Renda', Icon: Wallet },
+  { to: '/debts', label: 'Dívidas', Icon: CreditCard, tutorialId: 'debts' },
+  { to: '/income', label: 'Renda', Icon: Wallet, tutorialId: 'income' },
   { to: '/fixed-expenses', label: 'Gastos Fixos', Icon: ListChecks },
   { to: '/occasional-expenses', label: 'Ocasionais', Icon: Receipt },
   { to: '/goal', label: 'Meta', Icon: Target },
@@ -22,12 +22,13 @@ const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[
 
 const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) => (
   <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
-    {NAV_ITEMS.map(({ to, label, Icon, end }) => (
+    {NAV_ITEMS.map(({ to, label, Icon, end, tutorialId }) => (
       <NavLink
         key={to}
         to={to}
         end={end}
         onClick={onNavClick}
+        {...(tutorialId ? { 'data-tutorial': tutorialId } : {})}
         className={({ isActive }) =>
           `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
           ${isActive
