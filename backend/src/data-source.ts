@@ -8,14 +8,26 @@ import { Income } from './income/income.entity';
 import { OccasionalExpense } from './occasional-expense/occasional-expense.entity';
 import { User } from './user/user.entity';
 
-export const AppDataSource = new DataSource({
-  type: 'postgres',
-  host: process.env['DB_HOST'],
-  port: Number(process.env['DB_PORT']),
-  username: process.env['DB_USER'],
-  password: process.env['DB_PASSWORD'],
-  database: process.env['DB_NAME'],
-  entities: [Income, IncomeDeduction, Debt, FixedExpense, OccasionalExpense, Goal, User],
-  migrations: ['src/migrations/*.ts'],
-  synchronize: false,
-});
+const DATABASE_URL = process.env['DATABASE_URL'];
+
+export const AppDataSource = new DataSource(
+  DATABASE_URL
+    ? {
+        type: 'postgres',
+        url: DATABASE_URL,
+        entities: [Income, IncomeDeduction, Debt, FixedExpense, OccasionalExpense, Goal, User],
+        migrations: ['src/migrations/*.ts'],
+        synchronize: false,
+      }
+    : {
+        type: 'postgres',
+        host: process.env['DB_HOST'],
+        port: Number(process.env['DB_PORT']),
+        username: process.env['DB_USER'],
+        password: process.env['DB_PASSWORD'],
+        database: process.env['DB_NAME'],
+        entities: [Income, IncomeDeduction, Debt, FixedExpense, OccasionalExpense, Goal, User],
+        migrations: ['src/migrations/*.ts'],
+        synchronize: false,
+      },
+);

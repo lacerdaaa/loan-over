@@ -17,16 +17,21 @@ import { SnapshotModule } from './snapshot/snapshot.module';
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
-        username: config.get<string>('DB_USER'),
-        password: config.get<string>('DB_PASSWORD'),
-        database: config.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: config.get<string>('NODE_ENV') === 'development',
-      }),
+      useFactory: (config: ConfigService) => {
+        const url = config.get<string>('DATABASE_URL');
+        return url
+          ? { type: 'postgres', url, autoLoadEntities: true, synchronize: false }
+          : {
+              type: 'postgres',
+              host: config.get<string>('DB_HOST'),
+              port: config.get<number>('DB_PORT'),
+              username: config.get<string>('DB_USER'),
+              password: config.get<string>('DB_PASSWORD'),
+              database: config.get<string>('DB_NAME'),
+              autoLoadEntities: true,
+              synchronize: config.get<string>('NODE_ENV') === 'development',
+            };
+      },
     }),
     AuthModule,
     IncomeModule,
