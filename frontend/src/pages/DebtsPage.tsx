@@ -40,7 +40,7 @@ export const DebtsPage = () => {
           title="Dívidas"
           subtitle={`${debts.filter((d) => !d.closed).length} em aberto · ${debts.filter((d) => d.closed).length} quitadas`}
           action={
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-debt">
               <Plus size={14} /> Adicionar dívida
             </motion.button>
           }

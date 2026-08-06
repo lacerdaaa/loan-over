@@ -41,7 +41,7 @@ export const OccasionalExpensesPage = () => {
           title="Gastos Ocasionais"
           subtitle={<MonthNav month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />}
           action={
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-occasional">
               <Plus size={14} /> Adicionar gasto
             </motion.button>
           }

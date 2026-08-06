@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GREEN } from '../../lib/brand';
 
 interface TutorialStep {
   selector?: string;
+  navigateTo?: string;
   title: string;
   body: string;
 }
@@ -11,27 +13,86 @@ interface TutorialStep {
 const STEPS: TutorialStep[] = [
   {
     title: 'Bem-vindo ao Loan Over',
-    body: 'Vamos te mostrar os dois pontos principais. Leva menos de 1 minuto.',
+    body: 'Vamos te guiar pelos passos principais. Leva menos de 2 minutos.',
   },
   {
-    selector: '[data-tutorial="income"]',
-    title: 'Cadastre sua renda',
-    body: 'Adicione salário fixo ou renda variável. Em cada renda você pode incluir deduções como INSS e IRRF — o app calcula o líquido automaticamente.',
+    navigateTo: '/income',
+    selector: '[data-tutorial="add-income"]',
+    title: 'Registre sua renda',
+    body: 'Clique aqui para adicionar uma fonte de renda — salário fixo, renda variável, ou qualquer outra.',
   },
   {
-    selector: '[data-tutorial="debts"]',
+    title: 'Adicione descontos, se aplicável',
+    body: 'Dentro de cada renda cadastrada você pode incluir deduções como INSS, IRRF ou vale-transporte. O app calcula o valor líquido automaticamente.',
+  },
+  {
+    navigateTo: '/debts',
+    selector: '[data-tutorial="add-debt"]',
     title: 'Registre suas dívidas',
-    body: 'Cadastre cada parcelamento com valor, prazo e taxa de juros. Se for Tabela Price, informe o principal e a taxa mensal — o app calcula a parcela exata.',
+    body: 'Clique aqui para cadastrar uma dívida. Informe o valor da parcela, o total de parcelas e a data de início.',
+  },
+  {
+    navigateTo: '/occasional-expenses',
+    selector: '[data-tutorial="add-occasional"]',
+    title: 'Registre saídas ocasionais',
+    body: 'Clique aqui para adicionar gastos pontuais — uma viagem, um conserto, uma compra fora do orçamento fixo.',
   },
 ];
 
 const PAD = 10;
+const TOOLTIP_W = 272;
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
-const SPOTLIGHT_STEPS = STEPS.filter((s) => s.selector).length;
+const CONTENT_STEPS = STEPS.length - 1;
 
 interface Props {
   open: boolean;
   onClose: () => void;
+}
+
+const Dots = ({ current }: { current: number }) => (
+  <div className="flex items-center gap-1.5">
+    {Array.from({ length: CONTENT_STEPS }, (_, i) => (
+      <span
+        key={i}
+        className="block w-1.5 h-1.5 rounded-full transition-colors duration-200"
+        style={{ background: i === current - 1 ? GREEN : '#e5e7eb' }}
+      />
+    ))}
+  </div>
+);
+
+interface TooltipPos {
+  left: number;
+  top: number;
+  arrow: 'top' | 'left' | 'right';
+}
+
+function computeTooltipPos(rect: DOMRect): TooltipPos {
+  const vw = window.innerWidth;
+  const spaceRight = vw - rect.right;
+  const spaceLeft = rect.left;
+
+  // Prefer placing below the element (buttons are in the header area)
+  if (spaceRight < TOOLTIP_W + 32 && spaceLeft < TOOLTIP_W + 32) {
+    const left = Math.max(8, Math.min(vw - TOOLTIP_W - 8, rect.left + rect.width / 2 - TOOLTIP_W / 2));
+    return { left, top: rect.bottom + 16, arrow: 'top' };
+  }
+
+  // Place to the left if the button is near the right edge
+  if (spaceRight < TOOLTIP_W + 32) {
+    return {
+      left: rect.left - TOOLTIP_W - 16,
+      top: rect.top + rect.height / 2,
+      arrow: 'right',
+    };
+  }
+
+  // Otherwise place to the right
+  return {
+    left: rect.right + 16,
+    top: rect.top + rect.height / 2,
+    arrow: 'left',
+  };
 }
 
 interface TooltipProps {
@@ -44,20 +105,24 @@ interface TooltipProps {
 }
 
 const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps) => {
-  const left = rect.right + 16;
-  const top = rect.top + rect.height / 2;
-  const dotIndex = stepIndex - 1;
+  const { left, top, arrow } = computeTooltipPos(rect);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -6 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -4 }}
-      transition={{ duration: 0.2, ease: EASE }}
-      className="fixed bg-white rounded-xl shadow-2xl p-4"
-      style={{ left, top, transform: 'translateY(-50%)', width: 272, zIndex: 10001 }}
-    >
-      {/* Left arrow */}
+  const transform =
+    arrow === 'top' ? 'translateX(0)' : 'translateY(-50%)';
+
+  const arrowEl = {
+    top: (
+      <div
+        className="absolute -top-2 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{
+          width: 0, height: 0,
+          borderLeft: '7px solid transparent',
+          borderRight: '7px solid transparent',
+          borderBottom: '8px solid white',
+        }}
+      />
+    ),
+    left: (
       <div
         className="absolute -left-2 top-1/2 -translate-y-1/2 pointer-events-none"
         style={{
@@ -67,23 +132,36 @@ const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps
           borderRight: '8px solid white',
         }}
       />
+    ),
+    right: (
+      <div
+        className="absolute -right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+        style={{
+          width: 0, height: 0,
+          borderTop: '7px solid transparent',
+          borderBottom: '7px solid transparent',
+          borderLeft: '8px solid white',
+        }}
+      />
+    ),
+  }[arrow];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: arrow === 'top' ? -6 : 0, x: arrow === 'left' ? -6 : arrow === 'right' ? 6 : 0 }}
+      animate={{ opacity: 1, y: 0, x: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: EASE }}
+      className="fixed bg-white rounded-xl shadow-2xl p-4"
+      style={{ left, top, transform, width: TOOLTIP_W, zIndex: 10001 }}
+    >
+      {arrowEl}
       <p className="font-semibold text-sm text-base-content">{step.title}</p>
       <p className="text-xs leading-relaxed text-base-content/55 mt-1.5">{step.body}</p>
       <div className="flex items-center justify-between mt-4">
-        <div className="flex gap-1.5 items-center">
-          {Array.from({ length: SPOTLIGHT_STEPS }, (_, i) => (
-            <span
-              key={i}
-              className="block w-1.5 h-1.5 rounded-full transition-colors duration-200"
-              style={{ background: i === dotIndex ? GREEN : '#e5e7eb' }}
-            />
-          ))}
-        </div>
+        <Dots current={stepIndex} />
         <div className="flex items-center gap-3">
-          <button
-            className="text-xs text-base-content/35 hover:text-base-content/60 transition-colors"
-            onClick={onSkip}
-          >
+          <button className="text-xs text-base-content/35 hover:text-base-content/60 transition-colors" onClick={onSkip}>
             pular
           </button>
           <button className="btn btn-primary btn-xs" onClick={onNext}>
@@ -97,12 +175,14 @@ const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps
 
 interface CardProps {
   step: TutorialStep;
+  stepIndex: number;
   isFirst: boolean;
+  isLast: boolean;
   onNext: () => void;
   onSkip: () => void;
 }
 
-const CenteredCard = ({ step, isFirst, onNext, onSkip }: CardProps) => (
+const CenteredCard = ({ step, stepIndex, isFirst, isLast, onNext, onSkip }: CardProps) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.97 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -115,15 +195,15 @@ const CenteredCard = ({ step, isFirst, onNext, onSkip }: CardProps) => (
       <p className="font-bold text-base text-base-content">{step.title}</p>
       <p className="text-sm leading-relaxed text-base-content/60 mt-2">{step.body}</p>
       <div className="flex items-center justify-between mt-5">
-        <button
-          className="text-xs text-base-content/35 hover:text-base-content/60 transition-colors"
-          onClick={onSkip}
-        >
-          pular
-        </button>
-        <button className="btn btn-primary btn-sm" onClick={onNext}>
-          {isFirst ? 'começar →' : 'fechar'}
-        </button>
+        {!isFirst && <Dots current={stepIndex} />}
+        <div className={`flex items-center gap-3 ${isFirst ? 'w-full justify-between' : 'ml-auto'}`}>
+          <button className="text-xs text-base-content/35 hover:text-base-content/60 transition-colors" onClick={onSkip}>
+            pular
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={onNext}>
+            {isFirst ? 'começar →' : isLast ? 'fechar' : 'próximo →'}
+          </button>
+        </div>
       </div>
     </div>
   </motion.div>
@@ -132,6 +212,7 @@ const CenteredCard = ({ step, isFirst, onNext, onSkip }: CardProps) => (
 export const TutorialModal = ({ open, onClose }: Props) => {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const navigate = useNavigate();
 
   const current = STEPS[step];
 
@@ -144,14 +225,27 @@ export const TutorialModal = ({ open, onClose }: Props) => {
       setRect(null);
       return;
     }
+
+    let resizeHandler: (() => void) | null = null;
+
     const measure = () => {
       const el = document.querySelector(current.selector!);
       setRect(el ? el.getBoundingClientRect() : null);
     };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [open, step, current.selector]);
+
+    // Longer delay for navigated steps to let page render and animate in
+    const delay = current.navigateTo ? 500 : 50;
+    const timeoutId = setTimeout(() => {
+      measure();
+      resizeHandler = measure;
+      window.addEventListener('resize', measure);
+    }, delay);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+    };
+  }, [open, step, current.selector, current.navigateTo]);
 
   if (!open) return null;
 
@@ -160,20 +254,20 @@ export const TutorialModal = ({ open, onClose }: Props) => {
   const showSpotlight = Boolean(current.selector) && rect !== null;
 
   const handleNext = () => {
-    if (isLast) onClose();
-    else setStep((s) => s + 1);
+    if (isLast) { onClose(); return; }
+    const next = STEPS[step + 1];
+    if (next.navigateTo) navigate(next.navigateTo);
+    setStep((s) => s + 1);
   };
 
   return (
     <div className="fixed inset-0" style={{ zIndex: 9999 }}>
-      {/* Dark overlay with spotlight cutout via 4 strips */}
       {showSpotlight && rect ? (
         <>
-          <div style={{ position: 'fixed', inset: 0, top: 0, left: 0, right: 0, height: Math.max(0, rect.top - PAD), background: 'rgba(0,0,0,0.78)' }} />
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, rect.top - PAD), background: 'rgba(0,0,0,0.78)' }} />
           <div style={{ position: 'fixed', top: rect.bottom + PAD, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.78)' }} />
           <div style={{ position: 'fixed', top: rect.top - PAD, left: 0, width: Math.max(0, rect.left - PAD), height: rect.height + PAD * 2, background: 'rgba(0,0,0,0.78)' }} />
           <div style={{ position: 'fixed', top: rect.top - PAD, left: rect.right + PAD, right: 0, height: rect.height + PAD * 2, background: 'rgba(0,0,0,0.78)' }} />
-          {/* Green highlight ring */}
           <div
             style={{
               position: 'fixed',
@@ -192,7 +286,6 @@ export const TutorialModal = ({ open, onClose }: Props) => {
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.78)' }} />
       )}
 
-      {/* Tooltip or centered card */}
       <AnimatePresence mode="wait">
         {showSpotlight && rect ? (
           <Tooltip
@@ -208,7 +301,9 @@ export const TutorialModal = ({ open, onClose }: Props) => {
           <CenteredCard
             key={`card-${step}`}
             step={current}
+            stepIndex={step}
             isFirst={isFirst}
+            isLast={isLast}
             onNext={handleNext}
             onSkip={onClose}
           />
