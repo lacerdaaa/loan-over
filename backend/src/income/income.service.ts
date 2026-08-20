@@ -18,7 +18,12 @@ export class IncomeService {
 
   async findForMonth(userId: string, month: number, year: number): Promise<Income[]> {
     const fixedWhere: FindOptionsWhere<Income> = { type: IncomeType.FIXED, user: { id: userId } };
-    const variableWhere: FindOptionsWhere<Income> = { type: IncomeType.VARIABLE, month, year, user: { id: userId } };
+    const variableWhere: FindOptionsWhere<Income> = {
+      type: IncomeType.VARIABLE,
+      month,
+      year,
+      user: { id: userId },
+    };
 
     const [fixed, variable] = await Promise.all([
       this.repo.find({ where: fixedWhere }),
@@ -29,8 +34,10 @@ export class IncomeService {
   }
 
   netAmount(income: Income): number {
-    return Number(income.amount) -
-      (income.deductions ?? []).reduce((sum, d) => sum + Number(d.amount), 0);
+    return (
+      Number(income.amount) -
+      (income.deductions ?? []).reduce((sum, d) => sum + Number(d.amount), 0)
+    );
   }
 
   async create(userId: string, dto: CreateIncomeDto): Promise<Income> {
@@ -47,7 +54,11 @@ export class IncomeService {
     return this.repo.save(income);
   }
 
-  async addDeduction(userId: string, incomeId: string, dto: CreateDeductionDto): Promise<IncomeDeduction> {
+  async addDeduction(
+    userId: string,
+    incomeId: string,
+    dto: CreateDeductionDto,
+  ): Promise<IncomeDeduction> {
     const income = await this.repo.findOne({ where: { id: incomeId, user: { id: userId } } });
     if (!income) throw new NotFoundException(`Income ${incomeId} not found`);
 

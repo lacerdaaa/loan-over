@@ -70,7 +70,9 @@ describe('FixedExpenseService', () => {
     it('throws NotFoundException when expense does not exist', async () => {
       repo.findOne.mockResolvedValue(null);
 
-      await expect(service.update('ghost', USER_ID, { active: false })).rejects.toThrow(NotFoundException);
+      await expect(service.update('ghost', USER_ID, { active: false })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

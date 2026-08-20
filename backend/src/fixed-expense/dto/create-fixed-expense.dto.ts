@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateFixedExpenseDto {
   @ApiProperty({ example: 'Health plan' })
@@ -7,7 +16,7 @@ export class CreateFixedExpenseDto {
   @IsNotEmpty()
   declare name: string;
 
-  @ApiProperty({ example: 450.00, description: 'Monthly amount in BRL' })
+  @ApiProperty({ example: 450.0, description: 'Monthly amount in BRL' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   declare amount: number;
@@ -23,12 +32,20 @@ export class CreateFixedExpenseDto {
   @IsBoolean()
   active?: boolean;
 
-  @ApiPropertyOptional({ example: false, default: false, description: 'True when this expense is paid from a restricted benefit (food card, etc.) — excluded from free_balance' })
+  @ApiPropertyOptional({
+    example: false,
+    default: false,
+    description:
+      'True when this expense is paid from a restricted benefit (food card, etc.) — excluded from free_balance',
+  })
   @IsOptional()
   @IsBoolean()
   from_benefit?: boolean;
 
-  @ApiPropertyOptional({ example: 8, description: 'Month (1–12) from which this expense starts counting. Null = always active.' })
+  @ApiPropertyOptional({
+    example: 8,
+    description: 'Month (1–12) from which this expense starts counting. Null = always active.',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

@@ -1,5 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
-import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { CreateIncomeDto } from './dto/create-income.dto';
@@ -50,7 +57,10 @@ export class IncomeController {
   }
 
   @Post(':id/deductions')
-  @ApiOperation({ summary: 'Add a deduction to an income', description: 'Use for INSS, IRRF, IPTU, sister shares, etc.' })
+  @ApiOperation({
+    summary: 'Add a deduction to an income',
+    description: 'Use for INSS, IRRF, IPTU, sister shares, etc.',
+  })
   @ApiCreatedResponse({ type: IncomeDeduction })
   @HttpCode(201)
   addDeduction(

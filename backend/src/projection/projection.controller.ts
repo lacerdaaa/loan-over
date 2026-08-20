@@ -27,9 +27,24 @@ export class ProjectionController {
       '"liberation" event — the freed installment amount compounds into free_balance from that month onward. ' +
       'Also emits an "alert" event the month before a debt closes.',
   })
-  @ApiQuery({ name: 'month', required: false, example: 6, description: 'Reference month (defaults to current)' })
-  @ApiQuery({ name: 'year', required: false, example: 2026, description: 'Reference year (defaults to current)' })
-  @ApiQuery({ name: 'horizon', required: false, example: 24, description: 'Number of months to project (default 24)' })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    example: 6,
+    description: 'Reference month (defaults to current)',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    example: 2026,
+    description: 'Reference year (defaults to current)',
+  })
+  @ApiQuery({
+    name: 'horizon',
+    required: false,
+    example: 24,
+    description: 'Number of months to project (default 24)',
+  })
   @ApiOkResponse({ description: 'Array of ProjectedMonth' })
   async get(
     @CurrentUser() userId: string,

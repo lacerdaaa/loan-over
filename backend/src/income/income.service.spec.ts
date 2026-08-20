@@ -32,7 +32,7 @@ const makeIncome = (overrides: Partial<Income> = {}): Income => ({
 });
 
 const makeDeduction = (amount: number, label = 'INSS'): IncomeDeduction =>
-  ({ id: 'd1', label, amount } as IncomeDeduction);
+  ({ id: 'd1', label, amount }) as IncomeDeduction;
 
 describe('IncomeService', () => {
   let service: IncomeService;
@@ -82,7 +82,11 @@ describe('IncomeService', () => {
     it('subtracts all deductions from gross amount', () => {
       const income = makeIncome({
         amount: 6000,
-        deductions: [makeDeduction(660, 'INSS'), makeDeduction(420, 'IRRF'), makeDeduction(200, 'Health')],
+        deductions: [
+          makeDeduction(660, 'INSS'),
+          makeDeduction(420, 'IRRF'),
+          makeDeduction(200, 'Health'),
+        ],
       });
       expect(service.netAmount(income)).toBe(4720);
     });
@@ -90,7 +94,12 @@ describe('IncomeService', () => {
 
   describe('create', () => {
     it('saves a new income with category and returns it', async () => {
-      const dto: CreateIncomeDto = { type: IncomeType.FIXED, category: IncomeCategory.SALARY, amount: 6000, description: 'Salary' };
+      const dto: CreateIncomeDto = {
+        type: IncomeType.FIXED,
+        category: IncomeCategory.SALARY,
+        amount: 6000,
+        description: 'Salary',
+      };
       const saved = makeIncome();
 
       repo.create.mockReturnValue(saved);
@@ -121,7 +130,9 @@ describe('IncomeService', () => {
     it('throws NotFoundException when income does not exist', async () => {
       repo.findOne.mockResolvedValue(null);
 
-      await expect(service.addDeduction(USER_ID, 'ghost', { label: 'INSS', amount: 660 })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.addDeduction(USER_ID, 'ghost', { label: 'INSS', amount: 660 }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

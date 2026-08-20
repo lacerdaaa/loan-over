@@ -5,7 +5,14 @@ import { AuthService } from './auth.service';
 import { User } from '../user/user.entity';
 
 const makeUser = (overrides: Partial<User> = {}): User =>
-  ({ id: 'uuid-1', google_id: 'gid-1', email: 'test@example.com', name: 'Test User', avatar: '', ...overrides }) as User;
+  ({
+    id: 'uuid-1',
+    google_id: 'gid-1',
+    email: 'test@example.com',
+    name: 'Test User',
+    avatar: '',
+    ...overrides,
+  }) as User;
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -65,7 +72,12 @@ describe('AuthService', () => {
       const user = makeUser();
       const { access_token } = service.login(user);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: user.id, email: user.email, name: user.name, avatar: user.avatar });
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        sub: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+      });
       expect(access_token).toBe('signed.jwt.token');
     });
   });

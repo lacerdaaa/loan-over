@@ -7,8 +7,21 @@ import { OccasionalExpense } from '../occasional-expense/occasional-expense.enti
 import { IncomeCategory, IncomeType } from '../shared/types';
 import { SnapshotService } from './snapshot.service';
 
-const makeIncome = (amount: number, category = IncomeCategory.OTHER, deductions: Partial<IncomeDeduction>[] = []): Income =>
-  ({ id: '1', type: IncomeType.FIXED, category, amount, month: null, year: null, description: 'test', deductions }) as Income;
+const makeIncome = (
+  amount: number,
+  category = IncomeCategory.OTHER,
+  deductions: Partial<IncomeDeduction>[] = [],
+): Income =>
+  ({
+    id: '1',
+    type: IncomeType.FIXED,
+    category,
+    amount,
+    month: null,
+    year: null,
+    description: 'test',
+    deductions,
+  }) as Income;
 
 const makeExpense = (
   amount: number,
@@ -17,16 +30,48 @@ const makeExpense = (
   valid_from_month: number | null = null,
   valid_from_year: number | null = null,
 ): FixedExpense =>
-  ({ id: '1', name: 'test', amount, due_day: 5, active, from_benefit, valid_from_month, valid_from_year }) as FixedExpense;
+  ({
+    id: '1',
+    name: 'test',
+    amount,
+    due_day: 5,
+    active,
+    from_benefit,
+    valid_from_month,
+    valid_from_year,
+  }) as FixedExpense;
 
 const makeDebt = (installment_amount: number, closed = false, total = 10, paid = 0): Debt =>
-  ({ id: '1', name: 'test', installment_amount, total_installments: total, paid_installments: paid, start_date: new Date(), closed }) as Debt;
+  ({
+    id: '1',
+    name: 'test',
+    installment_amount,
+    total_installments: total,
+    paid_installments: paid,
+    start_date: new Date(),
+    closed,
+  }) as Debt;
 
 const makeOccasional = (amount: number, from_benefit = false): OccasionalExpense =>
-  ({ id: '1', description: 'test', amount, month: 6, year: 2026, from_benefit }) as OccasionalExpense;
+  ({
+    id: '1',
+    description: 'test',
+    amount,
+    month: 6,
+    year: 2026,
+    from_benefit,
+  }) as OccasionalExpense;
 
 const compute = (service: SnapshotService, overrides: Parameters<SnapshotService['compute']>[0]) =>
-  service.compute({ month: 6, year: 2026, incomes: [], fixedExpenses: [], debts: [], occasionalExpenses: [], ...overrides });
+  service.compute({
+    month: 6,
+    year: 2026,
+    incomes: [],
+    fixedExpenses: [],
+    debts: [],
+    occasionalExpenses: [],
+    ...overrides,
+  });
 
 describe('SnapshotService', () => {
   let service: SnapshotService;
@@ -91,7 +136,11 @@ describe('SnapshotService', () => {
 
     it('sums benefit incomes into total_benefit', () => {
       const result = compute(service, {
-        incomes: [makeIncome(5000), makeIncome(990, IncomeCategory.BENEFIT), makeIncome(200, IncomeCategory.BENEFIT)],
+        incomes: [
+          makeIncome(5000),
+          makeIncome(990, IncomeCategory.BENEFIT),
+          makeIncome(200, IncomeCategory.BENEFIT),
+        ],
       });
 
       expect(result.total_benefit).toBe(1190);

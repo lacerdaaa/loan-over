@@ -39,7 +39,8 @@ export class DebtController {
   @Patch(':id/pay')
   @ApiOperation({
     summary: 'Pay one installment',
-    description: 'Increments paid_installments by 1. Automatically sets closed=true when the last installment is paid.',
+    description:
+      'Increments paid_installments by 1. Automatically sets closed=true when the last installment is paid.',
   })
   @ApiOkResponse({ type: Debt })
   payInstallment(@Param('id') id: string, @CurrentUser() userId: string): Promise<Debt> {

@@ -44,6 +44,13 @@ export class SnapshotController {
       this.occasionalExpenseService.findForMonth(userId, m, y),
     ]);
 
-    return this.snapshotService.compute({ month: m, year: y, incomes, debts, fixedExpenses, occasionalExpenses });
+    return this.snapshotService.compute({
+      month: m,
+      year: y,
+      incomes,
+      debts,
+      fixedExpenses,
+      occasionalExpenses,
+    });
   }
 }

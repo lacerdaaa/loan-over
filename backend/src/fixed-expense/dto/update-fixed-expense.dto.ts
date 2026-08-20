@@ -7,7 +7,7 @@ export class UpdateFixedExpenseDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ example: 1500.00 })
+  @ApiPropertyOptional({ example: 1500.0 })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
@@ -20,7 +20,10 @@ export class UpdateFixedExpenseDto {
   @Max(31)
   due_day?: number;
 
-  @ApiPropertyOptional({ example: false, description: 'Set to false to exclude from monthly calculations without deleting' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Set to false to exclude from monthly calculations without deleting',
+  })
   @IsOptional()
   @IsBoolean()
   active?: boolean;

@@ -7,7 +7,14 @@ import { Goal } from './goal.entity';
 const USER_ID = 'user-uuid';
 
 const makeGoal = (overrides: Partial<Goal> = {}): Goal =>
-  ({ id: 'uuid-1', target_amount: 10000, deadline_month: 12, deadline_year: 2027, monthly_min: null, ...overrides }) as Goal;
+  ({
+    id: 'uuid-1',
+    target_amount: 10000,
+    deadline_month: 12,
+    deadline_year: 2027,
+    monthly_min: null,
+    ...overrides,
+  }) as Goal;
 
 describe('GoalService', () => {
   let service: GoalService;
@@ -17,10 +24,7 @@ describe('GoalService', () => {
     repo = { findOne: jest.fn(), save: jest.fn(), create: jest.fn(), delete: jest.fn() };
 
     const module = await Test.createTestingModule({
-      providers: [
-        GoalService,
-        { provide: getRepositoryToken(Goal), useValue: repo },
-      ],
+      providers: [GoalService, { provide: getRepositoryToken(Goal), useValue: repo }],
     }).compile();
 
     service = module.get(GoalService);
@@ -42,7 +46,12 @@ describe('GoalService', () => {
 
     it('persists monthly_min when provided', async () => {
       repo.findOne.mockResolvedValue(null);
-      const dto = { target_amount: 10000, deadline_month: 12, deadline_year: 2027, monthly_min: 500 };
+      const dto = {
+        target_amount: 10000,
+        deadline_month: 12,
+        deadline_year: 2027,
+        monthly_min: 500,
+      };
       const created = makeGoal(dto);
       repo.create.mockReturnValue(created);
       repo.save.mockResolvedValue(created);
@@ -55,7 +64,12 @@ describe('GoalService', () => {
     it('updates existing goal without losing monthly_min', async () => {
       const existing = makeGoal({ monthly_min: 200 });
       repo.findOne.mockResolvedValue(existing);
-      const dto = { target_amount: 15000, deadline_month: 6, deadline_year: 2028, monthly_min: 400 };
+      const dto = {
+        target_amount: 15000,
+        deadline_month: 6,
+        deadline_year: 2028,
+        monthly_min: 400,
+      };
       repo.save.mockResolvedValue({ ...existing, ...dto });
 
       const result = await service.upsert(USER_ID, dto);

@@ -1,5 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
-import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateOccasionalExpenseDto } from './dto/create-occasional-expense.dto';
 import { OccasionalExpense } from './occasional-expense.entity';
@@ -27,7 +34,10 @@ export class OccasionalExpenseController {
   @HttpCode(201)
   @ApiOperation({ summary: 'Register an occasional expense for a specific month' })
   @ApiCreatedResponse({ type: OccasionalExpense })
-  create(@CurrentUser() userId: string, @Body() dto: CreateOccasionalExpenseDto): Promise<OccasionalExpense> {
+  create(
+    @CurrentUser() userId: string,
+    @Body() dto: CreateOccasionalExpenseDto,
+  ): Promise<OccasionalExpense> {
     return this.service.create(userId, dto);
   }
 

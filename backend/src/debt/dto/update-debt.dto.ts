@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsNumber, IsOptional, IsString, IsNotEmpty, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  Min,
+} from 'class-validator';
 
 export class UpdateDebtDto {
   @ApiPropertyOptional()

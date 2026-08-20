@@ -18,7 +18,14 @@ interface ComputeInput {
 
 @Injectable()
 export class SnapshotService {
-  compute({ month, year, incomes, fixedExpenses, debts, occasionalExpenses }: ComputeInput): MonthlySnapshot {
+  compute({
+    month,
+    year,
+    incomes,
+    fixedExpenses,
+    debts,
+    occasionalExpenses,
+  }: ComputeInput): MonthlySnapshot {
     const total_income = incomes
       .filter((i) => i.category !== IncomeCategory.BENEFIT)
       .reduce((sum, i) => sum + netAmount(i), 0);
@@ -41,7 +48,11 @@ export class SnapshotService {
 
     const total_debt_balance = debts
       .filter((d) => !d.closed)
-      .reduce((sum, d) => sum + (d.total_installments - d.paid_installments) * Number(d.installment_amount), 0);
+      .reduce(
+        (sum, d) =>
+          sum + (d.total_installments - d.paid_installments) * Number(d.installment_amount),
+        0,
+      );
 
     return {
       month,

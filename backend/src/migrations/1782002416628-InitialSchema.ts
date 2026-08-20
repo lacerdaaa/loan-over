@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitialSchema1782002416628 implements MigrationInterface {
   name = 'InitialSchema1782002416628';
@@ -99,7 +99,9 @@ export class InitialSchema1782002416628 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "occasional_expenses"`);
     await queryRunner.query(`DROP TABLE "fixed_expenses"`);
     await queryRunner.query(`DROP TABLE "debts"`);
-    await queryRunner.query(`ALTER TABLE "income_deductions" DROP CONSTRAINT "FK_income_deductions_income"`);
+    await queryRunner.query(
+      `ALTER TABLE "income_deductions" DROP CONSTRAINT "FK_income_deductions_income"`,
+    );
     await queryRunner.query(`DROP TABLE "income_deductions"`);
     await queryRunner.query(`DROP TABLE "incomes"`);
     await queryRunner.query(`DROP TYPE "public"."incomes_category_enum"`);

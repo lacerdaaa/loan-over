@@ -33,10 +33,7 @@ describe('DebtService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DebtService,
-        { provide: getRepositoryToken(Debt), useFactory: mockRepository },
-      ],
+      providers: [DebtService, { provide: getRepositoryToken(Debt), useFactory: mockRepository }],
     }).compile();
 
     service = module.get(DebtService);

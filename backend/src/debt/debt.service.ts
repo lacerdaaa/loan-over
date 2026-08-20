@@ -18,9 +18,10 @@ export class DebtService {
   }
 
   async create(userId: string, dto: CreateDebtDto): Promise<Debt> {
-    const installment_amount = (dto.principal != null && dto.monthly_rate != null)
-      ? this.priceInstallment(dto.principal, dto.monthly_rate, dto.total_installments)
-      : dto.installment_amount!;
+    const installment_amount =
+      dto.principal != null && dto.monthly_rate != null
+        ? this.priceInstallment(dto.principal, dto.monthly_rate, dto.total_installments)
+        : dto.installment_amount!;
 
     const debt = this.repo.create({
       user: { id: userId },

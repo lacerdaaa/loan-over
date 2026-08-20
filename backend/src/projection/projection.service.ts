@@ -76,19 +76,23 @@ export class ProjectionService {
     const remaining = debt.total_installments - debt.paid_installments;
 
     if (offset === remaining) {
-      return [{
-        type: 'liberation',
-        description: `${debt.name} quitada — R$${debt.installment_amount}/mês liberados`,
-        amount: Number(debt.installment_amount),
-      }];
+      return [
+        {
+          type: 'liberation',
+          description: `${debt.name} quitada — R$${debt.installment_amount}/mês liberados`,
+          amount: Number(debt.installment_amount),
+        },
+      ];
     }
 
     if (offset === remaining - 1) {
-      return [{
-        type: 'alert',
-        description: `${debt.name} — última parcela no próximo mês`,
-        amount: Number(debt.installment_amount),
-      }];
+      return [
+        {
+          type: 'alert',
+          description: `${debt.name} — última parcela no próximo mês`,
+          amount: Number(debt.installment_amount),
+        },
+      ];
     }
 
     return [];

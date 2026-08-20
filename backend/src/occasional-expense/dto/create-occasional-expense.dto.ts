@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateOccasionalExpenseDto {
   @ApiProperty({ example: 'Car repair' })
@@ -7,7 +16,7 @@ export class CreateOccasionalExpenseDto {
   @IsNotEmpty()
   declare description: string;
 
-  @ApiProperty({ example: 800.00, description: 'Amount in BRL' })
+  @ApiProperty({ example: 800.0, description: 'Amount in BRL' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   declare amount: number;
@@ -23,7 +32,11 @@ export class CreateOccasionalExpenseDto {
   @Min(2000)
   declare year: number;
 
-  @ApiPropertyOptional({ example: false, default: false, description: 'True when paid from a restricted benefit' })
+  @ApiPropertyOptional({
+    example: false,
+    default: false,
+    description: 'True when paid from a restricted benefit',
+  })
   @IsOptional()
   @IsBoolean()
   from_benefit?: boolean;

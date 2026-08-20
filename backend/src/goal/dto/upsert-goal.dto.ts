@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 
 export class UpsertGoalDto {
-  @ApiProperty({ example: 10000.00, description: 'Target savings amount in BRL' })
+  @ApiProperty({ example: 10000.0, description: 'Target savings amount in BRL' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   declare target_amount: number;
@@ -18,7 +18,11 @@ export class UpsertGoalDto {
   @Min(2000)
   declare deadline_year: number;
 
-  @ApiProperty({ example: 500, required: false, description: 'Minimum monthly savings commitment in BRL' })
+  @ApiProperty({
+    example: 500,
+    required: false,
+    description: 'Minimum monthly savings commitment in BRL',
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
