@@ -5,25 +5,28 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
 import { useAnimations } from '../../lib/animations';
-import { BUSINESS_MODE_ENABLED } from '../../lib/flags';
+import { labelsFor, type LabelKey } from '../../lib/labels';
 import { hasDoneTutorial, markTutorialDone } from '../../lib/tutorial';
 import { useTheme } from '../../lib/theme';
+import { useBusinessMode } from '../../lib/useBusinessMode';
 import { TutorialModal } from '../ui/TutorialModal';
 import { SettingsModal } from './SettingsModal';
 
-const NAV_ITEMS: { to: string; label: string; Icon: LucideIcon; end?: boolean; tutorialId?: string }[] = [
-  { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { to: '/timeline', label: 'Cronograma', Icon: TrendingUp },
-  { to: '/debts', label: 'Dívidas', Icon: CreditCard, tutorialId: 'debts' },
-  { to: '/income', label: 'Renda', Icon: Wallet, tutorialId: 'income' },
-  { to: '/fixed-expenses', label: 'Gastos Fixos', Icon: ListChecks },
-  { to: '/occasional-expenses', label: 'Gastos do Mês', Icon: Receipt },
-  { to: '/goal', label: 'Meta', Icon: Target },
+const NAV_ITEMS: { to: string; labelKey: LabelKey; Icon: LucideIcon; end?: boolean; tutorialId?: string }[] = [
+  { to: '/dashboard', labelKey: 'dashboard', Icon: LayoutDashboard },
+  { to: '/timeline', labelKey: 'timeline', Icon: TrendingUp },
+  { to: '/debts', labelKey: 'debts', Icon: CreditCard, tutorialId: 'debts' },
+  { to: '/income', labelKey: 'income', Icon: Wallet, tutorialId: 'income' },
+  { to: '/fixed-expenses', labelKey: 'fixedExpenses', Icon: ListChecks },
+  { to: '/occasional-expenses', labelKey: 'occasionalExpenses', Icon: Receipt },
+  { to: '/goal', labelKey: 'goal', Icon: Target },
 ];
 
-const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) => (
+const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) => {
+  const labels = labelsFor(useBusinessMode());
+  return (
   <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
-    {NAV_ITEMS.map(({ to, label, Icon, end, tutorialId }) => (
+    {NAV_ITEMS.map(({ to, labelKey, Icon, end, tutorialId }) => (
       <NavLink
         key={to}
         to={to}
@@ -39,11 +42,12 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
         }
       >
         <Icon size={18} className="shrink-0" />
-        {!collapsed && <span>{label}</span>}
+        {!collapsed && <span>{labels[labelKey]}</span>}
       </NavLink>
     ))}
   </nav>
-);
+  );
+};
 
 
 const UserFooter = ({ collapsed, onSettingsOpen }: { collapsed?: boolean; onSettingsOpen: () => void }) => {
@@ -90,7 +94,7 @@ export const Sidebar = () => {
     setTutorialOpen(false);
   };
   const { data: me } = useMe();
-  const theme = useTheme(BUSINESS_MODE_ENABLED && me?.account_type === 'business');
+  const theme = useTheme(useBusinessMode());
   const animations = useAnimations();
   const spring = animations.enabled ? { type: 'spring' as const, stiffness: 400, damping: 36 } : { duration: 0 };
 

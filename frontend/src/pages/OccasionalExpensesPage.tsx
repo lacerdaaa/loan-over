@@ -8,7 +8,9 @@ import { MonthNav } from '../components/ui/MonthNav';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
+import { labelsFor } from '../lib/labels';
 import { usePrivacy } from '../lib/privacy';
+import { useBusinessMode } from '../lib/useBusinessMode';
 
 const now = new Date();
 const EMPTY = { description: '', amount: 0, from_benefit: false };
@@ -23,6 +25,7 @@ export const OccasionalExpensesPage = () => {
   const create = useCreateOccasionalExpense(month, year);
   const remove = useDeleteOccasionalExpense(month, year);
   const { hidden, mask } = usePrivacy();
+  const labels = labelsFor(useBusinessMode());
 
   const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
 
@@ -38,7 +41,7 @@ export const OccasionalExpensesPage = () => {
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Gastos do Mês"
+          title={labels.occasionalExpenses}
           subtitle={<MonthNav month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />}
           action={
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-occasional">

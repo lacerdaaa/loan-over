@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ProjectedMonth } from '../types/api';
 import { client } from './client';
 
-export const useProjection = (month: number, year: number, horizon = 24) =>
+export const useProjection = (month: number, year: number, horizon = 24, enabled = true) =>
   useQuery<ProjectedMonth[]>({
     queryKey: ['projection', month, year, horizon],
     queryFn: async () => {
@@ -11,4 +11,5 @@ export const useProjection = (month: number, year: number, horizon = 24) =>
       });
       return res.data;
     },
+    enabled,
   });

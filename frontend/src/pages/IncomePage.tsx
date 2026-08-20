@@ -8,7 +8,9 @@ import { MonthNav } from '../components/ui/MonthNav';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
+import { labelsFor } from '../lib/labels';
 import { usePrivacy } from '../lib/privacy';
+import { useBusinessMode } from '../lib/useBusinessMode';
 import type { Income, IncomeCategory, IncomeType } from '../types/api';
 
 const now = new Date();
@@ -103,6 +105,7 @@ export const IncomePage = () => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ description: '', amount: 0, type: tab, category: 'other' as IncomeCategory });
   const { hidden, mask } = usePrivacy();
+  const labels = labelsFor(useBusinessMode());
 
   const { data: incomes = [] } = useIncome(month, year);
   const create = useCreateIncome(month, year);
@@ -122,7 +125,7 @@ export const IncomePage = () => {
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Renda"
+          title={labels.income}
           action={
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-income">
               <Plus size={14} /> Adicionar renda

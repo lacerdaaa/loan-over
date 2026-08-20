@@ -100,4 +100,5 @@ export interface ProjectedMonth {
   events: ProjectionEvent[];
   active_debts: number;
   total_outflow: number;
+  cash_balance?: number;
 }

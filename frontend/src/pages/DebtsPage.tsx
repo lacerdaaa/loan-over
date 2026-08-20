@@ -7,6 +7,8 @@ import { DebtForm, type DebtFormValues } from '../components/ui/DebtForm';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
+import { labelsFor } from '../lib/labels';
+import { useBusinessMode } from '../lib/useBusinessMode';
 
 const EMPTY_DEBT_FORM: DebtFormValues = {
   name: '',
@@ -24,6 +26,7 @@ export const DebtsPage = () => {
   const create = useCreateDebt();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_DEBT_FORM);
+  const labels = labelsFor(useBusinessMode());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +40,7 @@ export const DebtsPage = () => {
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Dívidas"
+          title={labels.debts}
           subtitle={`${debts.filter((d) => !d.closed).length} em aberto · ${debts.filter((d) => d.closed).length} quitadas`}
           action={
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-debt">

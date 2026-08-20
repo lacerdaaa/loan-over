@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, Eye, EyeOff, ListCheck
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDebts } from '../api/debts';
+import { useProjection } from '../api/projection';
 import { useSnapshot } from '../api/snapshot';
 import { StatCard } from '../components/ui/StatCard';
 import { PageTransition } from '../components/ui/PageTransition';
@@ -11,20 +12,45 @@ import { payoffMonth } from '../lib/debt';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
+import { useBusinessMode } from '../lib/useBusinessMode';
+import type { ProjectedMonth } from '../types/api';
 
 const now = new Date();
 const CURRENT_MONTH = now.getMonth() + 1;
 const CURRENT_YEAR = now.getFullYear();
+const PROJECTION_HORIZON = 24;
+
+interface Runway {
+  months: number;
+  overflow: boolean;
+  label: string;
+}
+
+const computeRunway = (projection: ProjectedMonth[]): Runway => {
+  const firstNegative = projection.findIndex((m) => (m.cash_balance ?? 0) < 0);
+  if (firstNegative === -1) {
+    return { months: projection.length, overflow: true, label: '' };
+  }
+  const month = projection[firstNegative];
+  return {
+    months: firstNegative,
+    overflow: false,
+    label: month ? monthLabel(month.month, month.year) : '',
+  };
+};
 
 export const DashboardPage = () => {
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [year, setYear] = useState(CURRENT_YEAR);
   const { hidden, toggle: togglePrivacy, mask } = usePrivacy();
 
+  const business = useBusinessMode();
   const snapshot = useSnapshot(month, year);
   const debts = useDebts();
+  const projection = useProjection(CURRENT_MONTH, CURRENT_YEAR, PROJECTION_HORIZON, business);
   const openDebts = debts.data?.filter((d) => !d.closed) ?? [];
   const snap = snapshot.data;
+  const runway = business && projection.data ? computeRunway(projection.data) : null;
 
   const navigate = (delta: number) => {
     const next = addMonths(month, year, delta);
@@ -132,6 +158,20 @@ export const DashboardPage = () => {
                 ))
               )}
             </div>
+
+            {runway && (
+              <div className="stats bg-base-200 border border-base-300 w-fit shadow-none">
+                <div className="stat">
+                  <div className="stat-title text-xs">Runway</div>
+                  <div className="stat-value font-mono tabular-nums text-xl text-primary">
+                    {runway.overflow ? `${PROJECTION_HORIZON}m+` : `${runway.months}m`}
+                  </div>
+                  <div className="stat-desc">
+                    {runway.overflow ? 'caixa positivo em 24 meses' : `caixa negativo em ${runway.label}`}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {snap && ((snap.total_occasional ?? 0) > 0 || (snap.total_debt_balance ?? 0) > 0 || (snap.total_benefit ?? 0) > 0) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

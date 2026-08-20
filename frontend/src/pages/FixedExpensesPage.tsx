@@ -7,7 +7,9 @@ import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
+import { labelsFor } from '../lib/labels';
 import { usePrivacy } from '../lib/privacy';
+import { useBusinessMode } from '../lib/useBusinessMode';
 
 const now = new Date();
 const CURRENT_MONTH = now.getMonth() + 1;
@@ -31,6 +33,7 @@ export const FixedExpensesPage = () => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const { hidden, mask } = usePrivacy();
+  const labels = labelsFor(useBusinessMode());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +54,7 @@ export const FixedExpensesPage = () => {
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Gastos Fixos"
+          title={labels.fixedExpenses}
           subtitle={`${expenses.filter((e) => e.active).length} ativo(s)`}
           action={
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
