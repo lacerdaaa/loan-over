@@ -1,0 +1,41 @@
+<!-- @dsCard group="Colors" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../../styles.css" />
+<style>
+  body { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+  h2 { font-family: var(--lo-font-mono); font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--lo-ink-muted); margin: 0; }
+  .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .swatch { border-radius: var(--lo-radius-field); border: 1px solid var(--lo-line); overflow: hidden; }
+  .chip { height: 52px; }
+  .meta { padding: 6px 8px; background: var(--lo-surface); }
+  .name { font-family: var(--lo-font-mono); font-size: 11px; font-weight: 700; }
+  .val { font-family: var(--lo-font-mono); font-size: 9px; color: var(--lo-ink-muted); display: block; }
+</style>
+</head>
+<body>
+  <h2>// pessoal</h2>
+  <div class="row">
+    <div class="swatch"><div class="chip" style="background:var(--lo-green)"></div><div class="meta"><span class="name">--lo-green</span><span class="val">oklch(66% .179 155)</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-green-deep)"></div><div class="meta"><span class="name">--lo-green-deep</span><span class="val">oklch(28% .055 155)</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-cream)"></div><div class="meta"><span class="name">--lo-cream</span><span class="val">oklch(98.5% .007 145)</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-ink)"></div><div class="meta"><span class="name">--lo-ink</span><span class="val">oklch(25% .045 155)</span></div></div>
+  </div>
+  <h2>// business</h2>
+  <div class="row">
+    <div class="swatch"><div class="chip" style="background:var(--lo-biz-bg)"></div><div class="meta"><span class="name">--lo-biz-bg</span><span class="val">oklch(22% .02 250)</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-biz-steel)"></div><div class="meta"><span class="name">--lo-biz-steel</span><span class="val">oklch(60% .12 250)</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-biz-deep)"></div><div class="meta"><span class="name">--lo-biz-deep</span><span class="val">oklch(16% .02 250)</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-biz-ink)"></div><div class="meta"><span class="name">--lo-biz-ink</span><span class="val">oklch(93% .01 250)</span></div></div>
+  </div>
+  <h2>// semânticas (iguais nos dois modos)</h2>
+  <div class="row">
+    <div class="swatch"><div class="chip" style="background:var(--lo-success)"></div><div class="meta"><span class="name">--lo-success</span><span class="val">liberação de dívida</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-warning)"></div><div class="meta"><span class="name">--lo-warning</span><span class="val">alertas / benefícios</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-error)"></div><div class="meta"><span class="name">--lo-error</span><span class="val">saldo negativo</span></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--lo-info)"></div><div class="meta"><span class="name">--lo-info</span><span class="val">informativo</span></div></div>
+  </div>
+</body>
+</html>

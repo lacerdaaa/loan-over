@@ -1,0 +1,103 @@
+<!-- @dsCard group="Brand" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../../styles.css" />
+<style>
+  :root { --t: 7s; }
+  body { overflow: hidden; }
+  .stage {
+    position: relative; width: 100%; height: 100vh; min-height: 420px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--lo-cream);
+  }
+  /* Green wipe takes over the stage from 52% of the loop */
+  .wipe {
+    position: absolute; inset: -20%;
+    background: var(--lo-green);
+    transform: translateX(-130%) skewX(-20deg);
+    animation: wipe var(--t) var(--lo-ease) infinite;
+  }
+  @keyframes wipe {
+    0%, 52% { transform: translateX(-130%) skewX(-20deg); }
+    62%, 96% { transform: translateX(0) skewX(-20deg); }
+    100% { transform: translateX(130%) skewX(-20deg); }
+  }
+  .grid {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.09) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.16) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
+    animation: fadegrid var(--t) linear infinite;
+  }
+  @keyframes fadegrid { 0%, 56% { opacity: 0; } 64%, 94% { opacity: 1; } 100% { opacity: 0; } }
+
+  .lockup {
+    position: relative; display: flex; align-items: baseline; gap: 0.35em;
+    font-family: var(--lo-font-mono); font-weight: 700; font-size: clamp(40px, 9vw, 88px);
+    letter-spacing: -0.02em; z-index: 2;
+    animation: inkflip var(--t) var(--lo-ease) infinite;
+    color: var(--lo-ink);
+  }
+  @keyframes inkflip { 0%, 55% { color: var(--lo-ink); } 60%, 100% { color: #fff; } }
+
+  .slash { color: var(--lo-green); display: inline-block; animation: slashcolor var(--t) var(--lo-ease) infinite; }
+  @keyframes slashcolor { 0%, 55% { color: var(--lo-green); } 60%, 100% { color: #fff; } }
+
+  .s1 { animation: slashcolor var(--t) var(--lo-ease) infinite, s1move var(--t) var(--lo-ease) infinite; }
+  .s2 { animation: slashcolor var(--t) var(--lo-ease) infinite, s2move var(--t) var(--lo-ease) infinite; }
+  /* Slashes fly in from opposite sides, pulse, then act as the reveal edges */
+  @keyframes s1move {
+    0% { transform: translateX(-60vw); }
+    9% { transform: translateX(0.35em) scale(1); }
+    13% { transform: translateX(0.35em) scale(1.06); }
+    16%, 100% { transform: translateX(0) scale(1); }
+  }
+  @keyframes s2move {
+    0% { transform: translateX(60vw); }
+    9% { transform: translateX(-2.6em) scale(1); }
+    13% { transform: translateX(-2.6em) scale(1.06); }
+    16% { transform: translateX(-2.6em) scale(1); }
+    38%, 100% { transform: translateX(0) scale(1); }
+  }
+  .word { display: inline-block; overflow: hidden; white-space: nowrap; }
+  .word.loan { animation: openloan var(--t) var(--lo-ease) infinite; }
+  .word.over { animation: openover var(--t) var(--lo-ease) infinite; }
+  @keyframes openloan { 0%, 16% { max-width: 0; } 30%, 100% { max-width: 3em; } }
+  @keyframes openover { 0%, 24% { max-width: 0; } 38%, 100% { max-width: 3em; } }
+
+  .tagline, .cta { position: absolute; left: 50%; z-index: 2; opacity: 0; }
+  .tagline {
+    top: 62%; transform: translateX(-50%);
+    font-family: var(--lo-font-sans); font-weight: 600; color: rgba(255,255,255,0.85);
+    font-size: clamp(14px, 2.4vw, 22px);
+    animation: rise var(--t) var(--lo-ease) infinite;
+  }
+  .cta {
+    top: 74%; transform: translateX(-50%);
+    font-family: var(--lo-font-sans); font-weight: 800; color: var(--lo-green-deep);
+    background: #fff; border-radius: var(--lo-radius-pill); padding: 12px 26px;
+    font-size: clamp(12px, 2vw, 17px);
+    animation: rise2 var(--t) var(--lo-ease) infinite;
+  }
+  @keyframes rise { 0%, 62% { opacity: 0; margin-top: 14px; } 70%, 94% { opacity: 1; margin-top: 0; } 100% { opacity: 0; } }
+  @keyframes rise2 { 0%, 68% { opacity: 0; margin-top: 14px; } 76%, 94% { opacity: 1; margin-top: 0; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="wipe"></div>
+    <div class="grid"></div>
+    <div class="lockup">
+      <span class="slash s1">/</span><span class="word loan">loan</span>
+      <span class="slash s2">/</span><span class="word over">over</span>
+    </div>
+    <div class="tagline">Descubra quando você fica livre das dívidas.</div>
+    <div class="cta">Começar gratuitamente →</div>
+  </div>
+</body>
+</html>

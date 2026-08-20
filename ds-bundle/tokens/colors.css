@@ -1,0 +1,26 @@
+:root {
+  /* Personal — core brand (source: frontend/src/lib/brand.ts PALETTES.personal) */
+  --lo-green: oklch(66% 0.179 155);
+  --lo-green-deep: oklch(28% 0.055 155);
+  --lo-cream: oklch(98.5% 0.007 145);
+  --lo-ink: oklch(25% 0.045 155);
+  --lo-ink-muted: oklch(25% 0.045 155 / 0.55);
+  --lo-line: oklch(66% 0.179 155 / 0.18);
+  --lo-surface: oklch(100% 0 0);
+
+  /* Business — slate + steel (source: PALETTES.business) */
+  --lo-biz-bg: oklch(22% 0.02 250);
+  --lo-biz-hero: oklch(27% 0.025 250);
+  --lo-biz-deep: oklch(16% 0.02 250);
+  --lo-biz-steel: oklch(60% 0.12 250);
+  --lo-biz-ink: oklch(93% 0.01 250);
+  --lo-biz-ink-muted: oklch(93% 0.01 250 / 0.55);
+  --lo-biz-line: oklch(60% 0.12 250 / 0.22);
+  --lo-biz-surface: oklch(27% 0.025 250);
+
+  /* Semantic (app daisyUI themes — success stays green in BOTH modes) */
+  --lo-success: oklch(66% 0.179 155);
+  --lo-warning: oklch(75% 0.18 75);
+  --lo-error: oklch(62% 0.22 25);
+  --lo-info: oklch(62% 0.14 235);
+}

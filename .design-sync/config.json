@@ -1,0 +1,6 @@
+{
+  "projectId": "6340f82a-aa34-4dd9-87da-ea35e7b77cc8",
+  "projectName": "LoanOver Brand",
+  "layout": "hand-authored-brand-kit",
+  "note": "App repo, not a component library. Brand kit authored by hand from frontend/src/lib/brand.ts and frontend/src/index.css — no converter run, no _ds_sync.json anchor (every sync re-verifies)."
+}

@@ -1,0 +1,32 @@
+<!-- @dsCard group="Brand" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../../styles.css" />
+<style>
+  body { display: flex; }
+  section { flex: 1; position: relative; min-height: 100vh; }
+  .green { background: var(--lo-green); }
+  .slate { background: var(--lo-biz-hero); }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.09) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.16) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
+  }
+  .label {
+    position: absolute; bottom: 16px; left: 16px;
+    font-family: var(--lo-font-mono); font-size: 11px; font-weight: 700;
+    color: rgba(255,255,255,0.7); letter-spacing: 0.12em; text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <section class="green"><div class="grid"></div><span class="label">blueprint / green</span></section>
+  <section class="slate"><div class="grid"></div><span class="label">blueprint / business</span></section>
+</body>
+</html>

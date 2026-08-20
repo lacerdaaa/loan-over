@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
+@import './tokens/colors.css';
+@import './tokens/type.css';
+
+body {
+  margin: 0;
+  font-family: var(--lo-font-sans);
+  color: var(--lo-ink);
+  background: var(--lo-cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+.lo-logo {
+  font-family: var(--lo-font-mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
+}
+.lo-logo .slashes { color: var(--lo-green); }
+.lo-logo.on-dark { color: #fff; }
+.lo-logo.biz .slashes { color: var(--lo-biz-steel); }

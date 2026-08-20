@@ -1,0 +1,56 @@
+<!-- @dsCard group="Components" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../../styles.css" />
+<style>
+  body { display: flex; flex-direction: column; }
+  section { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; padding: 26px; }
+  .on-green { background: var(--lo-green); }
+  .on-slate { background: var(--lo-biz-bg); }
+  .pill {
+    font-family: var(--lo-font-sans); font-weight: 800; font-size: 15px;
+    background: #fff; color: var(--lo-green-deep);
+    border: 0; border-radius: var(--lo-radius-pill); padding: 14px 30px; cursor: pointer;
+    transition: transform 0.3s var(--lo-ease);
+  }
+  .pill:hover { transform: scale(1.03); }
+  .on-slate .pill { color: var(--lo-biz-deep); }
+  .btn {
+    font-family: var(--lo-font-sans); font-weight: 600; font-size: 13px;
+    background: var(--lo-green); color: #fff;
+    border: 0; border-radius: var(--lo-radius-field); padding: 9px 18px; cursor: pointer;
+  }
+  .on-slate .btn { background: var(--lo-biz-steel); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--lo-font-sans); font-size: 12px; font-weight: 500;
+    background: var(--lo-surface); color: var(--lo-ink);
+    border: 1px solid var(--lo-line); border-radius: var(--lo-radius-pill); padding: 6px 14px;
+  }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lo-green); }
+  .on-slate .chip { background: var(--lo-biz-surface); color: var(--lo-biz-ink); border-color: var(--lo-biz-line); }
+  .on-slate .chip .dot { background: var(--lo-biz-steel); }
+  .ghost {
+    font-family: var(--lo-font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.35);
+    border-radius: var(--lo-radius-pill); padding: 8px 16px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <section class="on-green">
+    <button class="pill">Começar gratuitamente →</button>
+    <button class="btn">+ Adicionar dívida</button>
+    <span class="chip"><span class="dot"></span>Tabela Price</span>
+    <button class="ghost">entrar</button>
+  </section>
+  <section class="on-slate">
+    <button class="pill">Entrar na lista de espera →</button>
+    <button class="btn">+ Adicionar financiamento</button>
+    <span class="chip"><span class="dot"></span>Runway</span>
+    <button class="ghost">entrar</button>
+  </section>
+</body>
+</html>

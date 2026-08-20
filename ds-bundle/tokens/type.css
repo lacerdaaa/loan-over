@@ -1,0 +1,11 @@
+:root {
+  --lo-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --lo-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --lo-radius-field: 0.5rem;
+  --lo-radius-box: 0.75rem;
+  --lo-radius-pill: 9999px;
+
+  /* Single easing curve used by every brand motion */
+  --lo-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
