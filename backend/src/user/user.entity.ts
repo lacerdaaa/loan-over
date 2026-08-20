@@ -1,5 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+export type AccountType = 'personal' | 'business';
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -16,4 +18,7 @@ export class User {
 
   @Column({ nullable: true })
   declare avatar: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare account_type: AccountType | null;
 }

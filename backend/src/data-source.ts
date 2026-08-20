@@ -6,6 +6,7 @@ import { Goal } from './goal/goal.entity';
 import { IncomeDeduction } from './income/income-deduction.entity';
 import { Income } from './income/income.entity';
 import { OccasionalExpense } from './occasional-expense/occasional-expense.entity';
+import { Organization } from './organization/organization.entity';
 import { User } from './user/user.entity';
 
 const DATABASE_URL = process.env['DATABASE_URL'];
@@ -15,7 +16,16 @@ export const AppDataSource = new DataSource(
     ? {
         type: 'postgres',
         url: DATABASE_URL,
-        entities: [Income, IncomeDeduction, Debt, FixedExpense, OccasionalExpense, Goal, User],
+        entities: [
+          Income,
+          IncomeDeduction,
+          Debt,
+          FixedExpense,
+          OccasionalExpense,
+          Goal,
+          User,
+          Organization,
+        ],
         migrations: ['src/migrations/*.ts'],
         synchronize: false,
       }
@@ -26,7 +36,16 @@ export const AppDataSource = new DataSource(
         username: process.env['DB_USER'],
         password: process.env['DB_PASSWORD'],
         database: process.env['DB_NAME'],
-        entities: [Income, IncomeDeduction, Debt, FixedExpense, OccasionalExpense, Goal, User],
+        entities: [
+          Income,
+          IncomeDeduction,
+          Debt,
+          FixedExpense,
+          OccasionalExpense,
+          Goal,
+          User,
+          Organization,
+        ],
         migrations: ['src/migrations/*.ts'],
         synchronize: false,
       },
