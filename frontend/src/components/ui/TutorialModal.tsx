@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GREEN } from '../../lib/brand';
 
 interface TutorialStep {
   selector?: string;
@@ -54,8 +53,7 @@ const Dots = ({ current }: { current: number }) => (
     {Array.from({ length: CONTENT_STEPS }, (_, i) => (
       <span
         key={i}
-        className="block w-1.5 h-1.5 rounded-full transition-colors duration-200"
-        style={{ background: i === current - 1 ? GREEN : '#e5e7eb' }}
+        className={`block w-1.5 h-1.5 rounded-full transition-colors duration-200 ${i === current - 1 ? 'bg-primary' : 'bg-base-300'}`}
       />
     ))}
   </div>
@@ -118,7 +116,7 @@ const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps
           width: 0, height: 0,
           borderLeft: '7px solid transparent',
           borderRight: '7px solid transparent',
-          borderBottom: '8px solid white',
+          borderBottom: '8px solid var(--color-base-100)',
         }}
       />
     ),
@@ -129,7 +127,7 @@ const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps
           width: 0, height: 0,
           borderTop: '7px solid transparent',
           borderBottom: '7px solid transparent',
-          borderRight: '8px solid white',
+          borderRight: '8px solid var(--color-base-100)',
         }}
       />
     ),
@@ -140,7 +138,7 @@ const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps
           width: 0, height: 0,
           borderTop: '7px solid transparent',
           borderBottom: '7px solid transparent',
-          borderLeft: '8px solid white',
+          borderLeft: '8px solid var(--color-base-100)',
         }}
       />
     ),
@@ -152,7 +150,7 @@ const Tooltip = ({ rect, step, stepIndex, isLast, onNext, onSkip }: TooltipProps
       animate={{ opacity: 1, y: 0, x: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2, ease: EASE }}
-      className="fixed bg-white rounded-xl shadow-2xl p-4"
+      className="fixed bg-base-100 rounded-xl shadow-2xl p-4"
       style={{ left, top, transform, width: TOOLTIP_W, zIndex: 10001 }}
     >
       {arrowEl}
@@ -191,7 +189,7 @@ const CenteredCard = ({ step, stepIndex, isFirst, isLast, onNext, onSkip }: Card
     className="fixed inset-0 flex items-center justify-center p-4"
     style={{ zIndex: 10001 }}
   >
-    <div className="w-full max-w-xs bg-white rounded-2xl shadow-2xl p-6">
+    <div className="w-full max-w-xs bg-base-100 rounded-2xl shadow-2xl p-6">
       <p className="font-bold text-base text-base-content">{step.title}</p>
       <p className="text-sm leading-relaxed text-base-content/60 mt-2">{step.body}</p>
       <div className="flex items-center justify-between mt-5">
@@ -209,28 +207,25 @@ const CenteredCard = ({ step, stepIndex, isFirst, isLast, onNext, onSkip }: Card
   </motion.div>
 );
 
-export const TutorialModal = ({ open, onClose }: Props) => {
+export const TutorialModal = ({ open, onClose }: Props) =>
+  open ? <TutorialOverlay onClose={onClose} /> : null;
+
+const TutorialOverlay = ({ onClose }: { onClose: () => void }) => {
   const [step, setStep] = useState(0);
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [measured, setMeasured] = useState<{ step: number; rect: DOMRect | null } | null>(null);
   const navigate = useNavigate();
 
   const current = STEPS[step];
+  const rect = measured?.step === step ? measured.rect : null;
 
   useEffect(() => {
-    if (open) setStep(0);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !current.selector) {
-      setRect(null);
-      return;
-    }
+    if (!current.selector) return;
 
     let resizeHandler: (() => void) | null = null;
 
     const measure = () => {
       const el = document.querySelector(current.selector!);
-      setRect(el ? el.getBoundingClientRect() : null);
+      setMeasured({ step, rect: el ? el.getBoundingClientRect() : null });
     };
 
     // Longer delay for navigated steps to let page render and animate in
@@ -245,9 +240,7 @@ export const TutorialModal = ({ open, onClose }: Props) => {
       clearTimeout(timeoutId);
       if (resizeHandler) window.removeEventListener('resize', resizeHandler);
     };
-  }, [open, step, current.selector, current.navigateTo]);
-
-  if (!open) return null;
+  }, [step, current.selector, current.navigateTo]);
 
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
@@ -276,7 +269,7 @@ export const TutorialModal = ({ open, onClose }: Props) => {
               width: rect.width + PAD * 2,
               height: rect.height + PAD * 2,
               borderRadius: 10,
-              boxShadow: `0 0 0 2px ${GREEN}`,
+              boxShadow: '0 0 0 2px var(--color-primary)',
               pointerEvents: 'none',
               zIndex: 10000,
             }}
