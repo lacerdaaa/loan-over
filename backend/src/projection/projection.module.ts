@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { DebtModule } from '../debt/debt.module';
 import { FixedExpenseModule } from '../fixed-expense/fixed-expense.module';
 import { IncomeModule } from '../income/income.module';
+import { OrganizationModule } from '../organization/organization.module';
 import { ProjectionController } from './projection.controller';
 import { ProjectionService } from './projection.service';
 
 @Module({
-  imports: [IncomeModule, DebtModule, FixedExpenseModule],
+  imports: [IncomeModule, DebtModule, FixedExpenseModule, OrganizationModule],
   controllers: [ProjectionController],
   providers: [ProjectionService],
   exports: [ProjectionService],

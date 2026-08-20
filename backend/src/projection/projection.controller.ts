@@ -4,8 +4,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { DebtService } from '../debt/debt.service';
 import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
 import { IncomeService } from '../income/income.service';
+import { OrganizationService } from '../organization/organization.service';
 import { ProjectedMonth } from '../shared/types';
-import { ProjectionService } from './projection.service';
+import { ProjectionInput, ProjectionService } from './projection.service';
 
 const DEFAULT_HORIZON = 24;
 
@@ -17,6 +18,7 @@ export class ProjectionController {
     private readonly incomeService: IncomeService,
     private readonly debtService: DebtService,
     private readonly fixedExpenseService: FixedExpenseService,
+    private readonly organizationService: OrganizationService,
   ) {}
 
   @Get()
@@ -57,15 +59,22 @@ export class ProjectionController {
     const refYear = Number(year) || now.getFullYear();
     const horizonMonths = Number(horizon) || DEFAULT_HORIZON;
 
-    const [incomes, debts, fixedExpenses] = await Promise.all([
+    const [incomes, debts, fixedExpenses, organization] = await Promise.all([
       this.incomeService.findForMonth(userId, refMonth, refYear),
       this.debtService.findAll(userId),
       this.fixedExpenseService.findAll(userId),
+      this.organizationService.find(userId),
     ]);
 
-    return this.projectionService.project(
-      { incomes, debts, fixedExpenses, referenceMonth: refMonth, referenceYear: refYear },
-      horizonMonths,
-    );
+    const input: ProjectionInput = {
+      incomes,
+      debts,
+      fixedExpenses,
+      referenceMonth: refMonth,
+      referenceYear: refYear,
+      ...(organization && { startingCashBalance: Number(organization.cash_balance) }),
+    };
+
+    return this.projectionService.project(input, horizonMonths);
   }
 }
