@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: loanover-light --default, loanover-dark --prefersdark;
+  themes: loanover-light --default, loanover-dark --prefersdark, loanover-business-light, loanover-business-dark;
 }
 
 @plugin "daisyui/theme" {
@@ -52,6 +52,72 @@
   --color-base-200: oklch(19% 0.015 155);
   --color-base-300: oklch(25% 0.015 155);
   --color-base-content: oklch(88% 0.01 155);
+  --color-info: oklch(70% 0.12 235);
+  --color-info-content: oklch(15% 0.03 235);
+  --color-success: oklch(66% 0.179 155);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(75% 0.18 75);
+  --color-warning-content: oklch(20% 0.05 75);
+  --color-error: oklch(62% 0.22 25);
+  --color-error-content: oklch(100% 0 0);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "loanover-business-light";
+  color-scheme: light;
+  --color-primary: oklch(60% 0.12 250);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(57% 0.172 155);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(80% 0.157 155);
+  --color-accent-content: oklch(15% 0.03 155);
+  --color-neutral: oklch(37% 0.02 155);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-base-100: oklch(97% 0.005 250);
+  --color-base-200: oklch(93% 0.008 250);
+  --color-base-300: oklch(88% 0.01 250);
+  --color-base-content: oklch(22% 0.02 250);
+  --color-info: oklch(62% 0.14 235);
+  --color-info-content: oklch(100% 0 0);
+  --color-success: oklch(66% 0.179 155);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(75% 0.18 75);
+  --color-warning-content: oklch(20% 0.05 75);
+  --color-error: oklch(62% 0.22 25);
+  --color-error-content: oklch(100% 0 0);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "loanover-business-dark";
+  color-scheme: dark;
+  --color-primary: oklch(60% 0.12 250);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(57% 0.172 155);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(80% 0.157 155);
+  --color-accent-content: oklch(15% 0.03 155);
+  --color-neutral: oklch(45% 0.02 155);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-base-100: oklch(16% 0.02 250);
+  --color-base-200: oklch(21% 0.02 250);
+  --color-base-300: oklch(27% 0.025 250);
+  --color-base-content: oklch(90% 0.01 250);
   --color-info: oklch(70% 0.12 235);
   --color-info-content: oklch(15% 0.03 235);
   --color-success: oklch(66% 0.179 155);

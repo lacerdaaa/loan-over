@@ -11,6 +11,7 @@ import { Navigate } from 'react-router-dom';
 import { BlueprintGrid } from '../components/ui/BlueprintGrid';
 import { isAuthenticated } from '../lib/auth';
 import { PALETTES, type LandingMode, type LandingPalette } from '../lib/brand';
+import { BUSINESS_MODE_ENABLED } from '../lib/flags';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 const AUTH_URL = `${API_URL}/auth/google`;
@@ -21,7 +22,9 @@ const WAITLIST_URL =
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
 const modeFromSearch = (search: string): LandingMode =>
-  new URLSearchParams(search).get('mode') === 'business' ? 'business' : 'personal';
+  BUSINESS_MODE_ENABLED && new URLSearchParams(search).get('mode') === 'business'
+    ? 'business'
+    : 'personal';
 
 const DotTexture = ({ palette }: { palette: LandingPalette }) => (
   <div
@@ -465,7 +468,7 @@ export const LandingPage = () => {
           style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.25)' }}
         >
           <span className="font-mono font-bold text-white tracking-tight">// loan over</span>
-          <ModeToggle mode={mode} onChange={changeMode} />
+          {BUSINESS_MODE_ENABLED && <ModeToggle mode={mode} onChange={changeMode} />}
           <a
             href={AUTH_URL}
             className="font-mono text-[11px] uppercase tracking-[0.2em] text-white rounded-full px-4 py-2 transition-colors hover:bg-white/15"

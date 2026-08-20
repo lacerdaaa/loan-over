@@ -1,6 +1,23 @@
 export type IncomeType = 'fixed' | 'variable';
 export type IncomeCategory = 'salary' | 'rent' | 'benefit' | 'other';
 
+export type AccountType = 'personal' | 'business';
+
+export interface Me {
+  id: string;
+  email: string;
+  name: string;
+  avatar: string;
+  account_type: AccountType | null;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  cash_balance: number;
+}
+
 export interface IncomeDeduction {
   id: string;
   label: string;

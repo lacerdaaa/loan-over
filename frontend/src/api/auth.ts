@@ -1,19 +1,24 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AccountType, Me } from '../types/api';
 import { client } from './client';
 
-interface Me {
-  id: string;
-  email: string;
-  name: string;
-  avatar: string;
-}
+const QUERY_KEY = ['me'];
 
 export const useMe = () =>
   useQuery<Me>({
-    queryKey: ['me'],
+    queryKey: QUERY_KEY,
     queryFn: async () => {
       const res = await client.get<Me>('/auth/me');
       return res.data;
     },
     staleTime: Infinity,
   });
+
+export const useSetAccountType = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (account_type: AccountType) =>
+      client.patch<Me>('/users/me', { account_type }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+  });
+};

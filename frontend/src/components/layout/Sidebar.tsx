@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../../api/auth';
 import { useAnimations } from '../../lib/animations';
+import { BUSINESS_MODE_ENABLED } from '../../lib/flags';
 import { hasDoneTutorial, markTutorialDone } from '../../lib/tutorial';
 import { useTheme } from '../../lib/theme';
 import { TutorialModal } from '../ui/TutorialModal';
@@ -89,7 +90,7 @@ export const Sidebar = () => {
     setTutorialOpen(false);
   };
   const { data: me } = useMe();
-  const theme = useTheme();
+  const theme = useTheme(BUSINESS_MODE_ENABLED && me?.account_type === 'business');
   const animations = useAnimations();
   const spring = animations.enabled ? { type: 'spring' as const, stiffness: 400, damping: 36 } : { duration: 0 };
 

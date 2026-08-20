@@ -3,9 +3,11 @@ import { AnimatePresence } from 'framer-motion';
 import { AnimationsProvider } from './lib/animations';
 import { PrivacyProvider } from './lib/privacy';
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
+import { AccountTypeGate } from './components/auth/AccountTypeGate';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Sidebar } from './components/layout/Sidebar';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { ChooseModePage } from './pages/ChooseModePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LandingPage } from './pages/LandingPage';
 import { DebtsPage } from './pages/DebtsPage';
@@ -45,8 +47,11 @@ export const App = () => (
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route element={<Sidebar />}>
-            <Route path="/*" element={<AnimatedRoutes />} />
+          <Route path="/choose-mode" element={<ChooseModePage />} />
+          <Route element={<AccountTypeGate />}>
+            <Route element={<Sidebar />}>
+              <Route path="/*" element={<AnimatedRoutes />} />
+            </Route>
           </Route>
         </Route>
       </Routes>
