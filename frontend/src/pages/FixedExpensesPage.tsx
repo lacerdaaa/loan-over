@@ -126,14 +126,14 @@ export const FixedExpensesPage = () => {
       <Modal open={open} onClose={() => setOpen(false)} title="Novo gasto fixo">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Field label="Nome">
-            <input className="input input-bordered input-sm" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input className="input input-sm" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Valor (R$)">
-              <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
+              <input type="number" step="0.01" className="input input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
             </Field>
             <Field label="Dia de vencimento">
-              <input type="number" min={1} max={31} className="input input-bordered input-sm" required value={form.due_day} onChange={(e) => setForm({ ...form, due_day: Number(e.target.value) })} />
+              <input type="number" min={1} max={31} className="input input-sm" required value={form.due_day} onChange={(e) => setForm({ ...form, due_day: Number(e.target.value) })} />
             </Field>
           </div>
 
@@ -141,7 +141,7 @@ export const FixedExpensesPage = () => {
             <span className="label-text text-xs">Começa em (opcional)</span>
             <div className="grid grid-cols-2 gap-3">
               <select
-                className="select select-bordered select-sm"
+                className="select select-sm"
                 value={form.valid_from_month}
                 onChange={(e) => setForm({ ...form, valid_from_month: Number(e.target.value) })}
               >
@@ -154,7 +154,7 @@ export const FixedExpensesPage = () => {
               </select>
               <input
                 type="number"
-                className="input input-bordered input-sm"
+                className="input input-sm"
                 disabled={!form.valid_from_month}
                 value={form.valid_from_year}
                 onChange={(e) => setForm({ ...form, valid_from_year: Number(e.target.value) })}

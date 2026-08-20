@@ -24,7 +24,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
   <form onSubmit={onSubmit} className="flex flex-col gap-3">
     <Field label="Nome">
       <input
-        className="input input-bordered input-sm"
+        className="input input-sm"
         required
         value={values.name}
         onChange={(e) => onChange({ ...values, name: e.target.value })}
@@ -47,7 +47,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
           <input
             type="number"
             step="0.01"
-            className="input input-bordered input-sm"
+            className="input input-sm"
             required
             value={values.principal || ''}
             onChange={(e) => onChange({ ...values, principal: Number(e.target.value) })}
@@ -57,7 +57,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
           <input
             type="number"
             step="0.01"
-            className="input input-bordered input-sm"
+            className="input input-sm"
             required
             value={values.monthly_rate || ''}
             onChange={(e) => onChange({ ...values, monthly_rate: Number(e.target.value) })}
@@ -69,7 +69,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
         <input
           type="number"
           step="0.01"
-          className="input input-bordered input-sm"
+          className="input input-sm"
           required
           value={values.installment_amount || ''}
           onChange={(e) => onChange({ ...values, installment_amount: Number(e.target.value) })}
@@ -81,7 +81,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
       <Field label="Total de parcelas">
         <input
           type="number"
-          className="input input-bordered input-sm"
+          className="input input-sm"
           required
           value={values.total_installments || ''}
           onChange={(e) => onChange({ ...values, total_installments: Number(e.target.value) })}
@@ -90,7 +90,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
       <Field label="Já pagas">
         <input
           type="number"
-          className="input input-bordered input-sm"
+          className="input input-sm"
           value={values.paid_installments}
           onChange={(e) => onChange({ ...values, paid_installments: Number(e.target.value) })}
         />
@@ -100,7 +100,7 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
     <Field label="Data de início">
       <input
         type="date"
-        className="input input-bordered input-sm"
+        className="input input-sm"
         required
         value={values.start_date}
         onChange={(e) => onChange({ ...values, start_date: e.target.value })}

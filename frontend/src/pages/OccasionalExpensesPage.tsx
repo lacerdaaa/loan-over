@@ -96,7 +96,7 @@ export const OccasionalExpensesPage = () => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Field label="Descrição">
             <input
-              className="input input-bordered input-sm"
+              className="input input-sm"
               required
               placeholder="Ex.: Conserto do carro, Consulta médica"
               value={form.description}
@@ -107,7 +107,7 @@ export const OccasionalExpensesPage = () => {
             <input
               type="number"
               step="0.01"
-              className="input input-bordered input-sm"
+              className="input input-sm"
               required
               value={form.amount || ''}
               onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}

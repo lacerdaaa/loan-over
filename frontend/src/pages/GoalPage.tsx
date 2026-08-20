@@ -226,8 +226,7 @@ export const GoalPage = () => {
                 <button
                   key={i}
                   onClick={() => setTutorialStep(i)}
-                  className="h-1 flex-1 rounded-full transition-colors"
-                  style={{ background: i === tutorialStep ? 'oklch(66% 0.179 155)' : 'oklch(66% 0.179 155 / 0.2)' }}
+                  className={`h-1 flex-1 rounded-full transition-colors ${i === tutorialStep ? 'bg-primary' : 'bg-primary/20'}`}
                 />
               ))}
             </div>
@@ -376,20 +375,20 @@ export const GoalPage = () => {
               <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
 
               <Field label="Valor da meta (R$)">
-                <input type="number" step="0.01" className="input input-bordered input-sm"
+                <input type="number" step="0.01" className="input input-sm"
                   placeholder="Ex: 10.000" value={form.target_amount || ''}
                   onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
               </Field>
 
               <Field label="Poupança mínima/mês (R$)">
-                <input type="number" step="0.01" className="input input-bordered input-sm"
+                <input type="number" step="0.01" className="input input-sm"
                   placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
                   onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
               </Field>
 
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Prazo — mês">
-                  <select className="select select-bordered select-sm" value={form.deadline_month}
+                  <select className="select select-sm" value={form.deadline_month}
                     onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
                     {Array.from({ length: 12 }, (_, i) => (
                       <option key={i + 1} value={i + 1}>
@@ -399,7 +398,7 @@ export const GoalPage = () => {
                   </select>
                 </Field>
                 <Field label="Prazo — ano">
-                  <input type="number" className="input input-bordered input-sm" value={form.deadline_year}
+                  <input type="number" className="input input-sm" value={form.deadline_year}
                     onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
                 </Field>
               </div>

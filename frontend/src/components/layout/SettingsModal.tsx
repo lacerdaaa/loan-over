@@ -179,7 +179,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
             <span className="text-xs text-base-content/50">Período</span>
             <div className="flex gap-2">
               <select
-                className="select select-bordered select-sm flex-1"
+                className="select select-sm flex-1"
                 value={exportMonth}
                 onChange={(e) => setExportMonth(Number(e.target.value))}
               >
@@ -191,7 +191,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
               </select>
               <input
                 type="number"
-                className="input input-bordered input-sm w-24"
+                className="input input-sm w-24"
                 value={exportYear}
                 onChange={(e) => setExportYear(Number(e.target.value))}
               />

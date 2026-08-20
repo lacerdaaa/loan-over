@@ -70,7 +70,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
         <form onSubmit={submitDeduction} className="flex gap-2 mt-1">
           <input
             placeholder="Descrição"
-            className="input input-bordered input-xs flex-1"
+            className="input input-xs flex-1"
             required
             value={deductionForm.label}
             onChange={(e) => setDeductionForm({ ...deductionForm, label: e.target.value })}
@@ -79,7 +79,7 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
             type="number"
             step="0.01"
             placeholder="Valor"
-            className="input input-bordered input-xs w-24"
+            className="input input-xs w-24"
             required
             value={deductionForm.amount}
             onChange={(e) => setDeductionForm({ ...deductionForm, amount: e.target.value })}
@@ -130,9 +130,9 @@ export const IncomePage = () => {
           }
         />
 
-        <div className="tabs tabs-boxed w-fit">
-          <button className={`tab ${tab === 'fixed' ? 'tab-active' : ''}`} onClick={() => setTab('fixed')}>Fixo</button>
-          <button className={`tab ${tab === 'variable' ? 'tab-active' : ''}`} onClick={() => setTab('variable')}>Variável</button>
+        <div role="tablist" className="tabs tabs-box w-fit">
+          <button role="tab" className={`tab ${tab === 'fixed' ? 'tab-active' : ''}`} onClick={() => setTab('fixed')}>Fixo</button>
+          <button role="tab" className={`tab ${tab === 'variable' ? 'tab-active' : ''}`} onClick={() => setTab('variable')}>Variável</button>
         </div>
 
         {tab === 'variable' && (
@@ -193,10 +193,10 @@ export const IncomePage = () => {
       <Modal open={open} onClose={() => setOpen(false)} title="Nova renda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Field label="Descrição">
-            <input className="input input-bordered input-sm" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <input className="input input-sm" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </Field>
           <Field label="Categoria">
-            <select className="select select-bordered select-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as IncomeCategory })}>
+            <select className="select select-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as IncomeCategory })}>
               <option value="salary">Salário</option>
               <option value="rent">Aluguel</option>
               <option value="benefit">Benefício (vale-refeição, transporte, etc.)</option>
@@ -204,7 +204,7 @@ export const IncomePage = () => {
             </select>
           </Field>
           <Field label="Valor bruto (R$)">
-            <input type="number" step="0.01" className="input input-bordered input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
+            <input type="number" step="0.01" className="input input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
           </Field>
           <div className="flex gap-2 mt-2">
             <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
