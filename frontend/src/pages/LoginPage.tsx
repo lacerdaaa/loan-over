@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { BlueprintGrid } from '../components/ui/BlueprintGrid';
-import { GREEN, GREEN_DEEP } from '../lib/brand';
+import { PALETTES } from '../lib/brand';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
+const { accent: GREEN, deep: GREEN_DEEP } = PALETTES.personal;
 
 export const LoginPage = () => (
   <div
