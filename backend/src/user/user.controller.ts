@@ -1,6 +1,7 @@
-import { Body, Controller, Patch } from '@nestjs/common';
+import { Body, Controller, Patch, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { BusinessFeatureGuard } from '../auth/guards/business-feature.guard';
 import { UpdateAccountTypeDto } from './dto/update-account-type.dto';
 import { AccountType } from './user.entity';
 import { UserService } from './user.service';
@@ -15,6 +16,7 @@ interface UserProfile {
 
 @ApiTags('users')
 @Controller('users')
+@UseGuards(BusinessFeatureGuard)
 export class UserController {
   constructor(private readonly service: UserService) {}
 

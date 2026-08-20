@@ -11,17 +11,17 @@ import { Organization } from './../src/organization/organization.entity';
 import { IncomeCategory, IncomeType } from './../src/shared/types';
 import { User } from './../src/user/user.entity';
 
-describe('ProjectionController (e2e)', () => {
+describe('Business feature flag OFF (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
   let userId: string;
   let token: string;
-  const email = 'projection-e2e@company.com';
+  const email = 'flag-off-e2e@company.com';
 
   const auth = (req: request.Test): request.Test => req.set('Authorization', `Bearer ${token}`);
 
   beforeAll(async () => {
-    process.env.FEATURE_BUSINESS = 'true';
+    process.env.FEATURE_BUSINESS = 'false';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -35,15 +35,10 @@ describe('ProjectionController (e2e)', () => {
     dataSource = app.get(getDataSourceToken());
     const users = dataSource.getRepository(User);
     const saved = await users.save(
-      users.create({
-        google_id: `proj-e2e-${Date.now()}`,
-        email,
-        name: 'Runway Owner',
-        avatar: '',
-      }),
+      users.create({ google_id: `flag-off-${Date.now()}`, email, name: 'Flag Off', avatar: '' }),
     );
     userId = saved.id;
-    token = app.get(JwtService).sign({ sub: userId, email, name: 'Runway Owner', avatar: '' });
+    token = app.get(JwtService).sign({ sub: userId, email, name: 'Flag Off', avatar: '' });
 
     const incomes = dataSource.getRepository(Income);
     await incomes.save(
@@ -56,6 +51,10 @@ describe('ProjectionController (e2e)', () => {
         deductions: [],
       }),
     );
+
+    // Seed an organization row directly — the API cannot create one while the flag is off.
+    const orgs = dataSource.getRepository(Organization);
+    await orgs.save(orgs.create({ user: { id: userId }, name: 'Hidden Co', cash_balance: 10000 }));
   });
 
   afterAll(async () => {
@@ -65,8 +64,30 @@ describe('ProjectionController (e2e)', () => {
     await app.close();
   });
 
-  describe('when the user has no organization', () => {
-    it('omits cash_balance from the projected months', async () => {
+  describe('user account-type endpoint', () => {
+    it('hides PATCH /users/me behind a 404', () => {
+      return auth(
+        request(app.getHttpServer()).patch('/users/me').send({ account_type: 'business' }),
+      ).expect(404);
+    });
+  });
+
+  describe('organization endpoints', () => {
+    it('hides GET /organization behind a 404', () => {
+      return auth(request(app.getHttpServer()).get('/organization')).expect(404);
+    });
+
+    it('hides POST /organization behind a 404', () => {
+      return auth(
+        request(app.getHttpServer())
+          .post('/organization')
+          .send({ name: 'Acme', cash_balance: 5000 }),
+      ).expect(404);
+    });
+  });
+
+  describe('projection', () => {
+    it('omits cash_balance even though an organization row exists', async () => {
       const response = await auth(
         request(app.getHttpServer()).get('/projection').query({ month: 6, year: 2026, horizon: 3 }),
       ).expect(200);
@@ -78,22 +99,12 @@ describe('ProjectionController (e2e)', () => {
     });
   });
 
-  describe('when the user has an organization with a cash balance', () => {
-    it('seeds the runway from the organization cash_balance and compounds free_balance', async () => {
-      await auth(
-        request(app.getHttpServer())
-          .post('/organization')
-          .send({ name: 'Runway Co', cash_balance: 10000 }),
-      ).expect(201);
+  describe('auth/me', () => {
+    it('still returns account_type (null) — not gated by the flag', async () => {
+      const response = await auth(request(app.getHttpServer()).get('/auth/me')).expect(200);
 
-      const response = await auth(
-        request(app.getHttpServer()).get('/projection').query({ month: 6, year: 2026, horizon: 3 }),
-      ).expect(200);
-
-      // free_balance each month = 5000 income, no expenses/debts
-      expect(response.body[0].cash_balance).toBe(15000);
-      expect(response.body[1].cash_balance).toBe(20000);
-      expect(response.body[2].cash_balance).toBe(25000);
+      expect(response.body).toHaveProperty('account_type', null);
+      expect(response.body.email).toBe(email);
     });
   });
 });

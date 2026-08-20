@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { DebtService } from '../debt/debt.service';
@@ -19,6 +20,7 @@ export class ProjectionController {
     private readonly debtService: DebtService,
     private readonly fixedExpenseService: FixedExpenseService,
     private readonly organizationService: OrganizationService,
+    private readonly config: ConfigService,
   ) {}
 
   @Get()
@@ -59,22 +61,30 @@ export class ProjectionController {
     const refYear = Number(year) || now.getFullYear();
     const horizonMonths = Number(horizon) || DEFAULT_HORIZON;
 
+    const input = await this.buildInput(userId, refMonth, refYear);
+    return this.projectionService.project(input, horizonMonths);
+  }
+
+  private async buildInput(
+    userId: string,
+    referenceMonth: number,
+    referenceYear: number,
+  ): Promise<ProjectionInput> {
+    const businessEnabled = this.config.get<string>('FEATURE_BUSINESS') === 'true';
     const [incomes, debts, fixedExpenses, organization] = await Promise.all([
-      this.incomeService.findForMonth(userId, refMonth, refYear),
+      this.incomeService.findForMonth(userId, referenceMonth, referenceYear),
       this.debtService.findAll(userId),
       this.fixedExpenseService.findAll(userId),
-      this.organizationService.find(userId),
+      businessEnabled ? this.organizationService.find(userId) : Promise.resolve(null),
     ]);
 
-    const input: ProjectionInput = {
+    return {
       incomes,
       debts,
       fixedExpenses,
-      referenceMonth: refMonth,
-      referenceYear: refYear,
+      referenceMonth,
+      referenceYear,
       ...(organization && { startingCashBalance: Number(organization.cash_balance) }),
     };
-
-    return this.projectionService.project(input, horizonMonths);
   }
 }

@@ -19,6 +19,7 @@ describe('OrganizationController (e2e)', () => {
   const auth = (req: request.Test): request.Test => req.set('Authorization', `Bearer ${token}`);
 
   beforeAll(async () => {
+    process.env.FEATURE_BUSINESS = 'true';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
