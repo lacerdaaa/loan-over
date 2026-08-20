@@ -106,6 +106,20 @@ landing components take a palette instead of importing globals:
 - Multi-user organizations with roles (owner / financeiro / contador read-only), invitations,
   audit trail on mutations.
 
+## Feature flags (production requirement)
+
+The app deploys to production from `main`. All business-mode behavior ships behind flags,
+default OFF; a flag-off build must be behaviorally identical to the previous production build.
+
+- **Frontend**: `VITE_FEATURE_BUSINESS` (build-time) → `BUSINESS_MODE_ENABLED` in
+  `frontend/src/lib/flags.ts`. Gates: landing Pessoal/Empresas toggle (and `?mode=business`),
+  the `/choose-mode` redirect for null `account_type`, business theme selection, and the
+  business dashboard additions.
+- **Backend**: `FEATURE_BUSINESS` env var → guard that returns 404 on `PATCH /users/me` and
+  `GET/POST /organization` when off; the projection controller skips the organization lookup
+  when off (no `cash_balance` in responses). `/auth/me` may keep returning `account_type`
+  (null for everyone) — additive and inert.
+
 ## Out of scope (explicitly)
 
 - Bank integrations / Open Finance, invoicing (NF-e), payments — LoanOver stays a projection
