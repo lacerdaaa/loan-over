@@ -214,4 +214,107 @@ describe('ProjectionService', () => {
       expect(result[2]?.free_balance).toBe(4000);
     });
   });
+
+  describe('when a starting cash balance is provided', () => {
+    it('accumulates each month free_balance onto the running cash_balance', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [makeExpense(1000)],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          startingCashBalance: 2000,
+        },
+        3,
+      );
+
+      // free_balance each month = 5000 - 1000 = 4000
+      expect(result[0]?.cash_balance).toBe(6000);
+      expect(result[1]?.cash_balance).toBe(10000);
+      expect(result[2]?.cash_balance).toBe(14000);
+    });
+
+    it('grows faster after a liberation frees an installment', () => {
+      const debt = makeDebt({
+        installment_amount: 500,
+        total_installments: 1,
+        paid_installments: 0,
+      });
+
+      const result = service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [makeExpense(1000)],
+          debts: [debt],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          startingCashBalance: 0,
+        },
+        3,
+      );
+
+      // Month 1: debt active → free_balance 3500 → cash_balance 3500
+      // Month 2: liberation → free_balance 4000 → cash_balance 7500
+      // Month 3: freed → free_balance 4000 → cash_balance 11500
+      expect(result[0]?.cash_balance).toBe(3500);
+      expect(result[1]?.cash_balance).toBe(7500);
+      expect(result[2]?.cash_balance).toBe(11500);
+    });
+
+    it('lets the cash_balance cross below zero when outflow exceeds income', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(1000)],
+          fixedExpenses: [makeExpense(1500)],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          startingCashBalance: 800,
+        },
+        3,
+      );
+
+      // free_balance each month = 1000 - 1500 = -500
+      expect(result[0]?.cash_balance).toBe(300);
+      expect(result[1]?.cash_balance).toBe(-200);
+      expect(result[2]?.cash_balance).toBe(-700);
+    });
+
+    it('accumulates from a zero starting balance', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(3000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          startingCashBalance: 0,
+        },
+        2,
+      );
+
+      expect(result[0]?.cash_balance).toBe(3000);
+      expect(result[1]?.cash_balance).toBe(6000);
+    });
+  });
+
+  describe('when no starting cash balance is provided', () => {
+    it('omits the cash_balance key from every projected month', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [makeExpense(1000)],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+        },
+        3,
+      );
+
+      for (const month of result) {
+        expect(month).not.toHaveProperty('cash_balance');
+      }
+    });
+  });
 });

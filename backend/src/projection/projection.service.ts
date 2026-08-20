@@ -12,6 +12,7 @@ export interface ProjectionInput {
   debts: Debt[];
   referenceMonth: number;
   referenceYear: number;
+  startingCashBalance?: number;
 }
 
 @Injectable()
@@ -19,21 +20,30 @@ export class ProjectionService {
   project(input: ProjectionInput, horizonMonths: number): ProjectedMonth[] {
     const months: ProjectedMonth[] = [];
     const baseIncome = this.sumFixedIncome(input.incomes);
+    let runningCash = input.startingCashBalance;
 
     for (let offset = 0; offset < horizonMonths; offset++) {
       const { month, year } = this.addMonths(input.referenceMonth, input.referenceYear, offset + 1);
       const monthFixed = this.sumActiveExpensesForMonth(input.fixedExpenses, month, year);
       const events = this.buildEvents(input.debts, offset);
       const activeDebtTotal = this.sumActiveDebtInstallments(input.debts, offset);
+      const freeBalance = baseIncome - monthFixed - activeDebtTotal;
 
-      months.push({
+      const projected: ProjectedMonth = {
         month,
         year,
-        free_balance: baseIncome - monthFixed - activeDebtTotal,
+        free_balance: freeBalance,
         events,
         active_debts: this.countActiveDebts(input.debts, offset),
         total_outflow: monthFixed + activeDebtTotal,
-      });
+      };
+
+      if (runningCash !== undefined) {
+        runningCash += freeBalance;
+        projected.cash_balance = runningCash;
+      }
+
+      months.push(projected);
     }
 
     return months;
