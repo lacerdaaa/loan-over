@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { AlertTriangle, Zap } from 'lucide-react';
+import { AlertTriangle, Gift, Zap } from 'lucide-react';
 import { useProjection } from '../api/projection';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
@@ -20,6 +20,7 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
 
   const alerts = m.events.filter((e) => e.type === 'alert');
   const liberations = m.events.filter((e) => e.type === 'liberation');
+  const payrolls = m.events.filter((e) => e.type === 'payroll');
 
   return (
     <motion.div
@@ -59,6 +60,21 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
               {e.amount > 0 && (
                 <span className="text-xs font-semibold text-success tabular-nums shrink-0">
                   +{mask(formatCurrency(e.amount))}/mês
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+        {payrolls.map((e, i) => (
+          <div key={`p-${i}`} className="flex items-start gap-2.5">
+            <div className="mt-0.5 w-5 h-5 rounded-md bg-warning/15 flex items-center justify-center shrink-0">
+              <Gift size={11} className="text-warning" />
+            </div>
+            <div className="flex flex-1 items-baseline justify-between gap-2 min-w-0">
+              <p className="text-sm text-base-content/70">{e.description}</p>
+              {e.amount > 0 && (
+                <span className="text-xs font-semibold text-warning tabular-nums shrink-0">
+                  -{mask(formatCurrency(e.amount))}
                 </span>
               )}
             </div>

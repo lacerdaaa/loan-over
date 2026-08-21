@@ -2,6 +2,8 @@ export type IncomeType = 'fixed' | 'variable';
 export type IncomeCategory = 'salary' | 'rent' | 'benefit' | 'other';
 
 export type AccountType = 'personal' | 'business';
+export type EmployeeRegime = 'clt' | 'pj';
+export type TaxRegime = 'simples' | 'lucro';
 
 export interface Me {
   id: string;
@@ -16,6 +18,16 @@ export interface Organization {
   name: string;
   cnpj: string | null;
   cash_balance: number;
+  tax_regime: TaxRegime;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  regime: EmployeeRegime;
+  gross_salary: number;
+  monthly_benefits: number;
+  active: boolean;
 }
 
 export interface IncomeDeduction {
@@ -85,10 +97,11 @@ export interface MonthlySnapshot {
   total_benefit: number;
   total_debt_balance: number;
   free_balance: number;
+  total_payroll?: number;
 }
 
 export interface ProjectionEvent {
-  type: 'liberation' | 'alert';
+  type: 'liberation' | 'alert' | 'payroll';
   description: string;
   amount: number;
 }

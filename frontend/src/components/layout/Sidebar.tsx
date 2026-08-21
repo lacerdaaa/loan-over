@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Wallet, X } from 'lucide-react';
+import { CreditCard, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
@@ -23,7 +23,8 @@ const NAV_ITEMS: { to: string; labelKey: LabelKey; Icon: LucideIcon; end?: boole
 ];
 
 const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) => {
-  const labels = labelsFor(useBusinessMode());
+  const isBusinessMode = useBusinessMode();
+  const labels = labelsFor(isBusinessMode);
   return (
   <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
     {NAV_ITEMS.map(({ to, labelKey, Icon, end, tutorialId }) => (
@@ -45,6 +46,22 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
         {!collapsed && <span>{labels[labelKey]}</span>}
       </NavLink>
     ))}
+    {isBusinessMode && (
+      <NavLink
+        to="/people"
+        onClick={onNavClick}
+        className={({ isActive }) =>
+          `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
+          ${isActive
+            ? 'bg-primary/10 text-primary border-l-2 border-primary pl-[10px]'
+            : 'text-base-content/60 hover:text-base-content hover:bg-base-300'
+          }`
+        }
+      >
+        <Users size={18} className="shrink-0" />
+        {!collapsed && <span>{labels.people}</span>}
+      </NavLink>
+    )}
   </nav>
   );
 };

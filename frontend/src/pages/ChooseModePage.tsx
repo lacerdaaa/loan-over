@@ -13,7 +13,7 @@ export const ChooseModePage = () => {
   const navigate = useNavigate();
 
   const [showBusinessForm, setShowBusinessForm] = useState(false);
-  const [form, setForm] = useState({ name: '', cnpj: '', cash_balance: 0 });
+  const [form, setForm] = useState({ name: '', cnpj: '', cash_balance: 0, tax_regime: 'simples' as const });
 
   if (!BUSINESS_MODE_ENABLED) {
     return <Navigate to="/dashboard" replace />;
@@ -45,6 +45,7 @@ export const ChooseModePage = () => {
       name: form.name,
       cnpj: form.cnpj || null,
       cash_balance: form.cash_balance,
+      tax_regime: form.tax_regime,
     });
     navigate('/dashboard', { replace: true });
   };

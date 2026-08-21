@@ -7,7 +7,8 @@ export type LabelKey =
   | 'income'
   | 'fixedExpenses'
   | 'occasionalExpenses'
-  | 'goal';
+  | 'goal'
+  | 'people';
 
 export const LABELS: Record<AccountType, Record<LabelKey, string>> = {
   personal: {
@@ -18,6 +19,7 @@ export const LABELS: Record<AccountType, Record<LabelKey, string>> = {
     fixedExpenses: 'Gastos Fixos',
     occasionalExpenses: 'Gastos do Mês',
     goal: 'Meta',
+    people: 'Pessoas',
   },
   business: {
     dashboard: 'Dashboard',
@@ -27,6 +29,7 @@ export const LABELS: Record<AccountType, Record<LabelKey, string>> = {
     fixedExpenses: 'Custos Fixos',
     occasionalExpenses: 'Despesas do Mês',
     goal: 'Meta',
+    people: 'Pessoas',
   },
 };
 
