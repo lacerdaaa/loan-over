@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { BankTransaction } from './bank-transaction/bank-transaction.entity';
 import { Debt } from './debt/debt.entity';
 import { Employee } from './employee/employee.entity';
 import { FixedExpense } from './fixed-expense/fixed-expense.entity';
@@ -27,6 +28,7 @@ export const AppDataSource = new DataSource(
           User,
           Organization,
           Employee,
+          BankTransaction,
         ],
         migrations: ['src/migrations/*.ts'],
         synchronize: false,
@@ -48,6 +50,7 @@ export const AppDataSource = new DataSource(
           User,
           Organization,
           Employee,
+          BankTransaction,
         ],
         migrations: ['src/migrations/*.ts'],
         synchronize: false,

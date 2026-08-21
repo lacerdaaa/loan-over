@@ -144,6 +144,22 @@ describe('Business feature flag OFF (e2e)', () => {
     });
   });
 
+  describe('bank-transactions endpoints', () => {
+    it('hides GET /bank-transactions behind a 404', () => {
+      return auth(
+        request(app.getHttpServer()).get('/bank-transactions').query({ month: 6, year: 2026 }),
+      ).expect(404);
+    });
+
+    it('hides POST /bank-transactions/import behind a 404', () => {
+      return auth(
+        request(app.getHttpServer())
+          .post('/bank-transactions/import')
+          .send({ transactions: [] }),
+      ).expect(404);
+    });
+  });
+
   describe('auth/me', () => {
     it('still returns account_type (null) — not gated by the flag', async () => {
       const response = await auth(request(app.getHttpServer()).get('/auth/me')).expect(200);
