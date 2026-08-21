@@ -147,6 +147,39 @@ user FK); `organizations.tax_regime` ('simples'|'lucro', default simples).
 **Tasks**: (1) entity+CRUD → sonnet; (2) motor puro + integração projeção/snapshot → opus,
 100% branch; (3) página Pessoas no frontend → sonnet.
 
+## Fase B2 — Conciliação financeira (aprovada 2026-08-21)
+
+Dor-alvo: o previsto no app vs o que de fato passou na conta. Import de extrato CSV,
+casamento manual com sugestões, resumo previsto × realizado por mês. Business-only
+(`BusinessFeatureGuard` / `useBusinessMode()`).
+
+**Decisões de design:**
+- CSV é parseado no **frontend** (parser próprio ~30 linhas, sem dependência nova; delimitador
+  auto-detectado, usuário mapeia colunas data/descrição/valor num preview). O backend recebe
+  JSON validado por DTO — nunca arquivo.
+- Entidade `bank_transactions`: user FK, `date`, `description`, `amount` decimal 12,2
+  **com sinal** (negativo = saída), `month`/`year` derivados no servidor, `matched_kind`
+  (`income|fixed_expense|debt|occasional_expense|payroll|ignored`, null = pendente),
+  `matched_id` uuid nullable (null para payroll/ignored), `import_hash` sha256 de
+  (user, date, amount, description) com índice único — reimportar o mesmo extrato pula
+  duplicatas e reporta `{ imported, skipped }`.
+- Sugestões de match são **frontend puro** (`lib/reconciliation.ts`): candidatos por
+  proximidade de valor (tolerância R$ 1 ou 1%, o que for maior) contra as listas esperadas.
+- `ReconciliationService.summarize()` **puro** (padrão snapshot/projection, 100% branch):
+  entrada = mês + entidades + transações; saída por categoria
+  `{ expected, actual, difference }` (income, fixed_expenses, debts, occasional, payroll) +
+  `unmatched_count`/`unmatched_total`. Esperado do mês: rendas líquidas não-benefício,
+  gastos fixos ativos não-benefício, parcelas de dívidas abertas, gastos do mês
+  não-benefício, folha caixa (+13º em nov/dez) via `PayrollService`.
+
+**Endpoints** (todos com guard): `GET /bank-transactions?month&year`,
+`POST /bank-transactions/import` (máx. 500 linhas), `PATCH /bank-transactions/:id` (match/
+ignore/unmatch), `DELETE /bank-transactions/:id`, `GET /reconciliation?month&year`.
+
+**Tasks**: (1) entidade + import com dedup + CRUD de match → sonnet; (2) motor puro de
+resumo + endpoint → sonnet (spec fecha o shape); (3) página Conciliação (import wizard,
+lista com sugestões, resumo) → sonnet.
+
 ## Out of scope (explicitly)
 
 - Bank integrations / Open Finance, invoicing (NF-e), payments — LoanOver stays a projection
