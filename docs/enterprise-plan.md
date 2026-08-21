@@ -120,6 +120,33 @@ default OFF; a flag-off build must be behaviorally identical to the previous pro
   when off (no `cash_balance` in responses). `/auth/me` may keep returning `account_type`
   (null for everyone) — additive and inert.
 
+## Fase B1 — Gestão de Pessoas / Folha (aprovada 2026-08-20)
+
+Primeira feature business de verdade (ordem decidida: Pessoas → Conciliação → Documentos).
+Dor-alvo: o dono vê R$ 3.000 de salário mas paga ~R$ 4.400; o 13º derruba o caixa em nov/dez.
+
+**Modelo de cálculo — duas visões, sem dupla contagem** (constantes em
+`backend/src/employee/payroll.constants.ts`; estimativas, não aconselhamento fiscal):
+
+- `FGTS_RATE = 0.08` · `THIRTEENTH_PROVISION = 1/12` · `VACATION_PROVISION = (4/3)/12`
+- `INSS_PATRONAL_RATE = 0.20` + `RAT_TERCEIROS_RATE = 0.088` — só regime `lucro`; no
+  `simples` = 0 (Anexo IV fora do MVP)
+- **Competência** (card "custo real" na página Pessoas): CLT = salário + FGTS + provisões
+  13º/férias+⅓ + INSS/RAT (se lucro) + benefícios. PJ = nota + benefícios.
+- **Caixa** (projeção/runway): custo mensal SEM provisões + picos: 13º = metade da folha CLT
+  ativa em novembro e em dezembro, como eventos `payroll` na projeção. Pico de férias fora do
+  MVP (só provisão na visão competência).
+
+**Entidades**: `employees` (name, regime clt|pj, gross_salary, monthly_benefits, active,
+user FK); `organizations.tax_regime` ('simples'|'lucro', default simples).
+
+**Integração**: `PayrollService` puro (sem repositório); `ProjectionInput` ganha `employees?`
++ `taxRegime?`; `MonthlySnapshot.total_payroll?` e eventos `payroll` ausentes fora do business
+(mesmo padrão do `cash_balance`). Tudo atrás de `FEATURE_BUSINESS` / `VITE_FEATURE_BUSINESS`.
+
+**Tasks**: (1) entity+CRUD → sonnet; (2) motor puro + integração projeção/snapshot → opus,
+100% branch; (3) página Pessoas no frontend → sonnet.
+
 ## Out of scope (explicitly)
 
 - Bank integrations / Open Finance, invoicing (NF-e), payments — LoanOver stays a projection
