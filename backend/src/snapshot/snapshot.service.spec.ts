@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Debt } from '../debt/debt.entity';
+import { Employee, EmployeeRegime } from '../employee/employee.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { IncomeDeduction } from '../income/income-deduction.entity';
 import { Income } from '../income/income.entity';
@@ -61,6 +62,17 @@ const makeOccasional = (amount: number, from_benefit = false): OccasionalExpense
     year: 2026,
     from_benefit,
   }) as OccasionalExpense;
+
+const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
+  ({
+    id: '1',
+    name: 'Alice',
+    regime: 'clt' as EmployeeRegime,
+    gross_salary: 3000,
+    monthly_benefits: 0,
+    active: true,
+    ...overrides,
+  }) as Employee;
 
 const compute = (service: SnapshotService, overrides: Parameters<SnapshotService['compute']>[0]) =>
   service.compute({
@@ -224,6 +236,58 @@ describe('SnapshotService', () => {
 
       expect(result.total_debts).toBe(0);
       expect(result.free_balance).toBe(5000);
+    });
+  });
+
+  describe('when employees and a tax regime are provided', () => {
+    it('sets total_payroll to the monthly cash cost in a non-13th month', () => {
+      const result = compute(service, {
+        month: 6,
+        year: 2026,
+        incomes: [makeIncome(10000)],
+        employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+        taxRegime: 'simples',
+      });
+
+      // monthly cash cost = 3000 + 3000*0.08 = 3240
+      expect(result.total_payroll).toBe(3240);
+      expect(result.free_balance).toBe(6760);
+    });
+
+    it('adds the 13th installment to total_payroll in November', () => {
+      const result = compute(service, {
+        month: 11,
+        year: 2026,
+        incomes: [makeIncome(10000)],
+        employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+        taxRegime: 'simples',
+      });
+
+      // 3240 monthly + 1500 thirteenth
+      expect(result.total_payroll).toBe(4740);
+      expect(result.free_balance).toBe(5260);
+    });
+
+    it('adds the 13th installment to total_payroll in December', () => {
+      const result = compute(service, {
+        month: 12,
+        year: 2026,
+        incomes: [makeIncome(10000)],
+        employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+        taxRegime: 'simples',
+      });
+
+      expect(result.total_payroll).toBe(4740);
+    });
+  });
+
+  describe('when no employees are provided', () => {
+    it('omits the total_payroll key entirely', () => {
+      const result = compute(service, {
+        incomes: [makeIncome(5000)],
+      });
+
+      expect(result).not.toHaveProperty('total_payroll');
     });
   });
 });

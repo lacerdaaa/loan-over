@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Debt } from '../debt/debt.entity';
+import { Employee } from '../employee/employee.entity';
+import { PayrollService } from '../employee/payroll.service';
 import { isExpenseActiveForMonth } from '../fixed-expense/fixed-expense.utils';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { netAmount } from '../income/income.utils';
 import { Income } from '../income/income.entity';
+import { TaxRegime } from '../organization/organization.entity';
 import { IncomeCategory, IncomeType, ProjectedMonth, ProjectionEvent } from '../shared/types';
+
+const NOVEMBER = 11;
+const DECEMBER = 12;
 
 export interface ProjectionInput {
   incomes: Income[];
@@ -13,21 +19,28 @@ export interface ProjectionInput {
   referenceMonth: number;
   referenceYear: number;
   startingCashBalance?: number;
+  employees?: Employee[];
+  taxRegime?: TaxRegime;
 }
 
 @Injectable()
 export class ProjectionService {
+  private readonly payrollService = new PayrollService();
+
   project(input: ProjectionInput, horizonMonths: number): ProjectedMonth[] {
     const months: ProjectedMonth[] = [];
     const baseIncome = this.sumFixedIncome(input.incomes);
+    const payrollCash = this.monthlyPayrollCash(input);
     let runningCash = input.startingCashBalance;
 
     for (let offset = 0; offset < horizonMonths; offset++) {
       const { month, year } = this.addMonths(input.referenceMonth, input.referenceYear, offset + 1);
       const monthFixed = this.sumActiveExpensesForMonth(input.fixedExpenses, month, year);
-      const events = this.buildEvents(input.debts, offset);
       const activeDebtTotal = this.sumActiveDebtInstallments(input.debts, offset);
-      const freeBalance = baseIncome - monthFixed - activeDebtTotal;
+      const events = this.buildEvents(input.debts, offset);
+      const thirteenth = this.payrollEventFor(input, month, events);
+      const monthOutflow = monthFixed + activeDebtTotal + payrollCash + thirteenth;
+      const freeBalance = baseIncome - monthOutflow;
 
       const projected: ProjectedMonth = {
         month,
@@ -35,7 +48,7 @@ export class ProjectionService {
         free_balance: freeBalance,
         events,
         active_debts: this.countActiveDebts(input.debts, offset),
-        total_outflow: monthFixed + activeDebtTotal,
+        total_outflow: monthOutflow,
       };
 
       if (runningCash !== undefined) {
@@ -47,6 +60,28 @@ export class ProjectionService {
     }
 
     return months;
+  }
+
+  private monthlyPayrollCash(input: ProjectionInput): number {
+    if (!input.employees || !input.taxRegime) return 0;
+    return this.payrollService.monthlyCashCost(input.employees, input.taxRegime);
+  }
+
+  private payrollEventFor(
+    input: ProjectionInput,
+    month: number,
+    events: ProjectionEvent[],
+  ): number {
+    if (!input.employees || !input.taxRegime) return 0;
+    if (month !== NOVEMBER && month !== DECEMBER) return 0;
+
+    const amount = this.payrollService.thirteenthInstallment(input.employees);
+    if (amount <= 0) return 0;
+
+    const description =
+      month === NOVEMBER ? '13º salário — 1ª parcela' : '13º salário — 2ª parcela';
+    events.push({ type: 'payroll', description, amount });
+    return amount;
   }
 
   private sumFixedIncome(incomes: Income[]): number {

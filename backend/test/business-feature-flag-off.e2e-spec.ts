@@ -6,6 +6,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
+import { Employee } from './../src/employee/employee.entity';
 import { Income } from './../src/income/income.entity';
 import { Organization } from './../src/organization/organization.entity';
 import { IncomeCategory, IncomeType } from './../src/shared/types';
@@ -55,10 +56,17 @@ describe('Business feature flag OFF (e2e)', () => {
     // Seed an organization row directly — the API cannot create one while the flag is off.
     const orgs = dataSource.getRepository(Organization);
     await orgs.save(orgs.create({ user: { id: userId }, name: 'Hidden Co', cash_balance: 10000 }));
+
+    // Seed a CLT employee directly — the API cannot create one while the flag is off.
+    const employees = dataSource.getRepository(Employee);
+    await employees.save(
+      employees.create({ user: { id: userId }, name: 'Alice', regime: 'clt', gross_salary: 3000 }),
+    );
   });
 
   afterAll(async () => {
     await dataSource.getRepository(Income).delete({ user: { id: userId } });
+    await dataSource.getRepository(Employee).delete({ user: { id: userId } });
     await dataSource.getRepository(Organization).delete({ user: { id: userId } });
     await dataSource.getRepository(User).delete({ id: userId });
     await app.close();
@@ -110,6 +118,29 @@ describe('Business feature flag OFF (e2e)', () => {
       for (const month of response.body) {
         expect(month).not.toHaveProperty('cash_balance');
       }
+    });
+
+    it('emits no payroll events even though a CLT employee row exists', async () => {
+      // horizon spans November and December, where 13th events would appear if the flag were on.
+      const response = await auth(
+        request(app.getHttpServer())
+          .get('/projection')
+          .query({ month: 10, year: 2026, horizon: 3 }),
+      ).expect(200);
+
+      for (const month of response.body) {
+        expect(month.events.some((e: { type: string }) => e.type === 'payroll')).toBe(false);
+      }
+    });
+  });
+
+  describe('snapshot', () => {
+    it('omits total_payroll even though a CLT employee row exists', async () => {
+      const response = await auth(
+        request(app.getHttpServer()).get('/snapshot').query({ month: 11, year: 2026 }),
+      ).expect(200);
+
+      expect(response.body).not.toHaveProperty('total_payroll');
     });
   });
 

@@ -6,6 +6,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
+import { Employee } from './../src/employee/employee.entity';
 import { Income } from './../src/income/income.entity';
 import { Organization } from './../src/organization/organization.entity';
 import { IncomeCategory, IncomeType } from './../src/shared/types';
@@ -60,6 +61,7 @@ describe('ProjectionController (e2e)', () => {
 
   afterAll(async () => {
     await dataSource.getRepository(Income).delete({ user: { id: userId } });
+    await dataSource.getRepository(Employee).delete({ user: { id: userId } });
     await dataSource.getRepository(Organization).delete({ user: { id: userId } });
     await dataSource.getRepository(User).delete({ id: userId });
     await app.close();
@@ -94,6 +96,28 @@ describe('ProjectionController (e2e)', () => {
       expect(response.body[0].cash_balance).toBe(15000);
       expect(response.body[1].cash_balance).toBe(20000);
       expect(response.body[2].cash_balance).toBe(25000);
+    });
+  });
+
+  describe('when the organization employs a CLT worker', () => {
+    it('emits a 13th-salary payroll event in November', async () => {
+      await auth(
+        request(app.getHttpServer())
+          .post('/employees')
+          .send({ name: 'Alice', regime: 'clt', gross_salary: 3000 }),
+      ).expect(201);
+
+      const response = await auth(
+        request(app.getHttpServer())
+          .get('/projection')
+          .query({ month: 10, year: 2026, horizon: 3 }),
+      ).expect(200);
+
+      // offset 1 → November 2026
+      const november = response.body[0];
+      const payroll = november.events.find((e: { type: string }) => e.type === 'payroll');
+      expect(payroll).toBeDefined();
+      expect(payroll.amount).toBe(1500);
     });
   });
 });

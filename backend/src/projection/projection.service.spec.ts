@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Debt } from '../debt/debt.entity';
+import { Employee, EmployeeRegime } from '../employee/employee.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { Income } from '../income/income.entity';
 import { IncomeCategory, IncomeType } from '../shared/types';
@@ -49,6 +50,17 @@ const makeDebt = (overrides: Partial<Debt>): Debt =>
     closed: false,
     ...overrides,
   }) as Debt;
+
+const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
+  ({
+    id: '1',
+    name: 'Alice',
+    regime: 'clt' as EmployeeRegime,
+    gross_salary: 3000,
+    monthly_benefits: 0,
+    active: true,
+    ...overrides,
+  }) as Employee;
 
 describe('ProjectionService', () => {
   let service: ProjectionService;
@@ -296,6 +308,130 @@ describe('ProjectionService', () => {
 
       expect(result[0]?.cash_balance).toBe(3000);
       expect(result[1]?.cash_balance).toBe(6000);
+    });
+  });
+
+  describe('when employees and a tax regime are provided', () => {
+    it('subtracts the monthly cash cost of payroll from free_balance and total_outflow', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+          taxRegime: 'simples',
+        },
+        1,
+      );
+
+      // monthly cash cost = 3000 + 3000*0.08 = 3240
+      expect(result[0]?.total_outflow).toBe(3240);
+      expect(result[0]?.free_balance).toBe(6760);
+    });
+
+    it('emits a payroll event for the first 13th installment in November', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 10,
+          referenceYear: 2026,
+          employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+          taxRegime: 'simples',
+        },
+        3,
+      );
+
+      // offset 1 → November 2026
+      const november = result[0];
+      const payroll = november?.events.find((e) => e.type === 'payroll');
+      expect(payroll?.description).toBe('13º salário — 1ª parcela');
+      expect(payroll?.amount).toBe(1500);
+    });
+
+    it('emits a payroll event for the second 13th installment in December', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 11,
+          referenceYear: 2026,
+          employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+          taxRegime: 'simples',
+        },
+        1,
+      );
+
+      // offset 1 → December 2026
+      const december = result[0];
+      const payroll = december?.events.find((e) => e.type === 'payroll');
+      expect(payroll?.description).toBe('13º salário — 2ª parcela');
+      expect(payroll?.amount).toBe(1500);
+    });
+
+    it('removes the 13th installment amount from free_balance in November and December', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 10,
+          referenceYear: 2026,
+          employees: [makeEmployee({ regime: 'clt', gross_salary: 3000 })],
+          taxRegime: 'simples',
+        },
+        3,
+      );
+
+      // November (offset 1): 10000 - 3240 monthly - 1500 thirteenth = 5260
+      expect(result[0]?.free_balance).toBe(5260);
+      // December (offset 2): also 5260
+      expect(result[1]?.free_balance).toBe(5260);
+      // January (offset 3): back to 10000 - 3240 = 6760
+      expect(result[2]?.free_balance).toBe(6760);
+    });
+
+    it('omits the payroll event when the 13th base is zero (only PJ contractors)', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 10,
+          referenceYear: 2026,
+          employees: [makeEmployee({ regime: 'pj', gross_salary: 8000 })],
+          taxRegime: 'simples',
+        },
+        1,
+      );
+
+      // November has no CLT payroll → no payroll event
+      expect(result[0]?.events.some((e) => e.type === 'payroll')).toBe(false);
+    });
+  });
+
+  describe('when no employees are provided', () => {
+    it('produces months with no payroll event and no payroll in total_outflow', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 10,
+          referenceYear: 2026,
+        },
+        3,
+      );
+
+      for (const month of result) {
+        expect(month.events.some((e) => e.type === 'payroll')).toBe(false);
+      }
+      expect(result[0]?.total_outflow).toBe(0);
+      expect(result[0]?.free_balance).toBe(10000);
     });
   });
 

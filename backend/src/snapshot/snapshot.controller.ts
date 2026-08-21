@@ -1,10 +1,13 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { DebtService } from '../debt/debt.service';
+import { EmployeeService } from '../employee/employee.service';
 import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
 import { IncomeService } from '../income/income.service';
 import { OccasionalExpenseService } from '../occasional-expense/occasional-expense.service';
+import { OrganizationService } from '../organization/organization.service';
 import { MonthlySnapshot } from '../shared/types';
 import { SnapshotService } from './snapshot.service';
 
@@ -17,6 +20,9 @@ export class SnapshotController {
     private readonly debtService: DebtService,
     private readonly fixedExpenseService: FixedExpenseService,
     private readonly occasionalExpenseService: OccasionalExpenseService,
+    private readonly organizationService: OrganizationService,
+    private readonly employeeService: EmployeeService,
+    private readonly config: ConfigService,
   ) {}
 
   @Get()
@@ -36,13 +42,17 @@ export class SnapshotController {
   ): Promise<MonthlySnapshot> {
     const m = Number(month);
     const y = Number(year);
+    const businessEnabled = this.config.get<string>('FEATURE_BUSINESS') === 'true';
 
-    const [incomes, debts, fixedExpenses, occasionalExpenses] = await Promise.all([
-      this.incomeService.findForMonth(userId, m, y),
-      this.debtService.findAll(userId),
-      this.fixedExpenseService.findAll(userId),
-      this.occasionalExpenseService.findForMonth(userId, m, y),
-    ]);
+    const [incomes, debts, fixedExpenses, occasionalExpenses, organization, employees] =
+      await Promise.all([
+        this.incomeService.findForMonth(userId, m, y),
+        this.debtService.findAll(userId),
+        this.fixedExpenseService.findAll(userId),
+        this.occasionalExpenseService.findForMonth(userId, m, y),
+        businessEnabled ? this.organizationService.find(userId) : Promise.resolve(null),
+        businessEnabled ? this.employeeService.findAll(userId) : Promise.resolve([]),
+      ]);
 
     return this.snapshotService.compute({
       month: m,
@@ -51,6 +61,7 @@ export class SnapshotController {
       debts,
       fixedExpenses,
       occasionalExpenses,
+      ...(organization && { employees, taxRegime: organization.tax_regime }),
     });
   }
 }

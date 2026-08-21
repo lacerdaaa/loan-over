@@ -10,7 +10,7 @@ export enum IncomeCategory {
   OTHER = 'other',
 }
 
-export type ProjectionEventType = 'liberation' | 'alert';
+export type ProjectionEventType = 'liberation' | 'alert' | 'payroll';
 
 export interface ProjectionEvent {
   type: ProjectionEventType;
@@ -38,4 +38,5 @@ export interface MonthlySnapshot {
   total_benefit: number;
   total_debt_balance: number;
   free_balance: number;
+  total_payroll?: number;
 }
