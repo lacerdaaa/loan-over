@@ -86,6 +86,20 @@ describe('Business feature flag OFF (e2e)', () => {
     });
   });
 
+  describe('employees endpoints', () => {
+    it('hides GET /employees behind a 404', () => {
+      return auth(request(app.getHttpServer()).get('/employees')).expect(404);
+    });
+
+    it('hides POST /employees behind a 404', () => {
+      return auth(
+        request(app.getHttpServer())
+          .post('/employees')
+          .send({ name: 'Alice', regime: 'clt', gross_salary: 3000 }),
+      ).expect(404);
+    });
+  });
+
   describe('projection', () => {
     it('omits cash_balance even though an organization row exists', async () => {
       const response = await auth(

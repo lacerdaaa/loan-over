@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { DebtModule } from './debt/debt.module';
+import { EmployeeModule } from './employee/employee.module';
 import { FixedExpenseModule } from './fixed-expense/fixed-expense.module';
 import { GoalModule } from './goal/goal.module';
 import { IncomeModule } from './income/income.module';
@@ -54,6 +55,7 @@ import { UserModule } from './user/user.module';
     ProjectionModule,
     GoalModule,
     OrganizationModule,
+    EmployeeModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

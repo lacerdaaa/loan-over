@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { Debt } from './debt/debt.entity';
+import { Employee } from './employee/employee.entity';
 import { FixedExpense } from './fixed-expense/fixed-expense.entity';
 import { Goal } from './goal/goal.entity';
 import { IncomeDeduction } from './income/income-deduction.entity';
@@ -25,6 +26,7 @@ export const AppDataSource = new DataSource(
           Goal,
           User,
           Organization,
+          Employee,
         ],
         migrations: ['src/migrations/*.ts'],
         synchronize: false,
@@ -45,6 +47,7 @@ export const AppDataSource = new DataSource(
           Goal,
           User,
           Organization,
+          Employee,
         ],
         migrations: ['src/migrations/*.ts'],
         synchronize: false,

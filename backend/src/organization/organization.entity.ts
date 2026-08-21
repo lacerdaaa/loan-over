@@ -1,6 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../user/user.entity';
 
+export type TaxRegime = 'simples' | 'lucro';
+
 @Entity('organizations')
 export class Organization {
   @PrimaryGeneratedColumn('uuid')
@@ -18,4 +20,7 @@ export class Organization {
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   declare cash_balance: number;
+
+  @Column({ type: 'varchar', default: 'simples' })
+  declare tax_regime: TaxRegime;
 }

@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import type { TaxRegime } from '../organization.entity';
 
 export class UpsertOrganizationDto {
   @ApiProperty({ example: 'Acme Ltda', description: 'Company name' })
@@ -20,4 +21,9 @@ export class UpsertOrganizationDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   declare cash_balance: number;
+
+  @ApiPropertyOptional({ example: 'simples', enum: ['simples', 'lucro'] })
+  @IsOptional()
+  @IsIn(['simples', 'lucro'])
+  tax_regime?: TaxRegime;
 }
