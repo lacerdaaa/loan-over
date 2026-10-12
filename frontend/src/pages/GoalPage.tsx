@@ -8,7 +8,6 @@ import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { MAX_PAYOFF_MONTHS } from '../lib/debt';
-import { getErrorMessage } from '../lib/errorMessage';
 import { formatCurrency } from '../lib/formatCurrency';
 import { offsetToLabel, savedProgressPercent, type GoalStatus } from '../lib/goalPlan';
 import { monthLabel } from '../lib/monthLabel';
@@ -75,8 +74,6 @@ const GoalForm = ({ goal }: { goal: Goal | null }) => {
             onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
         </Field>
       </div>
-
-      {upsert.isError && <p role="alert" className="text-xs text-error">{getErrorMessage(upsert.error)}</p>}
 
       <motion.button whileTap={{ scale: 0.97 }} type="submit"
         className="btn btn-primary btn-sm w-full" disabled={upsert.isPending}>
