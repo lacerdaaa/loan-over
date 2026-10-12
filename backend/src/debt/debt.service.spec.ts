@@ -185,6 +185,102 @@ describe('DebtService', () => {
     });
   });
 
+  describe('payInstallment month tracking', () => {
+    it('records the current month as the last paid month', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-05-17T12:00:00Z'));
+      repo.findOne.mockResolvedValue(makeDebt());
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Debt));
+
+      const result = await service.payInstallment('uuid-1', USER_ID);
+      jest.useRealTimers();
+
+      expect(result.last_paid_month).toBe('2026-05-01');
+    });
+  });
+
+  describe('advanceForMonth', () => {
+    const NOW = new Date('2026-05-01T00:00:00Z');
+
+    describe('when the debt has started and was not counted this month', () => {
+      it('adds one paid installment and records the month', () => {
+        const debt = makeDebt({ start_date: new Date('2026-01-01'), paid_installments: 3 });
+
+        const changed = service.advanceForMonth([debt], NOW);
+
+        expect(changed).toEqual([debt]);
+        expect(debt.paid_installments).toBe(4);
+        expect(debt.last_paid_month).toBe('2026-05-01');
+      });
+
+      it('also counts when the last paid month is an earlier month', () => {
+        const debt = makeDebt({ last_paid_month: '2026-04-01', paid_installments: 3 });
+
+        service.advanceForMonth([debt], NOW);
+
+        expect(debt.paid_installments).toBe(4);
+      });
+    });
+
+    describe('when the month was already counted', () => {
+      it('does not count it twice', () => {
+        const debt = makeDebt({ last_paid_month: '2026-05-01', paid_installments: 3 });
+
+        const changed = service.advanceForMonth([debt], NOW);
+
+        expect(changed).toEqual([]);
+        expect(debt.paid_installments).toBe(3);
+      });
+    });
+
+    describe('when the debt starts after the current month', () => {
+      it('leaves the debt untouched', () => {
+        const debt = makeDebt({ start_date: new Date('2026-06-01') });
+
+        const changed = service.advanceForMonth([debt], NOW);
+
+        expect(changed).toEqual([]);
+        expect(debt.paid_installments).toBe(0);
+      });
+    });
+
+    describe('when the debt starts later in the current month', () => {
+      it('waits for the next month', () => {
+        const debt = makeDebt({ start_date: new Date('2026-05-15') });
+
+        expect(service.advanceForMonth([debt], NOW)).toEqual([]);
+      });
+    });
+
+    describe('when the debt is already closed', () => {
+      it('leaves the debt untouched', () => {
+        const debt = makeDebt({ closed: true, paid_installments: 12 });
+
+        expect(service.advanceForMonth([debt], NOW)).toEqual([]);
+      });
+    });
+
+    describe('when the added installment is the last one', () => {
+      it('closes the debt', () => {
+        const debt = makeDebt({ paid_installments: 11, total_installments: 12 });
+
+        service.advanceForMonth([debt], NOW);
+
+        expect(debt.closed).toBe(true);
+      });
+    });
+  });
+
+  describe('autoIncrementInstallments', () => {
+    it('saves only the debts that advanced', async () => {
+      const debt = makeDebt({ start_date: new Date('2020-01-01') });
+      repo.find.mockResolvedValue([debt]);
+
+      await service.autoIncrementInstallments();
+
+      expect(repo.save).toHaveBeenCalledWith([debt]);
+    });
+  });
+
   describe('remove', () => {
     it('throws NotFoundException when debt does not exist', async () => {
       repo.findOne.mockResolvedValue(null);

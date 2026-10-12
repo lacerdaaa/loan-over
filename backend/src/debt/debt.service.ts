@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CreateDebtDto } from './dto/create-debt.dto';
 import { UpdateDebtDto } from './dto/update-debt.dto';
 import { Debt } from './debt.entity';
+import { dayKey, monthStartKey } from './debt-month.utils';
 
 const NON_COPIED_UPDATE_FIELDS: ReadonlySet<string> = new Set(['start_date', 'installment_amount']);
 
@@ -45,6 +46,12 @@ export class DebtService {
     return (principal * rate) / (1 - Math.pow(1 + rate, -n));
   }
 
+  private countInstallment(debt: Debt, monthStart: string): void {
+    debt.paid_installments += 1;
+    debt.last_paid_month = monthStart;
+    this.applyClosingRule(debt);
+  }
+
   private applyClosingRule(debt: Debt): void {
     debt.closed = debt.paid_installments >= debt.total_installments;
   }
@@ -54,8 +61,7 @@ export class DebtService {
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
     if (debt.closed) throw new BadRequestException(`Debt ${id} is already closed`);
 
-    debt.paid_installments += 1;
-    this.applyClosingRule(debt);
+    this.countInstallment(debt, monthStartKey(new Date()));
 
     return this.repo.save(debt);
   }
@@ -103,13 +109,23 @@ export class DebtService {
     await this.repo.delete(id);
   }
 
+  advanceForMonth(debts: Debt[], now: Date): Debt[] {
+    const monthStart = monthStartKey(now);
+    const due = debts.filter((debt) => this.isDueForMonth(debt, monthStart));
+    due.forEach((debt) => this.countInstallment(debt, monthStart));
+    return due;
+  }
+
+  private isDueForMonth(debt: Debt, monthStart: string): boolean {
+    const hasStarted = dayKey(debt.start_date) <= monthStart;
+    const alreadyCounted = debt.last_paid_month != null && debt.last_paid_month >= monthStart;
+    return !debt.closed && hasStarted && !alreadyCounted;
+  }
+
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async autoIncrementInstallments(): Promise<void> {
-    const activeDebts = await this.repo.find({ where: { closed: false } });
-    for (const debt of activeDebts) {
-      debt.paid_installments += 1;
-      this.applyClosingRule(debt);
-      await this.repo.save(debt);
-    }
+    const openDebts = await this.repo.find({ where: { closed: false } });
+    const advanced = this.advanceForMonth(openDebts, new Date());
+    await this.repo.save(advanced);
   }
 }

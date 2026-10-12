@@ -33,4 +33,7 @@ export class Debt {
 
   @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
   declare monthly_rate: number | null;
+
+  @Column({ type: 'date', nullable: true })
+  declare last_paid_month: string | null;
 }
