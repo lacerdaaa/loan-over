@@ -4,6 +4,7 @@ import { EntitlementService } from '../billing/entitlement.service';
 import { Debt } from '../debt/debt.entity';
 import { monthStartKey } from '../debt/debt-month.utils';
 import { DebtService } from '../debt/debt.service';
+import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { EmailService } from './email.service';
@@ -36,11 +37,14 @@ export class NotificationScheduler {
     private readonly composer: NotificationComposer,
     private readonly emailService: EmailService,
     private readonly unsubscribeTokens: UnsubscribeTokenService,
+    private readonly schedulerLock: SchedulerLockService,
   ) {}
 
   @Cron(MONTHLY_CRON, { timeZone: CRON_TIME_ZONE })
   async handleMonthlyCron(): Promise<void> {
-    await this.runMonthly(new Date());
+    await this.schedulerLock.runExclusive(SCHEDULER_LOCK_KEYS.NOTIFICATION_MONTHLY, () =>
+      this.runMonthly(new Date()),
+    );
   }
 
   async runMonthly(now: Date): Promise<void> {

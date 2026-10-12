@@ -5,6 +5,7 @@ import { BillingModule } from '../billing/billing.module';
 import { DebtModule } from '../debt/debt.module';
 import { ProjectionModule } from '../projection/projection.module';
 import { SnapshotModule } from '../snapshot/snapshot.module';
+import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
 import { EmailService } from './email.service';
 import { MonthlyReportBuilder } from './monthly-report.builder';
@@ -20,6 +21,7 @@ import { UnsubscribeTokenService } from './unsubscribe-token.service';
     UserModule,
     BillingModule,
     DebtModule,
+    SharedModule,
     SnapshotModule,
     ProjectionModule,
     JwtModule.registerAsync({

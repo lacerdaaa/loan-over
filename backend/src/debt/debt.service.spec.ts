@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { Debt } from './debt.entity';
+import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { DebtService } from './debt.service';
 import { CreateDebtDto } from './dto/create-debt.dto';
 import { UpdateDebtDto } from './dto/update-debt.dto';
@@ -39,10 +40,18 @@ const makeDebt = (overrides: Partial<Debt> = {}): Debt => ({
 describe('DebtService', () => {
   let service: DebtService;
   let repo: jest.Mocked<Repository<Debt>>;
+  let schedulerLock: { runExclusive: jest.Mock };
 
   beforeEach(async () => {
+    schedulerLock = {
+      runExclusive: jest.fn((_key: number, job: () => Promise<void>) => job().then(() => true)),
+    };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DebtService, { provide: getRepositoryToken(Debt), useFactory: mockRepository }],
+      providers: [
+        DebtService,
+        { provide: getRepositoryToken(Debt), useFactory: mockRepository },
+        { provide: SchedulerLockService, useValue: schedulerLock },
+      ],
     }).compile();
 
     service = module.get(DebtService);
@@ -286,6 +295,29 @@ describe('DebtService', () => {
       await service.autoIncrementInstallments();
 
       expect(repo.save).toHaveBeenCalledWith([debt]);
+    });
+  });
+
+  describe('handleMonthlyCron', () => {
+    it('advances installments under the debt advisory lock', async () => {
+      const debt = makeDebt({ start_date: new Date('2020-01-01') });
+      repo.find.mockResolvedValue([debt]);
+
+      await service.handleMonthlyCron();
+
+      expect(schedulerLock.runExclusive).toHaveBeenCalledWith(
+        SCHEDULER_LOCK_KEYS.DEBT_MONTHLY_ADVANCE,
+        expect.any(Function),
+      );
+      expect(repo.save).toHaveBeenCalledWith([debt]);
+    });
+
+    it('does nothing when another instance already holds the lock', async () => {
+      schedulerLock.runExclusive.mockResolvedValue(false);
+
+      await service.handleMonthlyCron();
+
+      expect(repo.find).not.toHaveBeenCalled();
     });
   });
 

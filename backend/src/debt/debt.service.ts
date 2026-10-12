@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
+import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { CreateDebtDto } from './dto/create-debt.dto';
 import { UpdateDebtDto } from './dto/update-debt.dto';
 import { Debt } from './debt.entity';
@@ -14,6 +15,7 @@ export class DebtService {
   constructor(
     @InjectRepository(Debt)
     private readonly repo: Repository<Debt>,
+    private readonly schedulerLock: SchedulerLockService,
   ) {}
 
   findAll(userId: string): Promise<Debt[]> {
@@ -122,6 +124,12 @@ export class DebtService {
   }
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
+  async handleMonthlyCron(): Promise<void> {
+    await this.schedulerLock.runExclusive(SCHEDULER_LOCK_KEYS.DEBT_MONTHLY_ADVANCE, () =>
+      this.autoIncrementInstallments(),
+    );
+  }
+
   async autoIncrementInstallments(): Promise<void> {
     const openDebts = await this.repo.find({ where: { closed: false } });
     const advanced = this.advanceForMonth(openDebts, new Date());
