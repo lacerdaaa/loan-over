@@ -27,19 +27,64 @@ export interface ProjectionInput {
   taxRegime?: TaxRegime;
 }
 
+export interface HypotheticalDebt {
+  name: string;
+  installment_amount: number;
+  installments: number;
+  start_offset: number;
+}
+
+export interface ScenarioAdjustments {
+  hypothetical_debts?: HypotheticalDebt[];
+  extra_monthly_income?: number;
+  extra_monthly_expense?: number;
+}
+
+export interface SimulationResult {
+  baseline: ProjectedMonth[];
+  scenario: ProjectedMonth[];
+}
+
+interface HypotheticalMonth {
+  installments: number;
+  activeCount: number;
+  events: ProjectionEvent[];
+}
+
+interface PayoffTarget {
+  name: string;
+  amount: number;
+  debtId?: string;
+}
+
 @Injectable()
 export class ProjectionService {
   private readonly payrollService = new PayrollService();
 
-  project(input: ProjectionInput, horizonMonths: number): ProjectedMonth[] {
-    const baseIncome = this.sumFixedIncome(input.incomes);
+  simulate(
+    input: ProjectionInput,
+    horizonMonths: number,
+    adjustments: ScenarioAdjustments,
+  ): SimulationResult {
+    return {
+      baseline: this.project(input, horizonMonths),
+      scenario: this.project(input, horizonMonths, adjustments),
+    };
+  }
+
+  project(
+    input: ProjectionInput,
+    horizonMonths: number,
+    adjustments: ScenarioAdjustments = {},
+  ): ProjectedMonth[] {
+    const baseIncome = this.sumFixedIncome(input.incomes) + (adjustments.extra_monthly_income ?? 0);
     const payrollCash = this.monthlyPayrollCash(input);
     let runningCash = input.startingCashBalance;
     let cumulative = input.startingSavings ?? 0;
     const months: ProjectedMonth[] = [];
 
     for (let offset = 0; offset < horizonMonths; offset++) {
-      const projected = this.projectMonth(input, offset, baseIncome, payrollCash);
+      const projected = this.projectMonth(input, offset, baseIncome, payrollCash, adjustments);
       cumulative += projected.free_balance;
       projected.cumulative_balance = cumulative;
 
@@ -59,22 +104,38 @@ export class ProjectionService {
     offset: number,
     baseIncome: number,
     payrollCash: number,
+    adjustments: ScenarioAdjustments,
   ): ProjectedMonth {
     const { month, year } = this.addMonths(input.referenceMonth, input.referenceYear, offset + 1);
     const monthFixed = this.sumActiveExpensesForMonth(input.fixedExpenses, month, year);
-    const activeDebtTotal = this.sumActiveDebtInstallments(input.debts, offset);
-    const events = this.buildEvents(input.debts, offset);
+    const hypothetical = this.hypotheticalMonth(adjustments.hypothetical_debts ?? [], offset);
+    const events = [...this.buildEvents(input.debts, offset), ...hypothetical.events];
     const thirteenth = this.payrollEventFor(input, month, events);
-    const monthOutflow = monthFixed + activeDebtTotal + payrollCash + thirteenth;
+    const monthOutflow =
+      monthFixed +
+      this.sumActiveDebtInstallments(input.debts, offset) +
+      hypothetical.installments +
+      payrollCash +
+      thirteenth +
+      (adjustments.extra_monthly_expense ?? 0);
 
     return {
       month,
       year,
       free_balance: baseIncome - monthOutflow,
       events,
-      active_debts: this.countActiveDebts(input.debts, offset),
+      active_debts: this.countActiveDebts(input.debts, offset) + hypothetical.activeCount,
       total_outflow: monthOutflow,
       cumulative_balance: 0,
+    };
+  }
+
+  private hypotheticalMonth(debts: HypotheticalDebt[], offset: number): HypotheticalMonth {
+    const active = debts.filter((d) => this.isHypotheticalActive(d, offset));
+    return {
+      installments: active.reduce((sum, d) => sum + d.installment_amount, 0),
+      activeCount: active.length,
+      events: debts.flatMap((d) => this.eventsForHypotheticalDebt(d, offset)),
     };
   }
 
@@ -134,28 +195,49 @@ export class ProjectionService {
 
   private eventsForDebt(debt: Debt, offset: number): ProjectionEvent[] {
     if (debt.closed) return [];
-    const remaining = debt.total_installments - debt.paid_installments;
+    const target = {
+      name: debt.name,
+      amount: Number(debt.installment_amount),
+      debtId: debt.id,
+    };
+    return this.payoffEvents(target, offset, debt.total_installments - debt.paid_installments);
+  }
 
-    if (offset === remaining) {
+  private isHypotheticalActive(debt: HypotheticalDebt, offset: number): boolean {
+    const sinceStart = offset - debt.start_offset;
+    return sinceStart >= 0 && sinceStart < debt.installments;
+  }
+
+  private eventsForHypotheticalDebt(debt: HypotheticalDebt, offset: number): ProjectionEvent[] {
+    const target = { name: debt.name, amount: debt.installment_amount };
+    return this.payoffEvents(target, offset - debt.start_offset, debt.installments);
+  }
+
+  private payoffEvents(
+    target: PayoffTarget,
+    offsetSinceStart: number,
+    remaining: number,
+  ): ProjectionEvent[] {
+    if (offsetSinceStart === remaining) {
       return [
         {
           type: 'liberation',
-          description: `${debt.name} quitada — ${formatBrl(debt.installment_amount)}/mês liberados`,
-          amount: Number(debt.installment_amount),
-          debt_id: debt.id,
-          debt_name: debt.name,
+          description: `${target.name} quitada — ${formatBrl(target.amount)}/mês liberados`,
+          amount: target.amount,
+          debt_id: target.debtId,
+          debt_name: target.name,
         },
       ];
     }
 
-    if (offset === remaining - 1) {
+    if (offsetSinceStart === remaining - 1) {
       return [
         {
           type: 'alert',
-          description: `${debt.name} — última parcela no próximo mês`,
-          amount: Number(debt.installment_amount),
-          debt_id: debt.id,
-          debt_name: debt.name,
+          description: `${target.name} — última parcela no próximo mês`,
+          amount: target.amount,
+          debt_id: target.debtId,
+          debt_name: target.name,
         },
       ];
     }

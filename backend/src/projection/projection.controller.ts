@@ -1,11 +1,12 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ProjectionQueryDto, DEFAULT_HORIZON } from './dto/projection-query.dto';
 import { ProjectedMonth } from '../shared/types';
 import { ProjectionAccessService } from './projection-access.service';
 import { ProjectionInputAssembler } from './projection-input.assembler';
-import { ProjectionService } from './projection.service';
+import { ProjectionService, SimulationResult } from './projection.service';
+import { SimulateProjectionDto } from './dto/simulate-projection.dto';
 
 @ApiTags('projection')
 @Controller('projection')
@@ -37,5 +38,26 @@ export class ProjectionController {
     await this.access.assertHorizonAllowed(userId, horizonMonths);
     const input = await this.inputAssembler.assemble(userId, refMonth, refYear);
     return this.projectionService.project(input, horizonMonths);
+  }
+
+  @Post('simulate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Simulate a what-if scenario against the baseline projection (Pro)',
+    description:
+      'Adds hypothetical debts and extra monthly income/expense to the projection and returns ' +
+      'both the unchanged baseline and the scenario.',
+  })
+  @ApiOkResponse({
+    description: '{ baseline, scenario } — both arrays of ProjectedMonth (403 without Pro)',
+  })
+  async simulate(
+    @CurrentUser() userId: string,
+    @Body() dto: SimulateProjectionDto,
+  ): Promise<SimulationResult> {
+    await this.access.assertSimulatorAllowed(userId);
+    const now = new Date();
+    const input = await this.inputAssembler.assemble(userId, now.getMonth() + 1, now.getFullYear());
+    return this.projectionService.simulate(input, dto.horizon ?? DEFAULT_HORIZON, dto);
   }
 }
