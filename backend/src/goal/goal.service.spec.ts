@@ -79,6 +79,19 @@ describe('GoalService', () => {
     });
   });
 
+  describe('upsert when monthly_min is omitted', () => {
+    it('clears the monthly_min of an existing goal', async () => {
+      const existing = makeGoal({ monthly_min: 200 });
+      repo.findOne.mockResolvedValue(existing);
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Goal));
+      const dto = { target_amount: 15000, deadline_month: 6, deadline_year: 2028 };
+
+      const result = await service.upsert(USER_ID, dto);
+
+      expect(result.monthly_min).toBeNull();
+    });
+  });
+
   describe('remove', () => {
     it('throws NotFoundException when no goal exists', async () => {
       repo.findOne.mockResolvedValue(null);
