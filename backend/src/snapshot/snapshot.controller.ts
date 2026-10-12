@@ -1,15 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { DebtService } from '../debt/debt.service';
-import { EmployeeService } from '../employee/employee.service';
-import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
-import { IncomeService } from '../income/income.service';
-import { OccasionalExpenseService } from '../occasional-expense/occasional-expense.service';
-import { OrganizationService } from '../organization/organization.service';
 import { MonthYearQueryDto } from '../shared/dto/month-year-query.dto';
 import { MonthlySnapshot } from '../shared/types';
+import { SnapshotInputAssembler } from './snapshot-input.assembler';
 import { SnapshotService } from './snapshot.service';
 
 @ApiTags('snapshot')
@@ -17,13 +11,7 @@ import { SnapshotService } from './snapshot.service';
 export class SnapshotController {
   constructor(
     private readonly snapshotService: SnapshotService,
-    private readonly incomeService: IncomeService,
-    private readonly debtService: DebtService,
-    private readonly fixedExpenseService: FixedExpenseService,
-    private readonly occasionalExpenseService: OccasionalExpenseService,
-    private readonly organizationService: OrganizationService,
-    private readonly employeeService: EmployeeService,
-    private readonly config: ConfigService,
+    private readonly inputAssembler: SnapshotInputAssembler,
   ) {}
 
   @Get()
@@ -38,27 +26,7 @@ export class SnapshotController {
     @CurrentUser() userId: string,
     @Query() query: MonthYearQueryDto,
   ): Promise<MonthlySnapshot> {
-    const { month: m, year: y } = query;
-    const businessEnabled = this.config.get<string>('FEATURE_BUSINESS') === 'true';
-
-    const [incomes, debts, fixedExpenses, occasionalExpenses, organization, employees] =
-      await Promise.all([
-        this.incomeService.findForMonth(userId, m, y),
-        this.debtService.findAll(userId),
-        this.fixedExpenseService.findAll(userId),
-        this.occasionalExpenseService.findForMonth(userId, m, y),
-        businessEnabled ? this.organizationService.find(userId) : Promise.resolve(null),
-        businessEnabled ? this.employeeService.findAll(userId) : Promise.resolve([]),
-      ]);
-
-    return this.snapshotService.compute({
-      month: m,
-      year: y,
-      incomes,
-      debts,
-      fixedExpenses,
-      occasionalExpenses,
-      ...(organization && { employees, taxRegime: organization.tax_regime }),
-    });
+    const input = await this.inputAssembler.assemble(userId, query.month, query.year);
+    return this.snapshotService.compute(input);
   }
 }

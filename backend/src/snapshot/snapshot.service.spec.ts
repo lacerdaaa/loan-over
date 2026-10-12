@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Debt } from '../debt/debt.entity';
-import { Employee, EmployeeRegime } from '../employee/employee.entity';
+import { Employee } from '../employee/employee.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { IncomeDeduction } from '../income/income-deduction.entity';
 import { Income } from '../income/income.entity';
 import { OccasionalExpense } from '../occasional-expense/occasional-expense.entity';
-import { IncomeCategory, IncomeType } from '../shared/types';
+import { IncomeCategory, IncomeType, MonthlySnapshot } from '../shared/types';
 import { ComputeInput, SnapshotService } from './snapshot.service';
 
 const makeIncome = (
@@ -67,14 +67,14 @@ const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
   ({
     id: '1',
     name: 'Alice',
-    regime: 'clt' as EmployeeRegime,
+    regime: 'clt',
     gross_salary: 3000,
     monthly_benefits: 0,
     active: true,
     ...overrides,
   }) as Employee;
 
-const compute = (service: SnapshotService, overrides: Partial<ComputeInput>) =>
+const compute = (service: SnapshotService, overrides: Partial<ComputeInput>): MonthlySnapshot =>
   service.compute({
     month: 6,
     year: 2026,
