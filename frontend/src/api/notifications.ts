@@ -6,11 +6,11 @@ export interface NotificationPreferences {
   monthly_report: boolean;
 }
 
-const QUERY_KEY = ['notifications', 'preferences'];
+export const NOTIFICATION_PREFERENCES_KEY = ['notifications', 'preferences'];
 
 export const useNotificationPreferences = () =>
   useQuery<NotificationPreferences>({
-    queryKey: QUERY_KEY,
+    queryKey: NOTIFICATION_PREFERENCES_KEY,
     queryFn: async () => (await client.get<NotificationPreferences>('/notifications/preferences')).data,
   });
 
@@ -19,7 +19,7 @@ export const useUpdateNotificationPreferences = () => {
   return useMutation({
     mutationFn: async (patch: Partial<NotificationPreferences>) =>
       (await client.patch<NotificationPreferences>('/notifications/preferences', patch)).data,
-    onSuccess: (data) => qc.setQueryData(QUERY_KEY, data),
+    onSuccess: (data) => qc.setQueryData(NOTIFICATION_PREFERENCES_KEY, data),
   });
 };
 

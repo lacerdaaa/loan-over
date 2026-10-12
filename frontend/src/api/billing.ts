@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { type Query, useMutation, useQuery } from '@tanstack/react-query';
 import { BILLING_ENABLED } from '../lib/flags';
 import { client } from './client';
 
@@ -18,11 +18,12 @@ interface RedirectResponse {
 
 export const BILLING_STATUS_KEY = ['billing', 'status'];
 
-export const useBillingStatus = () =>
+export const useBillingStatus = (refetchInterval?: (query: Query<BillingStatus>) => number | false) =>
   useQuery<BillingStatus>({
     queryKey: BILLING_STATUS_KEY,
     queryFn: async () => (await client.get<BillingStatus>('/billing/status')).data,
     enabled: BILLING_ENABLED,
+    refetchInterval,
   });
 
 const redirectTo = (data: RedirectResponse) => {
