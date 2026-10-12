@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
@@ -96,6 +96,16 @@ describe('BillingService', () => {
   });
 
   describe('checkout', () => {
+    it('refuses a new checkout when the user already has an active Pro subscription', async () => {
+      userService.findById.mockResolvedValue(
+        makeUser({ plan: 'pro', stripe_subscription_id: 'sub_1', stripe_customer_id: 'cus_old' }),
+      );
+      entitlements.isPro.mockReturnValue(true);
+
+      await expect(service.createCheckout(USER_ID)).rejects.toBeInstanceOf(ConflictException);
+      expect(gateway.createCheckoutSession).not.toHaveBeenCalled();
+    });
+
     it('creates a Stripe customer for a user without one and stores it', async () => {
       userService.findById.mockResolvedValue(makeUser());
 

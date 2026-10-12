@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User, UserPlan } from '../user/user.entity';
 import { UserService } from '../user/user.service';
@@ -17,6 +17,7 @@ export interface BillingUrl {
   url: string;
 }
 
+const ALREADY_SUBSCRIBED_MESSAGE = 'Assinatura já ativa';
 const NO_CUSTOMER_MESSAGE = 'Nenhuma assinatura encontrada para este usuário';
 
 @Injectable()
@@ -41,6 +42,9 @@ export class BillingService {
 
   async createCheckout(userId: string): Promise<BillingUrl> {
     const user = await this.requireUser(userId);
+    if (user.stripe_subscription_id && this.entitlements.isPro(user)) {
+      throw new ConflictException(ALREADY_SUBSCRIBED_MESSAGE);
+    }
     const customerId = await this.ensureCustomer(user);
     const frontendUrl = this.config.get<string>('FRONTEND_URL');
     const url = await this.gateway.createCheckoutSession({

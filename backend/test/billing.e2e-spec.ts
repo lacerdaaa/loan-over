@@ -248,6 +248,12 @@ describe('Billing and entitlements (e2e)', () => {
         ).expect(400);
       });
 
+      it('refuses a second checkout with 409 while the subscription is active', async () => {
+        await auth(request(app.getHttpServer()).post('/billing/checkout')).expect(409);
+
+        expect(gateway.createCheckoutSession).not.toHaveBeenCalled();
+      });
+
       it('moves the user back to free when the subscription is deleted', async () => {
         subscriptionEvent('customer.subscription.deleted', 'canceled');
         await postWebhook().expect(200);
