@@ -10,7 +10,7 @@ type RawDebt = Omit<Debt, 'installment_amount' | 'principal' | 'monthly_rate'> &
   monthly_rate?: number | string | null;
 };
 
-const toDebt = (raw: RawDebt): Debt => ({
+export const toDebt = (raw: RawDebt): Debt => ({
   ...raw,
   installment_amount: Number(raw.installment_amount),
   principal: toNullableNumber(raw.principal),

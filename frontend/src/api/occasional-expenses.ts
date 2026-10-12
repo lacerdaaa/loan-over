@@ -5,7 +5,7 @@ import { invalidateFinancials } from './invalidate';
 
 type RawOccasionalExpense = Omit<OccasionalExpense, 'amount'> & { amount: number | string };
 
-const toOccasionalExpense = (raw: RawOccasionalExpense): OccasionalExpense => ({
+export const toOccasionalExpense = (raw: RawOccasionalExpense): OccasionalExpense => ({
   ...raw,
   amount: Number(raw.amount),
 });

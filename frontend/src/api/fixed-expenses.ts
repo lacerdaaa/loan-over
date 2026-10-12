@@ -6,7 +6,7 @@ import { toNullableNumber } from './numbers';
 
 type RawFixedExpense = Omit<FixedExpense, 'amount'> & { amount: number | string };
 
-const toFixedExpense = (raw: RawFixedExpense): FixedExpense => ({
+export const toFixedExpense = (raw: RawFixedExpense): FixedExpense => ({
   ...raw,
   amount: Number(raw.amount),
   valid_from_month: toNullableNumber(raw.valid_from_month),

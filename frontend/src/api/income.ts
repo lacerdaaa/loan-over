@@ -9,12 +9,12 @@ type RawIncome = Omit<Income, 'amount' | 'deductions'> & {
   deductions?: RawIncomeDeduction[];
 };
 
-const toDeduction = (raw: RawIncomeDeduction): IncomeDeduction => ({
+export const toDeduction = (raw: RawIncomeDeduction): IncomeDeduction => ({
   ...raw,
   amount: Number(raw.amount),
 });
 
-const toIncome = (raw: RawIncome): Income => ({
+export const toIncome = (raw: RawIncome): Income => ({
   ...raw,
   amount: Number(raw.amount),
   deductions: (raw.deductions ?? []).map(toDeduction),

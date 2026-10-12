@@ -12,7 +12,7 @@ type RawGoal = Omit<Goal, 'target_amount' | 'monthly_min' | 'saved_amount'> & {
 
 export type GoalInput = Omit<Goal, 'id' | 'saved_amount'> & { saved_amount?: number };
 
-const toGoal = (raw: RawGoal): Goal => ({
+export const toGoal = (raw: RawGoal): Goal => ({
   ...raw,
   target_amount: Number(raw.target_amount),
   monthly_min: toNullableNumber(raw.monthly_min),
