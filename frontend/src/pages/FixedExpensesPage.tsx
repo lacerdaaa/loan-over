@@ -58,7 +58,7 @@ export const FixedExpensesPage = () => {
           title={labels.fixedExpenses}
           subtitle={`${expenses.filter((e) => e.active).length} ativo(s)`}
           action={
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOpen(true)} className="btn btn-primary btn-sm gap-1.5" data-tutorial="add-fixed">
               <Plus size={14} /> Adicionar gasto
             </motion.button>
           }

@@ -89,7 +89,7 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
 };
 
 const HorizonSelector = ({ value, onChange }: { value: Horizon; onChange: (h: Horizon) => void }) => (
-  <div role="group" aria-label="Horizonte da projeção" className="join">
+  <div role="group" aria-label="Horizonte da projeção" className="join" data-tutorial="timeline-horizon">
     {HORIZON_OPTIONS.map((option) => (
       <button
         key={option}

@@ -36,10 +36,36 @@ const STEPS: TutorialStep[] = [
     title: 'Registre os gastos do mês',
     body: 'Clique aqui para adicionar gastos pontuais — uma viagem, um conserto, uma compra fora do orçamento fixo.',
   },
+  {
+    navigateTo: '/fixed-expenses',
+    selector: '[data-tutorial="add-fixed"]',
+    title: 'Cadastre os gastos fixos',
+    body: 'Aluguel, internet, assinaturas: gastos que se repetem todo mês entram aqui e são descontados do seu saldo livre.',
+  },
+  {
+    navigateTo: '/timeline',
+    selector: '[data-tutorial="timeline-horizon"]',
+    title: 'Veja o futuro na projeção',
+    body: 'Escolha de 12 a 60 meses. O gráfico mostra o saldo livre, o saldo acumulado e marca os meses em que uma dívida quita.',
+  },
+  {
+    navigateTo: '/goal',
+    selector: '[data-tutorial="goal-help"]',
+    title: 'Defina sua meta',
+    body: 'Informe quanto quer juntar, quanto já guardou e o prazo. O app mostra se você está no prazo e sugere o que fazer quando uma dívida quitar. Este botão explica o método Snowball.',
+  },
+  {
+    navigateTo: '/dashboard',
+    title: 'Tudo pronto',
+    body: 'Volte ao painel sempre que quiser acompanhar o mês.',
+  },
 ];
 
 const PAD = 10;
 const TOOLTIP_W = 272;
+const VIEWPORT_MARGIN = 8;
+const TOOLTIP_GAP = 16;
+const SIDE_SPACE_NEEDED = TOOLTIP_W + TOOLTIP_GAP * 2;
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 const CONTENT_STEPS = STEPS.length - 1;
 
@@ -65,21 +91,22 @@ interface TooltipPos {
   arrow: 'top' | 'left' | 'right';
 }
 
+const clampLeft = (left: number): number =>
+  Math.max(VIEWPORT_MARGIN, Math.min(window.innerWidth - TOOLTIP_W - VIEWPORT_MARGIN, left));
+
 function computeTooltipPos(rect: DOMRect): TooltipPos {
-  const vw = window.innerWidth;
-  const spaceRight = vw - rect.right;
+  const spaceRight = window.innerWidth - rect.right;
   const spaceLeft = rect.left;
 
   // Prefer placing below the element (buttons are in the header area)
-  if (spaceRight < TOOLTIP_W + 32 && spaceLeft < TOOLTIP_W + 32) {
-    const left = Math.max(8, Math.min(vw - TOOLTIP_W - 8, rect.left + rect.width / 2 - TOOLTIP_W / 2));
-    return { left, top: rect.bottom + 16, arrow: 'top' };
+  if (spaceRight < SIDE_SPACE_NEEDED && spaceLeft < SIDE_SPACE_NEEDED) {
+    return { left: clampLeft(rect.left + rect.width / 2 - TOOLTIP_W / 2), top: rect.bottom + TOOLTIP_GAP, arrow: 'top' };
   }
 
   // Place to the left if the button is near the right edge
-  if (spaceRight < TOOLTIP_W + 32) {
+  if (spaceRight < SIDE_SPACE_NEEDED) {
     return {
-      left: rect.left - TOOLTIP_W - 16,
+      left: clampLeft(rect.left - TOOLTIP_W - TOOLTIP_GAP),
       top: rect.top + rect.height / 2,
       arrow: 'right',
     };
@@ -87,7 +114,7 @@ function computeTooltipPos(rect: DOMRect): TooltipPos {
 
   // Otherwise place to the right
   return {
-    left: rect.right + 16,
+    left: clampLeft(rect.right + TOOLTIP_GAP),
     top: rect.top + rect.height / 2,
     arrow: 'left',
   };
@@ -254,7 +281,7 @@ const TutorialOverlay = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0" style={{ zIndex: 9999 }}>
+    <div className="fixed inset-0" style={{ zIndex: 9999 }} role="dialog" aria-modal="true" aria-label="Tutorial">
       {showSpotlight && rect ? (
         <>
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, rect.top - PAD), background: 'rgba(0,0,0,0.78)' }} />

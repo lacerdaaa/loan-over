@@ -189,6 +189,7 @@ export const GoalPage = () => {
             <button
               type="button"
               aria-label="Como funciona o Snowball"
+              data-tutorial="goal-help"
               onClick={() => { setTutorialStep(0); setTutorialOpen(true); }}
               className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-base-content mt-1 shrink-0"
             >
