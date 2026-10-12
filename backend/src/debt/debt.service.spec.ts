@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { Debt } from './debt.entity';
 import { SCHEDULE_CRON_OPTIONS } from '@nestjs/schedule/dist/schedule.constants';
 import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
+import { monthStartKey } from './debt-month.utils';
 import { DebtService } from './debt.service';
 import { CreateDebtDto } from './dto/create-debt.dto';
 import { UpdateDebtDto } from './dto/update-debt.dto';
@@ -158,6 +159,30 @@ describe('DebtService', () => {
       const result = await patch(makeDebt(), { paid_installments: 12 });
 
       expect(result.closed).toBe(true);
+    });
+
+    it('stamps the current month as last paid when a patch closes an open debt', async () => {
+      const result = await patch(makeDebt(), { paid_installments: 12 });
+
+      expect(result.last_paid_month).toBe(monthStartKey(new Date()));
+    });
+
+    it('keeps last_paid_month when the debt was already closed', async () => {
+      const closed = makeDebt({
+        closed: true,
+        paid_installments: 12,
+        last_paid_month: '2026-01-01',
+      });
+
+      const result = await patch(closed, { name: 'Renamed' });
+
+      expect(result.last_paid_month).toBe('2026-01-01');
+    });
+
+    it('keeps last_paid_month when the patch leaves the debt open', async () => {
+      const result = await patch(makeDebt(), { paid_installments: 5 });
+
+      expect(result.last_paid_month).toBeNull();
     });
 
     it('throws NotFoundException when the debt does not exist', async () => {

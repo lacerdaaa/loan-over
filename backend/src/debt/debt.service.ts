@@ -73,9 +73,11 @@ export class DebtService {
     const debt = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
 
+    const wasClosed = debt.closed;
     this.applyFields(debt, dto);
     this.applyInstallment(debt, dto);
     this.applyClosingRule(debt);
+    if (!wasClosed && debt.closed) debt.last_paid_month = monthStartKey(new Date());
 
     return this.repo.save(debt);
   }
