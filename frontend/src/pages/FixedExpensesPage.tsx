@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { ListChecks, Plus, X } from 'lucide-react';
+import { ListChecks, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateFixedExpense, useDeleteFixedExpense, useFixedExpenses, useUpdateFixedExpense } from '../api/fixed-expenses';
+import { ConfirmDeleteButton } from '../components/ui/ConfirmDeleteButton';
 import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -109,6 +110,7 @@ export const FixedExpensesPage = () => {
                   </td>
                   <td>
                     <button
+                      aria-pressed={exp.active}
                       className={`badge badge-sm cursor-pointer select-none transition-colors ${exp.active ? 'badge-success' : 'badge-ghost text-base-content/40'}`}
                       onClick={() => update.mutate({ id: exp.id, active: !exp.active })}
                     >
@@ -116,7 +118,7 @@ export const FixedExpensesPage = () => {
                     </button>
                   </td>
                   <td>
-                    <motion.button whileTap={{ scale: 0.93 }} aria-label="Excluir gasto" className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(exp.id)}><X size={14} /></motion.button>
+                    <ConfirmDeleteButton label="Excluir gasto" pending={remove.isPending} onConfirm={() => remove.mutate(exp.id)} />
                   </td>
                 </motion.tr>
               ))}

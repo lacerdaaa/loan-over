@@ -32,6 +32,7 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
         key={to}
         to={to}
         end={end}
+        aria-label={labels[labelKey]}
         onClick={onNavClick}
         {...(tutorialId ? { 'data-tutorial': tutorialId } : {})}
         className={({ isActive }) =>
@@ -49,6 +50,7 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
     {isBusinessMode && (
       <NavLink
         to="/people"
+        aria-label={labels.people}
         onClick={onNavClick}
         className={({ isActive }) =>
           `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
@@ -128,6 +130,8 @@ export const Sidebar = () => {
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-expanded={!collapsed}
             className="font-mono font-bold text-primary text-sm whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity"
           >
             {collapsed ? '//' : '// loan over'}
@@ -156,7 +160,7 @@ export const Sidebar = () => {
                 <div className="flex items-center gap-3">
                   <span className="font-mono font-bold text-primary text-sm">// loan over</span>
                 </div>
-                <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(false)}>
+                <button className="btn btn-ghost btn-sm btn-square" aria-label="Fechar menu" onClick={() => setMobileOpen(false)}>
                   <X size={18} />
                 </button>
               </div>
@@ -171,7 +175,7 @@ export const Sidebar = () => {
       {/* Content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className="flex md:hidden items-center gap-3 px-4 py-3 border-b border-base-300 bg-base-200 shrink-0">
-          <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(true)}>
+          <button className="btn btn-ghost btn-sm btn-square" aria-label="Abrir menu" onClick={() => setMobileOpen(true)}>
             <Menu size={20} />
           </button>
           <span className="font-mono font-bold text-primary text-sm">// loan over</span>

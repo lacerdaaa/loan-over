@@ -83,6 +83,7 @@ export const DashboardPage = () => {
             <motion.button
               whileTap={{ scale: 0.93 }}
               className="btn btn-ghost btn-sm btn-square"
+              aria-label="Mês anterior"
               onClick={() => navigate(-1)}
             >
               <ArrowLeft size={16} />
@@ -101,6 +102,7 @@ export const DashboardPage = () => {
             <motion.button
               whileTap={{ scale: 0.93 }}
               className="btn btn-ghost btn-sm btn-square"
+              aria-label="Próximo mês"
               onClick={() => navigate(1)}
             >
               <ArrowRight size={16} />
