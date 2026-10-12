@@ -1,143 +1,24 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, HelpCircle, Snowflake, Target, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useDebts } from '../api/debts';
-import { useGoal, useUpsertGoal } from '../api/goal';
-import { useSnapshot } from '../api/snapshot';
+import { useState } from 'react';
+import { useUpsertGoal } from '../api/goal';
 import { Field } from '../components/ui/Field';
+import { LiberationSuggestions } from '../components/ui/LiberationSuggestions';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
-import { MAX_PAYOFF_MONTHS, naturalPayoffMonths, remainingBalance } from '../lib/debt';
+import { MAX_PAYOFF_MONTHS } from '../lib/debt';
 import { getErrorMessage } from '../lib/errorMessage';
 import { formatCurrency } from '../lib/formatCurrency';
+import { offsetToLabel, savedProgressPercent, type GoalStatus } from '../lib/goalPlan';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
-import type { Debt, Goal } from '../types/api';
+import { useGoalPlan } from '../lib/useGoalPlan';
+import type { Goal } from '../types/api';
 
 const now = new Date();
 const MONTH = now.getMonth() + 1;
 const YEAR = now.getFullYear();
-
-interface DebtResult {
-  id: string;
-  name: string;
-  installment: number;
-  trueRemainingBalance: number;
-  snowballPayoffOffset: number;
-  naturalPayoffOffset: number;
-  monthsSaved: number;
-}
-
-interface SimResult {
-  debtFreeOffset: number | null;
-  goalOffset: number | null;
-  debtOrder: DebtResult[];
-  postDebtMonthlyFree: number;
-}
-
-interface DebtState {
-  id: string;
-  name: string;
-  installment: number;
-  rate: number;
-  balance: number;
-  initialBalance: number;
-  freed: boolean;
-  snowballPayoffOffset: number;
-  naturalPayoffOffset: number;
-}
-
-const PAID_OFF_THRESHOLD = 0.01;
-
-function toDebtState(d: Debt): DebtState {
-  const balance = remainingBalance(d);
-  return {
-    id: d.id,
-    name: d.name,
-    installment: d.installment_amount,
-    rate: d.monthly_rate ?? 0,
-    balance,
-    initialBalance: balance,
-    freed: false,
-    snowballPayoffOffset: 0,
-    naturalPayoffOffset: naturalPayoffMonths(d),
-  };
-}
-
-// Applies extra money to the smallest debts in order; what a debt cannot absorb rolls to the next one.
-function applyExtraPayment(states: DebtState[], extra: number): void {
-  let remainingExtra = extra;
-  for (const d of states) {
-    if (remainingExtra <= 0) return;
-    if (d.freed) continue;
-    const paid = Math.min(remainingExtra, Math.max(0, d.balance));
-    d.balance -= paid;
-    remainingExtra -= paid;
-  }
-}
-
-// Advances every open debt by one installment and returns the installment amounts freed this month.
-function advanceInstallments(states: DebtState[], offset: number): number {
-  let freedInstallments = 0;
-  for (const d of states) {
-    if (d.freed) continue;
-    d.balance -= d.installment - d.balance * d.rate;
-    if (d.balance > PAID_OFF_THRESHOLD) continue;
-    d.freed = true;
-    d.snowballPayoffOffset = offset;
-    freedInstallments += d.installment;
-  }
-  return freedInstallments;
-}
-
-function toDebtResult(d: DebtState): DebtResult {
-  const snowballOffset = d.snowballPayoffOffset || d.naturalPayoffOffset;
-  return {
-    id: d.id,
-    name: d.name,
-    installment: d.installment,
-    trueRemainingBalance: d.initialBalance,
-    snowballPayoffOffset: snowballOffset,
-    naturalPayoffOffset: d.naturalPayoffOffset,
-    monthsSaved: Math.max(0, d.naturalPayoffOffset - snowballOffset),
-  };
-}
-
-function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number, targetAmount: number): SimResult {
-  const states = openDebts.map(toDebtState).sort((a, b) => a.balance - b.balance);
-
-  let freeBal = baseFreeBalance;
-  let cumSavings = 0;
-  let debtFreeOffset: number | null = states.length === 0 ? 0 : null;
-  let goalOffset: number | null = null;
-
-  for (let offset = 1; offset <= MAX_PAYOFF_MONTHS; offset++) {
-    if (debtFreeOffset === null) {
-      const saved = Math.min(monthlyMin, Math.max(0, freeBal));
-      cumSavings += saved;
-      applyExtraPayment(states, Math.max(0, freeBal - saved));
-      freeBal += advanceInstallments(states, offset);
-      if (states.every((d) => d.freed)) debtFreeOffset = offset;
-    } else {
-      cumSavings += Math.max(0, freeBal);
-    }
-
-    if (targetAmount > 0 && cumSavings >= targetAmount && goalOffset === null) {
-      goalOffset = offset;
-    }
-
-    if (debtFreeOffset !== null && (goalOffset !== null || targetAmount === 0)) break;
-  }
-
-  return { debtFreeOffset, goalOffset, debtOrder: states.map(toDebtResult), postDebtMonthlyFree: freeBal };
-}
-
-function offsetToLabel(offset: number | null): string {
-  if (offset === null) return '—';
-  const d = new Date(YEAR, MONTH - 1 + offset, 1);
-  return monthLabel(d.getMonth() + 1, d.getFullYear());
-}
 
 const INITIAL_DEADLINE_YEAR_OFFSET = 1;
 
@@ -148,6 +29,7 @@ const GoalForm = ({ goal }: { goal: Goal | null }) => {
     deadline_month: goal?.deadline_month ?? MONTH,
     deadline_year: goal?.deadline_year ?? YEAR + INITIAL_DEADLINE_YEAR_OFFSET,
     monthly_min: goal?.monthly_min ?? 0,
+    saved_amount: goal?.saved_amount ?? 0,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -163,6 +45,12 @@ const GoalForm = ({ goal }: { goal: Goal | null }) => {
         <input type="number" step="0.01" className="input input-sm"
           placeholder="Ex: 10.000" value={form.target_amount || ''}
           onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
+      </Field>
+
+      <Field label="Quanto já guardei (R$)">
+        <input type="number" step="0.01" min="0" className="input input-sm"
+          placeholder="Valor já separado para a meta" value={form.saved_amount || ''}
+          onChange={(e) => setForm({ ...form, saved_amount: Number(e.target.value) })} />
       </Field>
 
       <Field label="Poupança mínima/mês (R$)">
@@ -198,9 +86,53 @@ const GoalForm = ({ goal }: { goal: Goal | null }) => {
   );
 };
 
+const STATUS_BADGE = (status: GoalStatus): { className: string; label: string } | null => {
+  switch (status.kind) {
+    case 'achieved': return { className: 'badge-success', label: 'Meta atingida' };
+    case 'on_track': return { className: 'badge-success', label: 'No prazo' };
+    case 'late': return {
+      className: 'badge-error',
+      label: `Atrasado ${status.monthsLate} ${status.monthsLate === 1 ? 'mês' : 'meses'}`,
+    };
+    case 'expired': return { className: 'badge-error', label: 'Prazo vencido' };
+    case 'unreachable': return { className: 'badge-warning', label: 'Fora do alcance' };
+  }
+};
+
+const GoalProgress = ({ goal, status, requiredMonthly, monthsLeft }: {
+  goal: Goal;
+  status: GoalStatus | null;
+  requiredMonthly: number | null;
+  monthsLeft: number;
+}) => {
+  const { mask } = usePrivacy();
+  const percent = savedProgressPercent(goal.saved_amount, goal.target_amount);
+  const badge = status ? STATUS_BADGE(status) : null;
+
+  return (
+    <div className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-semibold text-sm text-base-content">Progresso da meta</h2>
+        {badge && <span className={`badge badge-sm ${badge.className}`}>{badge.label}</span>}
+      </div>
+      <progress className="progress progress-success w-full" value={percent} max={100} aria-label="Progresso da meta" />
+      <p className="text-xs text-base-content/60 tabular-nums">
+        {mask(formatCurrency(goal.saved_amount))} de {mask(formatCurrency(goal.target_amount))} ({Math.round(percent)}%)
+      </p>
+      <p className="text-xs text-base-content/60 leading-relaxed">
+        Prazo: <span className="font-semibold text-base-content">{monthLabel(goal.deadline_month, goal.deadline_year)}</span>
+        {monthsLeft >= 0 ? ` (${monthsLeft} ${monthsLeft === 1 ? 'mês' : 'meses'})` : ' (vencido)'}
+        {requiredMonthly !== null && requiredMonthly > 0 && (
+          <> · aporte necessário <span className="font-semibold text-base-content">{mask(formatCurrency(requiredMonthly))}/mês</span></>
+        )}
+      </p>
+    </div>
+  );
+};
+
 const simulationWarning = (freeBal: number, targetAmount: number, goalOffset: number | null): string | null => {
   if (freeBal <= 0) {
-    return 'Seu saldo livre este mês é zero ou negativo: não sobra dinheiro para poupar nem para antecipar dívidas.';
+    return 'Seu saldo livre projetado é zero ou negativo: não sobra dinheiro para poupar nem para antecipar dívidas.';
   }
   if (targetAmount > 0 && goalOffset === null) {
     return `Com o saldo livre atual, a meta não é atingida em ${MAX_PAYOFF_MONTHS} meses.`;
@@ -209,22 +141,10 @@ const simulationWarning = (freeBal: number, targetAmount: number, goalOffset: nu
 };
 
 export const GoalPage = () => {
-  const { data: goal } = useGoal();
-  const { data: snapshot } = useSnapshot(MONTH, YEAR);
-  const { data: allDebts = [] } = useDebts();
-
+  const { goal, openDebts, baseFreeBalance: freeBal, result, suggestions, monthsLeft, status, requiredMonthly } = useGoalPlan();
   const { hidden, mask } = usePrivacy();
-  const openDebts = allDebts.filter((d) => !d.closed);
-  const freeBal = snapshot?.free_balance ?? 0;
   const targetAmount = goal?.target_amount ?? 0;
   const monthlyMin = goal?.monthly_min ?? 0;
-
-  const debtsKey = JSON.stringify(openDebts);
-  const result = useMemo(
-    () => simulate(openDebts, freeBal, monthlyMin, targetAmount),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- debtsKey is the stable stand-in for openDebts
-    [debtsKey, freeBal, monthlyMin, targetAmount],
-  );
 
   const warning = simulationWarning(freeBal, targetAmount, result.goalOffset);
 
@@ -359,11 +279,11 @@ export const GoalPage = () => {
             <div className="stat-desc">{targetAmount > 0 ? offsetToLabel(result.goalOffset) : 'sem meta definida'}</div>
           </div>
           <div className="stat">
-            <div className="stat-title text-xs">Saldo livre atual</div>
+            <div className="stat-title text-xs">Saldo livre projetado</div>
             <div className="stat-value font-mono tabular-nums text-xl text-base-content">
               {mask(formatCurrency(freeBal))}
             </div>
-            <div className="stat-desc">este mês</div>
+            <div className="stat-desc">próximo mês</div>
           </div>
         </div>
 
@@ -426,17 +346,20 @@ export const GoalPage = () => {
                   {' '}→ meta em{' '}
                   <span className="font-semibold text-success">{offsetToLabel(result.goalOffset)}</span>
                 </p>
-                {result.goalOffset !== null && (
-                  <progress className="progress progress-success w-full" value={1} max={result.goalOffset} />
-                )}
               </div>
             )}
+
+            {goal && (
+              <GoalProgress goal={goal} status={status} requiredMonthly={requiredMonthly} monthsLeft={monthsLeft} />
+            )}
+
+            <LiberationSuggestions suggestions={suggestions} hasGoal={goal !== null} />
 
             {warning && (
               <div role="alert" className="alert alert-warning alert-soft text-xs">{warning}</div>
             )}
 
-            <GoalForm key={goal?.id ?? 'new'} goal={goal ?? null} />
+            <GoalForm key={goal?.id ?? 'new'} goal={goal} />
           </div>
         </div>
       </div>
