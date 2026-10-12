@@ -58,7 +58,9 @@ Campos novos em `users`: `plan` (`'free' | 'pro'`, default `'free'`), `stripe_cu
 - `POST /billing/portal` → `{ url: string }` (Customer Portal; 400 se não há cliente).
 - `POST /billing/webhook` (público, corpo cru, assinatura `STRIPE_WEBHOOK_SECRET`):
   `checkout.session.completed`, `customer.subscription.updated`,
-  `customer.subscription.deleted`.
+  `customer.subscription.deleted`. Responde `200` (também para eventos desconhecidos), `400` em
+  assinatura inválida, `404` com a flag desligada. Idempotente: sincroniza o estado a partir da
+  assinatura Stripe. `deleted` → `plan 'free'`, `subscription_status 'canceled'`.
 
 `is_pro` = `!billing_enabled || (plan === 'pro' && status ∈ {active, trialing})`.
 
@@ -70,7 +72,8 @@ Campos novos em `users`: `plan` (`'free' | 'pro'`, default `'free'`), `stripe_cu
 | Simulador | — | ✓ |
 | Relatório mensal por e-mail | — | ✓ |
 
-Recurso Pro sem Pro → **403** `{ message: 'Recurso disponível no plano Pro' }`.
+Recurso Pro sem Pro → **403** `{ message: 'Recurso disponível no plano Pro' }`
+(`GET /projection?horizon=` > 24, `POST /projection/simulate`, `monthly_report: true`).
 
 ## Simulador de cenários
 
@@ -87,7 +90,10 @@ Recurso Pro sem Pro → **403** `{ message: 'Recurso disponível no plano Pro' }
 }
 ```
 
-Todos opcionais (`hypothetical_debts` até 10 itens; `start_offset` 0..horizon-1 = mês projetado
-em que a primeira parcela entra). Resposta:
+Todos opcionais (`horizon` 1..60, default 24; `hypothetical_debts` até 10 itens com
+`installment_amount` > 0 e até 2 casas, `installments` inteiro 1..360 e `start_offset` inteiro
+0..horizon-1 = mês projetado em que a primeira parcela entra; `extra_monthly_income` /
+`extra_monthly_expense` ≥ 0). Resposta `200`; payload inválido → `400`; sem Pro → `403`. Resposta:
 `{ baseline: ProjectedMonth[], scenario: ProjectedMonth[] }` — mesmo shape do `GET /projection`.
-Dívidas hipotéticas geram eventos de liberação/alerta com `debt_id` nulo.
+Dívidas hipotéticas geram eventos de liberação/alerta sem `debt_id` (campo ausente no JSON) e
+com `debt_name` = nome informado. Só o `scenario` recebe os ajustes; o `baseline` é a projeção normal.

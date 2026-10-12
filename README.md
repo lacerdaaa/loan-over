@@ -130,6 +130,13 @@ There is at most one Goal record in the database (the API upserts into it).
 | `email` | string | Google account email |
 | `name` | string \| null | Display name |
 | `avatar` | string \| null | Profile photo URL |
+| `email_notifications` | boolean | Last-installment and payoff e-mail alerts (default `true`) |
+| `monthly_report` | boolean | Monthly e-mail report, Pro only (default `false`) |
+| `plan` | `free` \| `pro` | Subscription plan (default `free`) |
+| `stripe_customer_id` | string \| null | Stripe customer, created on the first checkout |
+| `stripe_subscription_id` | string \| null | Current Stripe subscription |
+| `subscription_status` | string \| null | Stripe status (`active`, `trialing`, `past_due`, `canceled`, ...) |
+| `current_period_end` | timestamp \| null | End of the paid period (next renewal) |
 
 ---
 
@@ -208,6 +215,72 @@ The month before a debt closes (`i === remaining_installments − 1`), the engin
 ```
 
 This signals the user that a liberation is coming next month.
+
+### Horizon limits
+
+`horizon` accepts 1..60 months (default 24). Horizons above 24 require the Pro plan; a free user
+receives `403 { "message": "Recurso disponível no plano Pro" }`.
+
+### What-if simulator (Pro)
+
+`POST /projection/simulate` runs the same engine twice over the same inputs and returns
+`{ baseline, scenario }` (both arrays of projected months, each with `cumulative_balance`):
+
+```json
+{
+  "horizon": 24,
+  "hypothetical_debts": [
+    { "name": "Notebook", "installment_amount": 350, "installments": 10, "start_offset": 0 }
+  ],
+  "extra_monthly_income": 0,
+  "extra_monthly_expense": 0
+}
+```
+
+- All fields are optional. Up to 10 hypothetical debts; `installment_amount` > 0 with at most 2
+  decimals; `installments` 1..360; `start_offset` is the 0-based projected month of the first
+  installment and must be lower than `horizon`.
+- Only the **scenario** is changed: each hypothetical debt is charged for `installments` months from
+  `start_offset`, and `extra_monthly_income` / `extra_monthly_expense` shift every month.
+  The baseline never includes them.
+- Hypothetical debts emit the same `alert` / `liberation` events as real ones, without `debt_id`
+  (`debt_name` is the given name).
+- Free users receive `403`. Nothing is persisted.
+
+---
+
+## Plans & billing
+
+Billing is controlled by the `FEATURE_BILLING` flag (backend) and `VITE_FEATURE_BILLING` (frontend),
+off by default.
+
+- **Flag off:** every user is treated as Pro, nothing is gated, and `POST /billing/checkout`,
+  `/billing/portal` and `/billing/webhook` answer `404`. `GET /billing/status` still works and reports
+  `billing_enabled: false, is_pro: true`.
+- **Flag on:** a user is Pro only when `plan = pro` **and** `subscription_status` is `active` or
+  `trialing`. Everyone else is on the free plan.
+
+| Feature | Free | Pro |
+|---|---|---|
+| Projection `horizon` | up to 24 months | up to 60 months |
+| What-if simulator | no | yes |
+| Monthly e-mail report | no | yes |
+
+A Pro-only feature used without Pro answers `403 { "message": "Recurso disponível no plano Pro" }`.
+
+**Flow:** `POST /billing/checkout` creates (once) a Stripe customer, stores `stripe_customer_id` and
+returns a Stripe Checkout URL (subscription mode, price `STRIPE_PRICE_PRO`). `POST /billing/portal`
+returns a Customer Portal URL (`400` if the user has no customer yet).
+
+**Webhook** (`POST /billing/webhook`, public, raw body, signature checked against
+`STRIPE_WEBHOOK_SECRET`; `400` on a bad signature). Handlers set state from the Stripe subscription,
+so redelivered events are harmless. Unknown events are acknowledged with `200` and ignored.
+
+| Event | Effect |
+|---|---|
+| `checkout.session.completed` | Links customer and subscription to the user in `client_reference_id`, retrieves the subscription and syncs plan, status and period end |
+| `customer.subscription.updated` | Finds the user by `stripe_customer_id` and syncs plan, status and `current_period_end` (`canceled` / `incomplete_expired` map to `free`; `past_due` keeps `pro` until Stripe cancels) |
+| `customer.subscription.deleted` | Plan `free`, status `canceled` |
 
 ---
 
@@ -289,7 +362,8 @@ The Dashboard shows `total_benefit` as a separate card so the user can see how m
 | Method | Path | Description |
 |---|---|---|
 | GET | `/snapshot` | Monthly snapshot for a given month/year |
-| GET | `/projection` | N-month forward projection |
+| GET | `/projection` | N-month forward projection (`horizon` above 24 is Pro) |
+| POST | `/projection/simulate` | What-if scenario vs. baseline (Pro) |
 | GET/POST/DELETE | `/income` | Manage incomes |
 | POST/DELETE | `/income/:id/deductions` | Manage deductions on an income |
 | GET/POST/PATCH/DELETE | `/debts` | Manage debts |
@@ -300,3 +374,10 @@ The Dashboard shows `total_benefit` as a separate card so the user can see how m
 | GET | `/auth/google` | Initiate Google OAuth flow |
 | GET | `/auth/google/callback` | OAuth callback, issues JWT |
 | GET | `/auth/me` | Returns current user from JWT |
+| GET/PATCH | `/notifications/preferences` | Read / update e-mail notification preferences (monthly report is Pro) |
+| POST | `/notifications/test` | Send a test e-mail to the current user (3 per hour) |
+| GET | `/notifications/unsubscribe` | Public; turns off all e-mails from a signed link |
+| GET | `/billing/status` | Plan, `is_pro`, subscription status and renewal date |
+| POST | `/billing/checkout` | Stripe Checkout URL (404 when billing is off) |
+| POST | `/billing/portal` | Stripe Customer Portal URL (404 when billing is off) |
+| POST | `/billing/webhook` | Public Stripe webhook (404 when billing is off) |
