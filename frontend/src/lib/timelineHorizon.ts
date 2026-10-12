@@ -1,3 +1,5 @@
+import { FREE_HORIZON_LIMIT } from './billing';
+
 export const HORIZON_OPTIONS = [12, 24, 36, 60] as const;
 export type Horizon = (typeof HORIZON_OPTIONS)[number];
 
@@ -23,3 +25,9 @@ export const saveHorizon = (horizon: Horizon): void => {
     // Storage unavailable (private mode): the choice simply is not remembered.
   }
 };
+
+export const requiresPro = (horizon: Horizon): boolean => horizon > FREE_HORIZON_LIMIT;
+
+/** Horizons above the free limit fall back to the default for non-Pro users. */
+export const allowedHorizon = (horizon: Horizon, isPro: boolean): Horizon =>
+  isPro || !requiresPro(horizon) ? horizon : DEFAULT_HORIZON;

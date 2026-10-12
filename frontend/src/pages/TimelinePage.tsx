@@ -1,16 +1,18 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Gift, Zap } from 'lucide-react';
 import { useState } from 'react';
+import { usePro } from '../api/billing';
 import { useProjection } from '../api/projection';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EventText } from '../components/ui/EventText';
+import { ProBadge } from '../components/ui/ProBadge';
 import { PageTransition } from '../components/ui/PageTransition';
 import { ProjectionChart } from '../components/ui/ProjectionChart';
 import { useAnimations } from '../lib/animations';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
-import { HORIZON_OPTIONS, loadHorizon, saveHorizon, type Horizon } from '../lib/timelineHorizon';
+import { allowedHorizon, HORIZON_OPTIONS, loadHorizon, requiresPro, saveHorizon, type Horizon } from '../lib/timelineHorizon';
 import type { ProjectedMonth } from '../types/api';
 
 const now = new Date();
@@ -88,24 +90,35 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
   );
 };
 
-const HorizonSelector = ({ value, onChange }: { value: Horizon; onChange: (h: Horizon) => void }) => (
+const HorizonSelector = ({ value, isPro, onChange }: { value: Horizon; isPro: boolean; onChange: (h: Horizon) => void }) => (
   <div role="group" aria-label="Horizonte da projeção" className="join" data-tutorial="timeline-horizon">
-    {HORIZON_OPTIONS.map((option) => (
-      <button
-        key={option}
-        type="button"
-        aria-pressed={option === value}
-        onClick={() => onChange(option)}
-        className={`join-item btn btn-xs ${option === value ? 'btn-primary' : 'btn-ghost border-base-300'}`}
-      >
-        {option}m
-      </button>
-    ))}
+    {HORIZON_OPTIONS.map((option) => {
+      const locked = requiresPro(option) && !isPro;
+      return (
+        <span
+          key={option}
+          className={`join-item ${locked ? 'tooltip tooltip-left' : ''}`}
+          data-tip={locked ? 'Disponível no plano Pro' : undefined}
+        >
+          <button
+            type="button"
+            aria-pressed={option === value}
+            disabled={locked}
+            onClick={() => onChange(option)}
+            className={`btn btn-xs gap-1 rounded-none ${option === value ? 'btn-primary' : 'btn-ghost border-base-300'}`}
+          >
+            {option}m {requiresPro(option) && <ProBadge />}
+          </button>
+        </span>
+      );
+    })}
   </div>
 );
 
 export const TimelinePage = () => {
-  const [horizon, setHorizon] = useState<Horizon>(loadHorizon);
+  const isPro = usePro();
+  const [storedHorizon, setHorizon] = useState<Horizon>(loadHorizon);
+  const horizon = allowedHorizon(storedHorizon, isPro);
   const { data, isLoading } = useProjection(MONTH, YEAR, horizon);
 
   const handleHorizonChange = (next: Horizon) => {
@@ -119,7 +132,7 @@ export const TimelinePage = () => {
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
           title={`Projeção ${horizon} meses`}
-          action={<HorizonSelector value={horizon} onChange={handleHorizonChange} />}
+          action={<HorizonSelector value={horizon} isPro={isPro} onChange={handleHorizonChange} />}
           subtitle="Fluxo de caixa futuro com base nas dívidas e renda atuais"
         />
 
