@@ -8,18 +8,19 @@ import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
-import { remainingBalance } from '../lib/debt';
+import { MAX_PAYOFF_MONTHS, naturalPayoffMonths, remainingBalance } from '../lib/debt';
+import { getErrorMessage } from '../lib/errorMessage';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
-import type { Debt } from '../types/api';
+import type { Debt, Goal } from '../types/api';
 
 const now = new Date();
 const MONTH = now.getMonth() + 1;
 const YEAR = now.getFullYear();
-const MAX_MONTHS = 120;
 
 interface DebtResult {
+  id: string;
   name: string;
   installment: number;
   trueRemainingBalance: number;
@@ -36,6 +37,7 @@ interface SimResult {
 }
 
 interface DebtState {
+  id: string;
   name: string;
   installment: number;
   rate: number;
@@ -46,71 +48,79 @@ interface DebtState {
   naturalPayoffOffset: number;
 }
 
-function naturalPayoffOffset(installment: number, rate: number, balance: number): number {
-  if (rate === 0) return Math.ceil(balance / installment);
-  let b = balance;
-  let months = 0;
-  while (b > 0.01 && months < MAX_MONTHS) {
-    b -= installment - b * rate;
-    months++;
+const PAID_OFF_THRESHOLD = 0.01;
+
+function toDebtState(d: Debt): DebtState {
+  const balance = remainingBalance(d);
+  return {
+    id: d.id,
+    name: d.name,
+    installment: d.installment_amount,
+    rate: d.monthly_rate ?? 0,
+    balance,
+    initialBalance: balance,
+    freed: false,
+    snowballPayoffOffset: 0,
+    naturalPayoffOffset: naturalPayoffMonths(d),
+  };
+}
+
+// Applies extra money to the smallest debts in order; what a debt cannot absorb rolls to the next one.
+function applyExtraPayment(states: DebtState[], extra: number): void {
+  let remainingExtra = extra;
+  for (const d of states) {
+    if (remainingExtra <= 0) return;
+    if (d.freed) continue;
+    const paid = Math.min(remainingExtra, Math.max(0, d.balance));
+    d.balance -= paid;
+    remainingExtra -= paid;
   }
-  return months;
+}
+
+// Advances every open debt by one installment and returns the installment amounts freed this month.
+function advanceInstallments(states: DebtState[], offset: number): number {
+  let freedInstallments = 0;
+  for (const d of states) {
+    if (d.freed) continue;
+    d.balance -= d.installment - d.balance * d.rate;
+    if (d.balance > PAID_OFF_THRESHOLD) continue;
+    d.freed = true;
+    d.snowballPayoffOffset = offset;
+    freedInstallments += d.installment;
+  }
+  return freedInstallments;
+}
+
+function toDebtResult(d: DebtState): DebtResult {
+  const snowballOffset = d.snowballPayoffOffset || d.naturalPayoffOffset;
+  return {
+    id: d.id,
+    name: d.name,
+    installment: d.installment,
+    trueRemainingBalance: d.initialBalance,
+    snowballPayoffOffset: snowballOffset,
+    naturalPayoffOffset: d.naturalPayoffOffset,
+    monthsSaved: Math.max(0, d.naturalPayoffOffset - snowballOffset),
+  };
 }
 
 function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number, targetAmount: number): SimResult {
-  const states: DebtState[] = openDebts
-    .map((d) => {
-      const installment = Number(d.installment_amount);
-      const rate = Number(d.monthly_rate ?? 0);
-      const balance = remainingBalance(d);
-      return {
-        name: d.name,
-        installment,
-        rate,
-        balance,
-        initialBalance: balance,
-        freed: false,
-        snowballPayoffOffset: 0,
-        naturalPayoffOffset: naturalPayoffOffset(installment, rate, balance),
-      };
-    })
-    .sort((a, b) => a.balance - b.balance);
+  const states = openDebts.map(toDebtState).sort((a, b) => a.balance - b.balance);
 
   let freeBal = baseFreeBalance;
   let cumSavings = 0;
-  let debtFreeOffset: number | null = null;
+  let debtFreeOffset: number | null = states.length === 0 ? 0 : null;
   let goalOffset: number | null = null;
 
-  for (let offset = 1; offset <= MAX_MONTHS; offset++) {
-    const allDone = states.every((d) => d.freed);
-
-    if (!allDone) {
+  for (let offset = 1; offset <= MAX_PAYOFF_MONTHS; offset++) {
+    if (debtFreeOffset === null) {
       const saved = Math.min(monthlyMin, Math.max(0, freeBal));
       cumSavings += saved;
-      const extra = Math.max(0, freeBal - saved);
-
-      // Apply extra to the smallest active debt
-      const target = states.find((d) => !d.freed);
-      if (target) target.balance -= extra;
-
-      // Advance every active debt by one installment (with amortization)
-      for (const d of states) {
-        if (d.freed) continue;
-        const interest = d.rate > 0 ? d.balance * d.rate : 0;
-        d.balance -= d.installment - interest;
-
-        if (d.balance <= 0.01 && !d.freed) {
-          d.freed = true;
-          d.snowballPayoffOffset = offset;
-          freeBal += d.installment;
-        }
-      }
-
-      if (states.every((d) => d.freed) && debtFreeOffset === null) {
-        debtFreeOffset = offset;
-      }
+      applyExtraPayment(states, Math.max(0, freeBal - saved));
+      freeBal += advanceInstallments(states, offset);
+      if (states.every((d) => d.freed)) debtFreeOffset = offset;
     } else {
-      cumSavings += freeBal;
+      cumSavings += Math.max(0, freeBal);
     }
 
     if (targetAmount > 0 && cumSavings >= targetAmount && goalOffset === null) {
@@ -120,16 +130,7 @@ function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number
     if (debtFreeOffset !== null && (goalOffset !== null || targetAmount === 0)) break;
   }
 
-  const debtOrder: DebtResult[] = states.map((d) => ({
-    name: d.name,
-    installment: d.installment,
-    trueRemainingBalance: d.initialBalance,
-    snowballPayoffOffset: d.snowballPayoffOffset || d.naturalPayoffOffset,
-    naturalPayoffOffset: d.naturalPayoffOffset,
-    monthsSaved: Math.max(0, d.naturalPayoffOffset - (d.snowballPayoffOffset || d.naturalPayoffOffset)),
-  }));
-
-  return { debtFreeOffset, goalOffset, debtOrder, postDebtMonthlyFree: freeBal };
+  return { debtFreeOffset, goalOffset, debtOrder: states.map(toDebtResult), postDebtMonthlyFree: freeBal };
 }
 
 function offsetToLabel(offset: number | null): string {
@@ -138,11 +139,79 @@ function offsetToLabel(offset: number | null): string {
   return monthLabel(d.getMonth() + 1, d.getFullYear());
 }
 
+const INITIAL_DEADLINE_YEAR_OFFSET = 1;
+
+const GoalForm = ({ goal }: { goal: Goal | null }) => {
+  const upsert = useUpsertGoal();
+  const [form, setForm] = useState({
+    target_amount: goal?.target_amount ?? 0,
+    deadline_month: goal?.deadline_month ?? MONTH,
+    deadline_year: goal?.deadline_year ?? YEAR + INITIAL_DEADLINE_YEAR_OFFSET,
+    monthly_min: goal?.monthly_min ?? 0,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    upsert.mutate(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
+      <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
+
+      <Field label="Valor da meta (R$)">
+        <input type="number" step="0.01" className="input input-sm"
+          placeholder="Ex: 10.000" value={form.target_amount || ''}
+          onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
+      </Field>
+
+      <Field label="Poupança mínima/mês (R$)">
+        <input type="number" step="0.01" className="input input-sm"
+          placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
+          onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Prazo — mês">
+          <select className="select select-sm" value={form.deadline_month}
+            onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {new Date(0, i).toLocaleString('pt-BR', { month: 'short' })}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Prazo — ano">
+          <input type="number" className="input input-sm" value={form.deadline_year}
+            onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
+        </Field>
+      </div>
+
+      {upsert.isError && <p role="alert" className="text-xs text-error">{getErrorMessage(upsert.error)}</p>}
+
+      <motion.button whileTap={{ scale: 0.97 }} type="submit"
+        className="btn btn-primary btn-sm w-full" disabled={upsert.isPending}>
+        Salvar
+      </motion.button>
+    </form>
+  );
+};
+
+const simulationWarning = (freeBal: number, targetAmount: number, goalOffset: number | null): string | null => {
+  if (freeBal <= 0) {
+    return 'Seu saldo livre este mês é zero ou negativo: não sobra dinheiro para poupar nem para antecipar dívidas.';
+  }
+  if (targetAmount > 0 && goalOffset === null) {
+    return `Com o saldo livre atual, a meta não é atingida em ${MAX_PAYOFF_MONTHS} meses.`;
+  }
+  return null;
+};
+
 export const GoalPage = () => {
   const { data: goal } = useGoal();
   const { data: snapshot } = useSnapshot(MONTH, YEAR);
   const { data: allDebts = [] } = useDebts();
-  const upsert = useUpsertGoal();
 
   const { hidden, mask } = usePrivacy();
   const openDebts = allDebts.filter((d) => !d.closed);
@@ -150,19 +219,14 @@ export const GoalPage = () => {
   const targetAmount = goal?.target_amount ?? 0;
   const monthlyMin = goal?.monthly_min ?? 0;
 
-  const [form, setForm] = useState({
-    target_amount: goal?.target_amount ?? 0,
-    deadline_month: goal?.deadline_month ?? MONTH,
-    deadline_year: goal?.deadline_year ?? YEAR + 1,
-    monthly_min: goal?.monthly_min ?? 0,
-  });
-
   const debtsKey = JSON.stringify(openDebts);
   const result = useMemo(
     () => simulate(openDebts, freeBal, monthlyMin, targetAmount),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debtsKey is the stable stand-in for openDebts
     [debtsKey, freeBal, monthlyMin, targetAmount],
   );
+
+  const warning = simulationWarning(freeBal, targetAmount, result.goalOffset);
 
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -193,11 +257,6 @@ export const GoalPage = () => {
     },
   ] as const;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    upsert.mutate(form);
-  };
-
   return (
     <PageTransition>
       <div className="flex flex-col gap-5 w-full">
@@ -225,6 +284,9 @@ export const GoalPage = () => {
               {TUTORIAL_STEPS.map((_, i) => (
                 <button
                   key={i}
+                  type="button"
+                  aria-label={`Passo ${i + 1} do tutorial`}
+                  aria-current={i === tutorialStep}
                   onClick={() => setTutorialStep(i)}
                   className={`h-1 flex-1 rounded-full transition-colors ${i === tutorialStep ? 'bg-primary' : 'bg-primary/20'}`}
                 />
@@ -320,7 +382,7 @@ export const GoalPage = () => {
               <div className="divide-y divide-base-300">
                 {result.debtOrder.map((d, i) => (
                   <motion.div
-                    key={d.name}
+                    key={d.id}
                     initial={{ opacity: 0, x: -6 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
@@ -370,44 +432,11 @@ export const GoalPage = () => {
               </div>
             )}
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
-              <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
+            {warning && (
+              <div role="alert" className="alert alert-warning alert-soft text-xs">{warning}</div>
+            )}
 
-              <Field label="Valor da meta (R$)">
-                <input type="number" step="0.01" className="input input-sm"
-                  placeholder="Ex: 10.000" value={form.target_amount || ''}
-                  onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
-              </Field>
-
-              <Field label="Poupança mínima/mês (R$)">
-                <input type="number" step="0.01" className="input input-sm"
-                  placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
-                  onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
-              </Field>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="Prazo — mês">
-                  <select className="select select-sm" value={form.deadline_month}
-                    onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {new Date(0, i).toLocaleString('pt-BR', { month: 'short' })}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Prazo — ano">
-                  <input type="number" className="input input-sm" value={form.deadline_year}
-                    onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
-                </Field>
-              </div>
-
-              <motion.button whileTap={{ scale: 0.97 }} type="submit"
-                className="btn btn-primary btn-sm w-full" disabled={upsert.isPending}>
-                Salvar
-              </motion.button>
-            </form>
+            <GoalForm key={goal?.id ?? 'new'} goal={goal ?? null} />
           </div>
         </div>
       </div>
