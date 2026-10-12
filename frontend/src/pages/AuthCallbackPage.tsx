@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { setToken } from '../lib/auth';
+import { queryClient } from '../lib/queryClient';
 
 export const AuthCallbackPage = () => {
   const [params] = useSearchParams();
@@ -9,6 +10,7 @@ export const AuthCallbackPage = () => {
   useEffect(() => {
     const token = params.get('token');
     if (token) {
+      queryClient.clear();
       setToken(token);
       navigate('/', { replace: true });
     } else {
