@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { Debt } from './debt.entity';
+import { SCHEDULE_CRON_OPTIONS } from '@nestjs/schedule/dist/schedule.constants';
 import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { DebtService } from './debt.service';
 import { CreateDebtDto } from './dto/create-debt.dto';
@@ -299,6 +300,15 @@ describe('DebtService', () => {
   });
 
   describe('handleMonthlyCron', () => {
+    it('is scheduled in the Brazilian timezone so it fires at midnight BRT on day 1', () => {
+      const options = Reflect.getMetadata(
+        SCHEDULE_CRON_OPTIONS,
+        DebtService.prototype.handleMonthlyCron,
+      ) as { timeZone?: string };
+
+      expect(options.timeZone).toBe('America/Sao_Paulo');
+    });
+
     it('advances installments under the debt advisory lock', async () => {
       const debt = makeDebt({ start_date: new Date('2020-01-01') });
       repo.find.mockResolvedValue([debt]);

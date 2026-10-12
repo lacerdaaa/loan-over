@@ -8,6 +8,7 @@ import { UpdateDebtDto } from './dto/update-debt.dto';
 import { Debt } from './debt.entity';
 import { dayKey, monthStartKey } from './debt-month.utils';
 
+const CRON_TIME_ZONE = 'America/Sao_Paulo';
 const NON_COPIED_UPDATE_FIELDS: ReadonlySet<string> = new Set(['start_date', 'installment_amount']);
 
 @Injectable()
@@ -123,7 +124,13 @@ export class DebtService {
     return !debt.closed && hasStarted && !alreadyCounted;
   }
 
-  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
+  /**
+   * Fires at 00:00 BRT on day 1, i.e. 03:00 UTC of the same day. That is still the same
+   * UTC month, so the UTC-based `monthStartKey(new Date())` resolves to the month that just
+   * began. Without the time zone the cron would fire at 00:00 server time and, on a UTC
+   * host, the BRT-based notification cron (09:00 BRT) could race it. 09:00 BRT runs after.
+   */
+  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT, { timeZone: CRON_TIME_ZONE })
   async handleMonthlyCron(): Promise<void> {
     await this.schedulerLock.runExclusive(SCHEDULER_LOCK_KEYS.DEBT_MONTHLY_ADVANCE, () =>
       this.autoIncrementInstallments(),
