@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -8,6 +8,7 @@ interface JwtPayload {
   email: string;
   name: string;
   avatar: string;
+  purpose?: string;
 }
 
 @Injectable()
@@ -20,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload): { id: string; email: string; name: string; avatar: string } {
+    if (payload.purpose) throw new UnauthorizedException('Token not valid for sessions');
     return { id: payload.sub, email: payload.email, name: payload.name, avatar: payload.avatar };
   }
 }
