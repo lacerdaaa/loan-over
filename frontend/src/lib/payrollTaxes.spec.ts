@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inssEmployee, irrfMonthly, salaryDeductions } from './payrollTaxes';
+import { inssEmployee, irrfMonthly, missingSalaryDeductions, salaryDeductions } from './payrollTaxes';
 
 describe('inssEmployee', () => {
   describe('when the salary is zero', () => {
@@ -89,6 +89,30 @@ describe('salaryDeductions', () => {
   describe('when the salary is zero', () => {
     it('returns no deductions', () => {
       expect(salaryDeductions(0, 0)).toEqual([]);
+    });
+  });
+});
+
+describe('missingSalaryDeductions', () => {
+  describe('when the income has no deductions yet', () => {
+    it('returns every calculated deduction', () => {
+      const missing = missingSalaryDeductions(8000, []);
+
+      expect(missing).toEqual(salaryDeductions(8000, 0));
+    });
+  });
+
+  describe('when INSS was already applied but IRRF is missing', () => {
+    it('returns only IRRF', () => {
+      const missing = missingSalaryDeductions(8000, ['INSS']);
+
+      expect(missing.map((d) => d.label)).toEqual(['IRRF']);
+    });
+  });
+
+  describe('when both deductions are already present', () => {
+    it('returns nothing', () => {
+      expect(missingSalaryDeductions(8000, ['INSS', 'IRRF'])).toEqual([]);
     });
   });
 });

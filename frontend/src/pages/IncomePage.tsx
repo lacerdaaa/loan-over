@@ -10,7 +10,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { labelsFor } from '../lib/labels';
-import { salaryDeductions } from '../lib/payrollTaxes';
+import { missingSalaryDeductions, salaryDeductions } from '../lib/payrollTaxes';
 import { usePrivacy } from '../lib/privacy';
 import { useBusinessMode } from '../lib/useBusinessMode';
 import type { Income, IncomeCategory, IncomeType } from '../types/api';
@@ -32,10 +32,15 @@ const DeductionRow = ({ income }: { income: Income }) => {
   const { mask } = usePrivacy();
   const net = netAmount(income);
   const hasDeductions = deductions(income).length > 0;
-  const canCalculate = income.category === 'salary' && !hasDeductions;
+  const missingDeductions = missingSalaryDeductions(income.amount, deductions(income).map((d) => d.label));
+  const canCalculate = income.category === 'salary' && missingDeductions.length > 0;
 
   const calculateDeductions = async () => {
-    for (const d of salaryDeductions(income.amount, 0)) await addDeduction.mutateAsync(d);
+    try {
+      for (const d of missingDeductions) await addDeduction.mutateAsync(d);
+    } catch {
+      // The global mutation toast already reports the failure; a retry applies what is still missing.
+    }
   };
 
   const submitDeduction = (e: React.FormEvent) => {
@@ -129,6 +134,12 @@ export const IncomePage = () => {
 
   const withCalculatedDeductions = form.category === 'salary' && calcDeductions && form.amount > 0;
 
+  const closeModal = () => {
+    setOpen(false);
+    setCalcDeductions(false);
+    setDependents(0);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const base: CreateIncomePayload = tab === 'fixed'
@@ -137,7 +148,7 @@ export const IncomePage = () => {
     const payload: CreateIncomePayload = withCalculatedDeductions
       ? { ...base, deductions: salaryDeductions(form.amount, dependents) }
       : base;
-    create.mutate(payload, { onSuccess: () => setOpen(false) });
+    create.mutate(payload, { onSuccess: closeModal });
   };
 
   return (
@@ -212,7 +223,7 @@ export const IncomePage = () => {
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nova renda">
+      <Modal open={open} onClose={closeModal} title="Nova renda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Field label="Descrição">
             <input className="input input-sm" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -245,7 +256,7 @@ export const IncomePage = () => {
             </div>
           )}
           <div className="flex gap-2 mt-2">
-            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
+            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={closeModal}>Cancelar</button>
             <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>
           </div>
         </form>

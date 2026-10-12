@@ -58,3 +58,6 @@ export const salaryDeductions = (gross: number, dependents: number): SalaryDeduc
     { label: 'IRRF', amount: irrf },
   ].filter(({ amount }) => amount > 0);
 };
+
+export const missingSalaryDeductions = (gross: number, existingLabels: string[]): SalaryDeduction[] =>
+  salaryDeductions(gross, 0).filter(({ label }) => !existingLabels.includes(label));
