@@ -6,6 +6,8 @@ import { CreateDebtDto } from './dto/create-debt.dto';
 import { UpdateDebtDto } from './dto/update-debt.dto';
 import { Debt } from './debt.entity';
 
+const NON_COPIED_UPDATE_FIELDS: ReadonlySet<string> = new Set(['start_date', 'installment_amount']);
+
 @Injectable()
 export class DebtService {
   constructor(
@@ -34,11 +36,17 @@ export class DebtService {
       monthly_rate: dto.monthly_rate ?? null,
       closed: false,
     });
+    this.applyClosingRule(debt);
     return this.repo.save(debt);
   }
 
   private priceInstallment(principal: number, rate: number, n: number): number {
+    if (rate === 0) return principal / n;
     return (principal * rate) / (1 - Math.pow(1 + rate, -n));
+  }
+
+  private applyClosingRule(debt: Debt): void {
+    debt.closed = debt.paid_installments >= debt.total_installments;
   }
 
   async payInstallment(id: string, userId: string): Promise<Debt> {
@@ -47,7 +55,7 @@ export class DebtService {
     if (debt.closed) throw new BadRequestException(`Debt ${id} is already closed`);
 
     debt.paid_installments += 1;
-    debt.closed = debt.paid_installments === debt.total_installments;
+    this.applyClosingRule(debt);
 
     return this.repo.save(debt);
   }
@@ -56,26 +64,37 @@ export class DebtService {
     const debt = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
 
-    if (dto.name !== undefined) debt.name = dto.name;
-    if (dto.total_installments !== undefined) debt.total_installments = dto.total_installments;
-    if (dto.paid_installments !== undefined) debt.paid_installments = dto.paid_installments;
-    if (dto.start_date !== undefined) debt.start_date = new Date(dto.start_date);
-    if (dto.principal !== undefined) debt.principal = dto.principal ?? null;
-    if (dto.monthly_rate !== undefined) debt.monthly_rate = dto.monthly_rate ?? null;
-
-    const principal = dto.principal ?? (debt.principal ? Number(debt.principal) : null);
-    const rate = dto.monthly_rate ?? (debt.monthly_rate ? Number(debt.monthly_rate) : null);
-    const n = debt.total_installments;
-
-    if (principal != null && rate != null) {
-      debt.installment_amount = this.priceInstallment(principal, rate, n);
-    } else if (dto.installment_amount !== undefined) {
-      debt.installment_amount = dto.installment_amount;
-    }
-
-    debt.closed = debt.paid_installments >= debt.total_installments;
+    this.applyFields(debt, dto);
+    this.applyInstallment(debt, dto);
+    this.applyClosingRule(debt);
 
     return this.repo.save(debt);
+  }
+
+  private applyFields(debt: Debt, dto: UpdateDebtDto): void {
+    const copied = Object.entries(dto).filter(
+      ([key, value]) => value !== undefined && !NON_COPIED_UPDATE_FIELDS.has(key),
+    );
+    Object.assign(debt, Object.fromEntries(copied));
+    if (dto.start_date !== undefined) debt.start_date = new Date(dto.start_date);
+  }
+
+  private applyInstallment(debt: Debt, dto: UpdateDebtDto): void {
+    const pricingChanged =
+      dto.principal !== undefined ||
+      dto.monthly_rate !== undefined ||
+      dto.total_installments !== undefined;
+    const hasPriceData = debt.principal != null && debt.monthly_rate != null;
+
+    if (pricingChanged && hasPriceData) {
+      debt.installment_amount = this.priceInstallment(
+        Number(debt.principal),
+        Number(debt.monthly_rate),
+        debt.total_installments,
+      );
+      return;
+    }
+    if (dto.installment_amount !== undefined) debt.installment_amount = dto.installment_amount;
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -89,7 +108,7 @@ export class DebtService {
     const activeDebts = await this.repo.find({ where: { closed: false } });
     for (const debt of activeDebts) {
       debt.paid_installments += 1;
-      debt.closed = debt.paid_installments === debt.total_installments;
+      this.applyClosingRule(debt);
       await this.repo.save(debt);
     }
   }
