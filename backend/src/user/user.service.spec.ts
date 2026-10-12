@@ -138,4 +138,38 @@ describe('UserService', () => {
       expect(options.where[0]).not.toHaveProperty('id');
     });
   });
+
+  describe('findByStripeCustomerId', () => {
+    it('looks the user up by Stripe customer id', async () => {
+      const user = makeUser({ stripe_customer_id: 'cus_1' });
+      repo.findOne.mockResolvedValue(user);
+
+      const result = await service.findByStripeCustomerId('cus_1');
+
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { stripe_customer_id: 'cus_1' } });
+      expect(result).toBe(user);
+    });
+  });
+
+  describe('updateBilling', () => {
+    it('merges the billing fields into the user and saves it', async () => {
+      repo.findOne.mockResolvedValue(makeUser());
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const result = await service.updateBilling(USER_ID, {
+        plan: 'pro',
+        subscription_status: 'active',
+      });
+
+      expect(result).toMatchObject({ id: USER_ID, plan: 'pro', subscription_status: 'active' });
+    });
+
+    it('throws when the user does not exist', async () => {
+      repo.findOne.mockResolvedValue(null);
+
+      await expect(service.updateBilling(USER_ID, { plan: 'pro' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
 });

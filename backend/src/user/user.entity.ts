@@ -2,6 +2,14 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 export type UserPlan = 'free' | 'pro';
 
+export interface UserBilling {
+  plan: UserPlan;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  current_period_end: Date | null;
+}
+
 export type AccountType = 'personal' | 'business';
 
 export interface NotificationPreferences {

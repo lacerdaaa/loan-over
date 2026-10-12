@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, MoreThan, Repository } from 'typeorm';
-import { AccountType, NotificationPreferences, User } from './user.entity';
+import { AccountType, NotificationPreferences, User, UserBilling } from './user.entity';
 
 @Injectable()
 export class UserService {
@@ -16,6 +16,10 @@ export class UserService {
 
   findById(id: string): Promise<User | null> {
     return this.repo.findOne({ where: { id } });
+  }
+
+  findByStripeCustomerId(customerId: string): Promise<User | null> {
+    return this.repo.findOne({ where: { stripe_customer_id: customerId } });
   }
 
   create(data: { google_id: string; email: string; name: string; avatar: string }): Promise<User> {
@@ -36,6 +40,13 @@ export class UserService {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException(`User ${id} not found`);
     Object.assign(user, preferences);
+    return this.repo.save(user);
+  }
+
+  async updateBilling(id: string, billing: Partial<UserBilling>): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    Object.assign(user, billing);
     return this.repo.save(user);
   }
 
