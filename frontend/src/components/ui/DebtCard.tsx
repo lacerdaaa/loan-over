@@ -3,6 +3,7 @@ import { Check, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useDeleteDebt, usePayInstallment, useUpdateDebt } from '../../api/debts';
 import { payoffMonth, remainingBalance } from '../../lib/debt';
+import { debtPayloadFromForm } from '../../lib/debtPayload';
 import { formatCurrency } from '../../lib/formatCurrency';
 import { usePrivacy } from '../../lib/privacy';
 import type { Debt } from '../../types/api';
@@ -48,10 +49,7 @@ export const DebtCard = ({ debt }: Props) => {
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = form.hasInterest
-      ? { id: debt.id, name: form.name, principal: form.principal, monthly_rate: form.monthly_rate / 100, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date }
-      : { id: debt.id, name: form.name, installment_amount: form.installment_amount, monthly_rate: null, principal: null, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date };
-    update.mutate(payload as Parameters<typeof update.mutate>[0], { onSuccess: () => setEditing(false) });
+    update.mutate({ ...debtPayloadFromForm(form), id: debt.id }, { onSuccess: () => setEditing(false) });
   };
 
   return (

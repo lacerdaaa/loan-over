@@ -7,6 +7,7 @@ import { DebtForm, type DebtFormValues } from '../components/ui/DebtForm';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
+import { debtPayloadFromForm } from '../lib/debtPayload';
 import { labelsFor } from '../lib/labels';
 import { useBusinessMode } from '../lib/useBusinessMode';
 
@@ -30,10 +31,7 @@ export const DebtsPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = form.hasInterest
-      ? { name: form.name, principal: form.principal, monthly_rate: form.monthly_rate / 100, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date }
-      : { name: form.name, installment_amount: form.installment_amount, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date };
-    create.mutate(payload as Parameters<typeof create.mutate>[0], { onSuccess: () => { setOpen(false); setForm(EMPTY_DEBT_FORM); } });
+    create.mutate(debtPayloadFromForm(form), { onSuccess: () => { setOpen(false); setForm(EMPTY_DEBT_FORM); } });
   };
 
   return (

@@ -17,6 +17,26 @@ const toDebt = (raw: RawDebt): Debt => ({
   monthly_rate: toNullableNumber(raw.monthly_rate),
 });
 
+interface DebtPayloadBase {
+  name: string;
+  total_installments: number;
+  paid_installments: number;
+  start_date: string;
+}
+
+interface FixedInstallmentTerms {
+  installment_amount: number;
+  principal?: null;
+  monthly_rate?: null;
+}
+
+interface PriceTableTerms {
+  principal: number;
+  monthly_rate: number;
+}
+
+export type DebtPayload = DebtPayloadBase & (FixedInstallmentTerms | PriceTableTerms);
+
 const QUERY_KEY = ['debts'];
 
 export const useDebts = () =>
@@ -31,7 +51,7 @@ export const useDebts = () =>
 export const useCreateDebt = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Debt, 'id' | 'closed'>) =>
+    mutationFn: (data: DebtPayload) =>
       client.post<RawDebt>('/debts', data).then((r) => toDebt(r.data)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
@@ -70,7 +90,7 @@ export const usePayInstallment = () => {
 export const useUpdateDebt = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: Partial<Omit<Debt, 'closed'>> & { id: string }) =>
+    mutationFn: ({ id, ...data }: DebtPayload & { id: string }) =>
       client.patch<RawDebt>(`/debts/${id}`, data).then((r) => toDebt(r.data)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
