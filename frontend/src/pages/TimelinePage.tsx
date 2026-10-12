@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Gift, Zap } from 'lucide-react';
+import { useState } from 'react';
 import { useProjection } from '../api/projection';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EventText } from '../components/ui/EventText';
@@ -9,6 +10,7 @@ import { useAnimations } from '../lib/animations';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
+import { HORIZON_OPTIONS, loadHorizon, saveHorizon, type Horizon } from '../lib/timelineHorizon';
 import type { ProjectedMonth } from '../types/api';
 
 const now = new Date();
@@ -86,15 +88,38 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
   );
 };
 
+const HorizonSelector = ({ value, onChange }: { value: Horizon; onChange: (h: Horizon) => void }) => (
+  <div role="group" aria-label="Horizonte da projeção" className="join">
+    {HORIZON_OPTIONS.map((option) => (
+      <button
+        key={option}
+        type="button"
+        aria-pressed={option === value}
+        onClick={() => onChange(option)}
+        className={`join-item btn btn-xs ${option === value ? 'btn-primary' : 'btn-ghost border-base-300'}`}
+      >
+        {option}m
+      </button>
+    ))}
+  </div>
+);
+
 export const TimelinePage = () => {
-  const { data, isLoading } = useProjection(MONTH, YEAR, 24);
+  const [horizon, setHorizon] = useState<Horizon>(loadHorizon);
+  const { data, isLoading } = useProjection(MONTH, YEAR, horizon);
+
+  const handleHorizonChange = (next: Horizon) => {
+    setHorizon(next);
+    saveHorizon(next);
+  };
   const months = data?.filter((m) => m.events.length > 0) ?? [];
 
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Projeção 24 meses"
+          title={`Projeção ${horizon} meses`}
+          action={<HorizonSelector value={horizon} onChange={handleHorizonChange} />}
           subtitle="Fluxo de caixa futuro com base nas dívidas e renda atuais"
         />
 
@@ -113,7 +138,7 @@ export const TimelinePage = () => {
               <Zap size={22} className="text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-base-content">Nenhum marco nos próximos 24 meses</p>
+              <p className="font-semibold text-base-content">Nenhum marco nos próximos {horizon} meses</p>
               <p className="text-sm text-base-content/50 mt-1 max-w-xs">
                 Cadastre dívidas para ver as datas de quitação e os meses em que o saldo fica livre.
               </p>
