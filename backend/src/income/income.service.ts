@@ -33,13 +33,6 @@ export class IncomeService {
     return [...fixed, ...variable];
   }
 
-  netAmount(income: Income): number {
-    return (
-      Number(income.amount) -
-      (income.deductions ?? []).reduce((sum, d) => sum + Number(d.amount), 0)
-    );
-  }
-
   async create(userId: string, dto: CreateIncomeDto): Promise<Income> {
     const income = this.repo.create({
       user: { id: userId },
@@ -49,7 +42,7 @@ export class IncomeService {
       description: dto.description,
       month: dto.month ?? null,
       year: dto.year ?? null,
-      deductions: [],
+      deductions: dto.deductions ?? [],
     });
     return this.repo.save(income);
   }

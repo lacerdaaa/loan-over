@@ -72,25 +72,6 @@ describe('IncomeService', () => {
     });
   });
 
-  describe('netAmount', () => {
-    it('returns gross amount when there are no deductions', () => {
-      const income = makeIncome({ amount: 6000, deductions: [] });
-      expect(service.netAmount(income)).toBe(6000);
-    });
-
-    it('subtracts all deductions from gross amount', () => {
-      const income = makeIncome({
-        amount: 6000,
-        deductions: [
-          makeDeduction(660, 'INSS'),
-          makeDeduction(420, 'IRRF'),
-          makeDeduction(200, 'Health'),
-        ],
-      });
-      expect(service.netAmount(income)).toBe(4720);
-    });
-  });
-
   describe('create', () => {
     it('saves a new income with category and returns it', async () => {
       const dto: CreateIncomeDto = {
@@ -108,6 +89,24 @@ describe('IncomeService', () => {
 
       expect(result.category).toBe(IncomeCategory.SALARY);
       expect(repo.save).toHaveBeenCalledWith(saved);
+    });
+
+    it('persists the deductions given in the dto', async () => {
+      const dto: CreateIncomeDto = {
+        type: IncomeType.FIXED,
+        category: IncomeCategory.SALARY,
+        amount: 6000,
+        description: 'Salary',
+        deductions: [{ label: 'INSS', amount: 660 }],
+      };
+      repo.create.mockImplementation((entity) => entity as Income);
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Income));
+
+      await service.create(USER_ID, dto);
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ deductions: [{ label: 'INSS', amount: 660 }] }),
+      );
     });
   });
 
