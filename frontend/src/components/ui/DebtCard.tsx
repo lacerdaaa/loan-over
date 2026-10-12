@@ -13,14 +13,16 @@ interface Props {
   debt: Debt;
 }
 
-const toDateInput = (date: Date | string) =>
-  new Date(date).toISOString().slice(0, 10);
+const RATE_DECIMALS = 4;
+const DATE_INPUT_LENGTH = 'YYYY-MM-DD'.length;
+
+const toDateInput = (date: string) => date.slice(0, DATE_INPUT_LENGTH);
 
 const formFromDebt = (debt: Debt): DebtFormValues => ({
   name: debt.name,
-  installment_amount: Number(debt.installment_amount),
-  principal: Number(debt.principal ?? 0),
-  monthly_rate: Number(debt.monthly_rate ?? 0) * 100,
+  installment_amount: debt.installment_amount,
+  principal: debt.principal ?? 0,
+  monthly_rate: Number(((debt.monthly_rate ?? 0) * 100).toFixed(RATE_DECIMALS)),
   total_installments: debt.total_installments,
   paid_installments: debt.paid_installments,
   start_date: toDateInput(debt.start_date),
@@ -66,7 +68,7 @@ export const DebtCard = ({ debt }: Props) => {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm text-base-content/60 tabular-nums">{mask(formatCurrency(debt.installment_amount))}/mês</p>
               {debt.monthly_rate ? (
-                <span className="badge badge-ghost badge-xs tabular-nums">{(Number(debt.monthly_rate) * 100).toFixed(2)}% a.m.</span>
+                <span className="badge badge-ghost badge-xs tabular-nums">{Number((debt.monthly_rate * 100).toFixed(RATE_DECIMALS))}% a.m.</span>
               ) : null}
             </div>
           </div>
@@ -117,7 +119,7 @@ export const DebtCard = ({ debt }: Props) => {
           <progress className="progress progress-primary w-full" value={progress} max={100} />
           <div className="flex justify-between text-xs text-base-content/50 mt-1">
             <span>{debt.paid_installments} de {debt.total_installments} pagas</span>
-            <span>quitação: {payoffMonth(debt.start_date, debt.total_installments)}</span>
+            <span>quitação: {payoffMonth(debt)}</span>
           </div>
           {showPayoffCost && (
             <div className="flex justify-between text-xs mt-1.5">

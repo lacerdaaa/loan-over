@@ -219,7 +219,7 @@ export const DashboardPage = () => {
                           {debt.name}
                         </span>
                         <span className="text-base-content/50">
-                          {mask(formatCurrency(debt.installment_amount))}/mês · quitação {payoffMonth(debt.start_date, debt.total_installments)}
+                          {mask(formatCurrency(debt.installment_amount))}/mês · quitação {payoffMonth(debt)}
                         </span>
                       </div>
                       <progress
