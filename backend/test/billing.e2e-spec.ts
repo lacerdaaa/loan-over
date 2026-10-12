@@ -39,17 +39,14 @@ describe('Billing and entitlements (e2e)', () => {
       .set('Stripe-Signature', 't=1,v1=sig')
       .send('{"id":"evt_1"}');
   const subscriptionEvent = (type: string, status: string): void => {
-    gateway.constructWebhookEvent.mockReturnValue({
-      type,
-      data: {
-        object: {
-          id: 'sub_e2e',
-          customer: CUSTOMER_ID,
-          status,
-          items: { data: [{ current_period_end: PERIOD_END_SECONDS }] },
-        },
-      },
-    });
+    const subscription = {
+      id: 'sub_e2e',
+      customer: CUSTOMER_ID,
+      status,
+      items: { data: [{ current_period_end: PERIOD_END_SECONDS }] },
+    };
+    gateway.constructWebhookEvent.mockReturnValue({ type, data: { object: subscription } });
+    gateway.retrieveSubscription.mockResolvedValue(subscription);
   };
 
   beforeAll(async () => {

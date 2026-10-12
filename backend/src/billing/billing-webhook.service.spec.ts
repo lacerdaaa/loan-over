@@ -27,7 +27,9 @@ describe('BillingWebhookService', () => {
   beforeEach(() => {
     gateway = { constructWebhookEvent: jest.fn(), retrieveSubscription: jest.fn() };
     userService = {
-      findByStripeCustomerId: jest.fn().mockResolvedValue({ id: 'user-1' }),
+      findByStripeCustomerId: jest
+        .fn()
+        .mockResolvedValue({ id: 'user-1', stripe_subscription_id: 'sub_1' }),
       updateBilling: jest.fn().mockResolvedValue(undefined),
     };
     service = new BillingWebhookService(
@@ -104,18 +106,35 @@ describe('BillingWebhookService', () => {
   });
 
   describe('when a subscription is updated', () => {
-    it('syncs the user found by Stripe customer id', async () => {
+    it('syncs the user from the live subscription found by Stripe customer id', async () => {
       gateway.constructWebhookEvent.mockReturnValue(
-        makeEvent('customer.subscription.updated', makeSubscription('past_due')),
+        makeEvent('customer.subscription.updated', makeSubscription('active')),
       );
+      gateway.retrieveSubscription.mockResolvedValue(makeSubscription('past_due'));
 
       await service.handle(RAW_BODY, SIGNATURE);
 
       expect(userService.findByStripeCustomerId).toHaveBeenCalledWith('cus_1');
+      expect(gateway.retrieveSubscription).toHaveBeenCalledWith('sub_1');
       expect(userService.updateBilling).toHaveBeenCalledWith(
         'user-1',
         expect.objectContaining({ plan: 'pro', subscription_status: 'past_due' }),
       );
+    });
+
+    it('syncs a user who has no subscription recorded yet', async () => {
+      userService.findByStripeCustomerId.mockResolvedValue({
+        id: 'user-1',
+        stripe_subscription_id: null,
+      });
+      gateway.constructWebhookEvent.mockReturnValue(
+        makeEvent('customer.subscription.updated', makeSubscription('active')),
+      );
+      gateway.retrieveSubscription.mockResolvedValue(makeSubscription('active'));
+
+      await service.handle(RAW_BODY, SIGNATURE);
+
+      expect(userService.updateBilling).toHaveBeenCalledTimes(1);
     });
 
     it('does nothing when no user owns that customer', async () => {
@@ -128,13 +147,27 @@ describe('BillingWebhookService', () => {
 
       expect(userService.updateBilling).not.toHaveBeenCalled();
     });
-  });
 
-  describe('when a subscription is deleted', () => {
-    it('moves the user back to the free plan as canceled', async () => {
+    it('ignores an event for a subscription that is not the current one', async () => {
+      userService.findByStripeCustomerId.mockResolvedValue({
+        id: 'user-1',
+        stripe_subscription_id: 'sub_new',
+      });
       gateway.constructWebhookEvent.mockReturnValue(
-        makeEvent('customer.subscription.deleted', makeSubscription('active')),
+        makeEvent('customer.subscription.updated', makeSubscription('active')),
       );
+
+      await service.handle(RAW_BODY, SIGNATURE);
+
+      expect(gateway.retrieveSubscription).not.toHaveBeenCalled();
+      expect(userService.updateBilling).not.toHaveBeenCalled();
+    });
+
+    it('uses the live state when the event arrives after a later deletion', async () => {
+      gateway.constructWebhookEvent.mockReturnValue(
+        makeEvent('customer.subscription.updated', makeSubscription('active')),
+      );
+      gateway.retrieveSubscription.mockResolvedValue(makeSubscription('canceled'));
 
       await service.handle(RAW_BODY, SIGNATURE);
 
@@ -142,6 +175,36 @@ describe('BillingWebhookService', () => {
         'user-1',
         expect.objectContaining({ plan: 'free', subscription_status: 'canceled' }),
       );
+    });
+  });
+
+  describe('when a subscription is deleted', () => {
+    it('moves the user back to the free plan as canceled', async () => {
+      gateway.constructWebhookEvent.mockReturnValue(
+        makeEvent('customer.subscription.deleted', makeSubscription('active')),
+      );
+      gateway.retrieveSubscription.mockResolvedValue(makeSubscription('canceled'));
+
+      await service.handle(RAW_BODY, SIGNATURE);
+
+      expect(userService.updateBilling).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ plan: 'free', subscription_status: 'canceled' }),
+      );
+    });
+
+    it('ignores the deletion of an old subscription after the user resubscribed', async () => {
+      userService.findByStripeCustomerId.mockResolvedValue({
+        id: 'user-1',
+        stripe_subscription_id: 'sub_new',
+      });
+      gateway.constructWebhookEvent.mockReturnValue(
+        makeEvent('customer.subscription.deleted', makeSubscription('canceled')),
+      );
+
+      await service.handle(RAW_BODY, SIGNATURE);
+
+      expect(userService.updateBilling).not.toHaveBeenCalled();
     });
 
     it('does nothing when no user owns that customer', async () => {

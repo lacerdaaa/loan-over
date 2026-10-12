@@ -22,9 +22,8 @@ export class BillingWebhookService {
       case 'checkout.session.completed':
         return this.onCheckoutCompleted(event.data.object);
       case 'customer.subscription.updated':
-        return this.syncSubscription(event.data.object);
       case 'customer.subscription.deleted':
-        return this.syncSubscription({ ...event.data.object, status: 'canceled' });
+        return this.syncCurrentSubscription(event.data.object);
       default:
         return;
     }
@@ -48,9 +47,15 @@ export class BillingWebhookService {
     );
   }
 
-  private async syncSubscription(subscription: Stripe.Subscription): Promise<void> {
-    const user = await this.userService.findByStripeCustomerId(idOf(subscription.customer));
+  /**
+   * Events can arrive late or out of order, and may belong to a subscription the user
+   * no longer has. Only the user's current subscription is synced, from its live state.
+   */
+  private async syncCurrentSubscription(eventSubscription: Stripe.Subscription): Promise<void> {
+    const user = await this.userService.findByStripeCustomerId(idOf(eventSubscription.customer));
     if (!user) return;
-    await this.userService.updateBilling(user.id, toBillingFields(subscription));
+    if (user.stripe_subscription_id && user.stripe_subscription_id !== eventSubscription.id) return;
+    const live = await this.gateway.retrieveSubscription(eventSubscription.id);
+    await this.userService.updateBilling(user.id, toBillingFields(live));
   }
 }
