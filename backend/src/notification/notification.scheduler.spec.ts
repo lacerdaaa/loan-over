@@ -33,6 +33,7 @@ const makeDebt = (name: string, overrides: Partial<Debt> = {}): Debt =>
     paid_installments: 3,
     closed: false,
     last_paid_month: MONTH_START,
+    start_date: new Date('2026-01-01'),
     ...overrides,
   }) as Debt;
 
@@ -94,6 +95,23 @@ describe('NotificationScheduler', () => {
       expect(emailService.send.mock.calls[0]?.[0]).toMatchObject({
         subject: 'Última parcela chegando',
       });
+    });
+  });
+
+  describe('when a debt with one installment remaining has not started yet', () => {
+    it('does not announce a last installment', async () => {
+      userService.findNotificationRecipients.mockResolvedValue([makeUser('a')]);
+      debtService.findAll.mockResolvedValue([
+        makeDebt('Futuro', {
+          total_installments: 10,
+          paid_installments: 9,
+          start_date: new Date('2027-06-01'),
+        }),
+      ]);
+
+      await scheduler.runMonthly(NOW);
+
+      expect(sentTo()).toEqual([]);
     });
   });
 

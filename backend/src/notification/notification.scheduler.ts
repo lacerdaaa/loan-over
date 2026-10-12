@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { EntitlementService } from '../billing/entitlement.service';
 import { Debt } from '../debt/debt.entity';
-import { monthStartKey } from '../debt/debt-month.utils';
+import { dayKey, monthStartKey } from '../debt/debt-month.utils';
 import { DebtService } from '../debt/debt.service';
 import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { User } from '../user/user.entity';
@@ -86,7 +86,9 @@ export class NotificationScheduler {
     return {
       lastInstallmentNextMonth: debts.filter(
         (d) =>
-          !d.closed && d.total_installments - d.paid_installments === LAST_INSTALLMENT_REMAINING,
+          !d.closed &&
+          dayKey(d.start_date) <= monthStart &&
+          d.total_installments - d.paid_installments === LAST_INSTALLMENT_REMAINING,
       ),
       finalInstallmentThisMonth: debts.filter((d) => d.closed && d.last_paid_month === monthStart),
     };
