@@ -41,7 +41,7 @@ export const DebtCard = ({ debt }: Props) => {
     : 0;
   const remaining = debt.total_installments - debt.paid_installments;
   const payoffCost = remainingBalance(debt);
-  const faceCost = remaining * Number(debt.installment_amount);
+  const faceCost = remaining * debt.installment_amount;
   const showPayoffCost = !!debt.monthly_rate && !debt.closed && payoffCost < faceCost - 0.01;
 
   const handleEdit = (e: React.FormEvent) => {

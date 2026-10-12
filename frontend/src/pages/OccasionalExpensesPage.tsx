@@ -27,7 +27,7 @@ export const OccasionalExpensesPage = () => {
   const { hidden, mask } = usePrivacy();
   const labels = labelsFor(useBusinessMode());
 
-  const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
+  const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + e.amount, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

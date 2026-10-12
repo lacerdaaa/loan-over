@@ -18,7 +18,7 @@ const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salário', ren
 
 const deductions = (income: Income) => income.deductions ?? [];
 const netAmount = (income: Income) =>
-  income.amount - deductions(income).reduce((s, d) => s + Number(d.amount), 0);
+  income.amount - deductions(income).reduce((s, d) => s + d.amount, 0);
 
 type DeductionFormState = { incomeId: string; label: string; amount: string };
 
