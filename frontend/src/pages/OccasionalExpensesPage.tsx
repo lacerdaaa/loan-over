@@ -22,8 +22,8 @@ export const OccasionalExpensesPage = () => {
   const [form, setForm] = useState(EMPTY);
 
   const { data: expenses = [] } = useOccasionalExpenses(month, year);
-  const create = useCreateOccasionalExpense(month, year);
-  const remove = useDeleteOccasionalExpense(month, year);
+  const create = useCreateOccasionalExpense();
+  const remove = useDeleteOccasionalExpense();
   const { hidden, mask } = usePrivacy();
   const labels = labelsFor(useBusinessMode());
 

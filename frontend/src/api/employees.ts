@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Employee } from '../types/api';
 import { client } from './client';
+import { invalidateFinancials } from './invalidate';
 
 const QUERY_KEY = ['employees'];
-const SNAPSHOT_KEY = ['snapshot'];
-const PROJECTION_KEY = ['projection'];
 
 export const useEmployees = () =>
   useQuery<Employee[]>({
@@ -22,8 +21,7 @@ export const useCreateEmployee = () => {
       client.post<Employee>('/employees', data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
-      qc.invalidateQueries({ queryKey: SNAPSHOT_KEY });
-      qc.invalidateQueries({ queryKey: PROJECTION_KEY });
+      invalidateFinancials(qc);
     },
   });
 };
@@ -35,8 +33,7 @@ export const useUpdateEmployee = () => {
       client.patch<Employee>(`/employees/${id}`, data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
-      qc.invalidateQueries({ queryKey: SNAPSHOT_KEY });
-      qc.invalidateQueries({ queryKey: PROJECTION_KEY });
+      invalidateFinancials(qc);
     },
   });
 };
@@ -47,8 +44,7 @@ export const useDeleteEmployee = () => {
     mutationFn: (id: string) => client.delete(`/employees/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
-      qc.invalidateQueries({ queryKey: SNAPSHOT_KEY });
-      qc.invalidateQueries({ queryKey: PROJECTION_KEY });
+      invalidateFinancials(qc);
     },
   });
 };

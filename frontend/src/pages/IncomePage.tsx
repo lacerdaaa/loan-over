@@ -22,11 +22,11 @@ const netAmount = (income: Income) =>
 
 type DeductionFormState = { incomeId: string; label: string; amount: string };
 
-const DeductionRow = ({ income, month, year }: { income: Income; month: number; year: number }) => {
+const DeductionRow = ({ income }: { income: Income }) => {
   const [showForm, setShowForm] = useState(false);
   const [deductionForm, setDeductionForm] = useState<DeductionFormState>({ incomeId: income.id, label: '', amount: '' });
-  const addDeduction = useAddDeduction(income.id, month, year);
-  const removeDeduction = useRemoveDeduction(income.id, month, year);
+  const addDeduction = useAddDeduction(income.id);
+  const removeDeduction = useRemoveDeduction(income.id);
   const { mask } = usePrivacy();
   const net = netAmount(income);
   const hasDeductions = deductions(income).length > 0;
@@ -108,8 +108,8 @@ export const IncomePage = () => {
   const labels = labelsFor(useBusinessMode());
 
   const { data: incomes = [] } = useIncome(month, year);
-  const create = useCreateIncome(month, year);
-  const remove = useDeleteIncome(month, year);
+  const create = useCreateIncome();
+  const remove = useDeleteIncome();
 
   const filtered = incomes.filter((i) => i.type === tab);
 
@@ -169,7 +169,7 @@ export const IncomePage = () => {
                   <motion.button whileTap={{ scale: 0.93 }} aria-label="Remover renda" className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}><X size={14} /></motion.button>
                 </div>
               </div>
-              <DeductionRow income={income} month={month} year={year} />
+              <DeductionRow income={income} />
             </motion.div>
           ))}
           {filtered.length === 0 && (

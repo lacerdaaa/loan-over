@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Income, IncomeDeduction } from '../types/api';
 import { client } from './client';
+import { invalidateFinancials } from './invalidate';
 
 type RawIncomeDeduction = Omit<IncomeDeduction, 'amount'> & { amount: number | string };
 type RawIncome = Omit<Income, 'amount' | 'deductions'> & {
@@ -19,7 +20,8 @@ const toIncome = (raw: RawIncome): Income => ({
   deductions: (raw.deductions ?? []).map(toDeduction),
 });
 
-const queryKey = (month: number, year: number) => ['income', month, year];
+const QUERY_PREFIX = ['income'];
+const queryKey = (month: number, year: number) => [...QUERY_PREFIX, month, year];
 
 export const useIncome = (month: number, year: number) =>
   useQuery<Income[]>({
@@ -36,39 +38,51 @@ export type CreateIncomePayload = Omit<Income, 'id' | 'month' | 'year' | 'deduct
   deductions?: { label: string; amount: number }[];
 };
 
-export const useCreateIncome = (month: number, year: number) => {
+export const useCreateIncome = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateIncomePayload) =>
       client.post<RawIncome>('/income', data).then((r) => toIncome(r.data)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey(month, year) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_PREFIX });
+      invalidateFinancials(qc);
+    },
   });
 };
 
-export const useDeleteIncome = (month: number, year: number) => {
+export const useDeleteIncome = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => client.delete(`/income/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey(month, year) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_PREFIX });
+      invalidateFinancials(qc);
+    },
   });
 };
 
-export const useAddDeduction = (incomeId: string, month: number, year: number) => {
+export const useAddDeduction = (incomeId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { label: string; amount: number }) =>
       client
         .post<RawIncomeDeduction>(`/income/${incomeId}/deductions`, data)
         .then((r) => toDeduction(r.data)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey(month, year) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_PREFIX });
+      invalidateFinancials(qc);
+    },
   });
 };
 
-export const useRemoveDeduction = (incomeId: string, month: number, year: number) => {
+export const useRemoveDeduction = (incomeId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (deductionId: string) =>
       client.delete(`/income/${incomeId}/deductions/${deductionId}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey(month, year) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_PREFIX });
+      invalidateFinancials(qc);
+    },
   });
 };

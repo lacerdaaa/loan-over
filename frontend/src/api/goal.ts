@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Goal } from '../types/api';
 import { client } from './client';
+import { invalidateFinancials } from './invalidate';
 import { toNullableNumber } from './numbers';
 
 type RawGoal = Omit<Goal, 'target_amount' | 'monthly_min'> & {
@@ -30,6 +31,9 @@ export const useUpsertGoal = () => {
   return useMutation({
     mutationFn: (data: Omit<Goal, 'id'>) =>
       client.post<RawGoal>('/goal', data).then((r) => toGoal(r.data)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      invalidateFinancials(qc);
+    },
   });
 };

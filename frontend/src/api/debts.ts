@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Debt } from '../types/api';
 import { client } from './client';
+import { invalidateFinancials } from './invalidate';
 import { toNullableNumber } from './numbers';
 
 type RawDebt = Omit<Debt, 'installment_amount' | 'principal' | 'monthly_rate'> & {
@@ -32,7 +33,10 @@ export const useCreateDebt = () => {
   return useMutation({
     mutationFn: (data: Omit<Debt, 'id' | 'closed'>) =>
       client.post<RawDebt>('/debts', data).then((r) => toDebt(r.data)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      invalidateFinancials(qc);
+    },
   });
 };
 
@@ -56,7 +60,10 @@ export const usePayInstallment = () => {
     onError: (_err, _id, ctx) => {
       if (ctx?.previous) qc.setQueryData(QUERY_KEY, ctx.previous);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      invalidateFinancials(qc);
+    },
   });
 };
 
@@ -65,7 +72,10 @@ export const useUpdateDebt = () => {
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Omit<Debt, 'closed'>> & { id: string }) =>
       client.patch<RawDebt>(`/debts/${id}`, data).then((r) => toDebt(r.data)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      invalidateFinancials(qc);
+    },
   });
 };
 
@@ -73,6 +83,9 @@ export const useDeleteDebt = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => client.delete(`/debts/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      invalidateFinancials(qc);
+    },
   });
 };
