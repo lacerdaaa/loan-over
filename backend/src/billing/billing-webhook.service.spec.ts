@@ -1,7 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import Stripe from 'stripe';
 import { UserService } from '../user/user.service';
-import { User } from '../user/user.entity';
 import { BillingWebhookService } from './billing-webhook.service';
 import { StripeGateway } from './stripe.gateway';
 
@@ -28,7 +27,7 @@ describe('BillingWebhookService', () => {
   beforeEach(() => {
     gateway = { constructWebhookEvent: jest.fn(), retrieveSubscription: jest.fn() };
     userService = {
-      findByStripeCustomerId: jest.fn().mockResolvedValue({ id: 'user-1' } as User),
+      findByStripeCustomerId: jest.fn().mockResolvedValue({ id: 'user-1' }),
       updateBilling: jest.fn().mockResolvedValue(undefined),
     };
     service = new BillingWebhookService(
