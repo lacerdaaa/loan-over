@@ -14,7 +14,7 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  app.enableCors();
+  app.enableCors({ origin: process.env.FRONTEND_URL || true });
 
   const config = new DocumentBuilder()
     .setTitle('Loan Over API')
@@ -39,4 +39,4 @@ async function bootstrap(): Promise<void> {
   await app.listen(port);
 }
 
-bootstrap();
+void bootstrap();

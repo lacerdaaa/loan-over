@@ -26,10 +26,11 @@ import { UserModule } from './user/user.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const url = config.get<string>('DATABASE_URL');
-        const isProd = config.get<string>('NODE_ENV') === 'production';
+        const nodeEnv = config.get<string>('NODE_ENV');
+        const isProd = nodeEnv === 'production';
         const base = {
           autoLoadEntities: true,
-          synchronize: !isProd,
+          synchronize: nodeEnv === 'development',
           migrations: isProd ? ['dist/migrations/*.js'] : ['src/migrations/*.ts'],
           migrationsRun: isProd,
         };
