@@ -11,6 +11,7 @@ import { MonthlyReportBuilder } from './monthly-report.builder';
 import { NotificationPreferencesService } from './notification-preferences.service';
 import { NotificationComposer } from './notification.composer';
 import { NotificationController } from './notification.controller';
+import { NotificationService } from './notification.service';
 import { NotificationScheduler } from './notification.scheduler';
 import { UnsubscribeTokenService } from './unsubscribe-token.service';
 
@@ -31,6 +32,7 @@ import { UnsubscribeTokenService } from './unsubscribe-token.service';
     NotificationPreferencesService,
     NotificationComposer,
     NotificationScheduler,
+    NotificationService,
     MonthlyReportBuilder,
     EmailService,
     UnsubscribeTokenService,

@@ -121,4 +121,79 @@ describe('Notifications (e2e)', () => {
       expect((await loadUser())?.monthly_report).toBe(false);
     });
   });
+
+  describe('GET /notifications/unsubscribe', () => {
+    const FRONTEND_URL = 'https://app.example.com';
+    let previousFrontendUrl: string | undefined;
+
+    beforeAll(() => {
+      previousFrontendUrl = process.env.FRONTEND_URL;
+      process.env.FRONTEND_URL = FRONTEND_URL;
+    });
+
+    afterAll(() => {
+      if (previousFrontendUrl === undefined) delete process.env.FRONTEND_URL;
+      else process.env.FRONTEND_URL = previousFrontendUrl;
+    });
+
+    it('turns off both notification flags and redirects to the frontend without a session', async () => {
+      await dataSource
+        .getRepository(User)
+        .update({ id: userId }, { email_notifications: true, monthly_report: true });
+      const unsubscribeToken = app
+        .get(JwtService)
+        .sign({ sub: userId, purpose: 'unsubscribe' }, { expiresIn: '90d' });
+
+      const response = await request(app.getHttpServer())
+        .get('/notifications/unsubscribe')
+        .query({ token: unsubscribeToken })
+        .expect(302);
+
+      expect(response.headers.location).toBe(`${FRONTEND_URL}/unsubscribed`);
+      const user = await loadUser();
+      expect(user?.email_notifications).toBe(false);
+      expect(user?.monthly_report).toBe(false);
+    });
+
+    it('answers 400 for a token that is not valid', () => {
+      return request(app.getHttpServer())
+        .get('/notifications/unsubscribe')
+        .query({ token: 'not-a-jwt' })
+        .expect(400);
+    });
+
+    it('answers 400 for a session token without the unsubscribe purpose', () => {
+      return request(app.getHttpServer())
+        .get('/notifications/unsubscribe')
+        .query({ token })
+        .expect(400);
+    });
+
+    it('answers 400 when the token is missing', () => {
+      return request(app.getHttpServer()).get('/notifications/unsubscribe').expect(400);
+    });
+
+    it('does not accept the unsubscribe token as a login session', async () => {
+      const unsubscribeToken = app
+        .get(JwtService)
+        .sign({ sub: userId, purpose: 'unsubscribe' }, { expiresIn: '90d' });
+
+      await request(app.getHttpServer())
+        .get('/notifications/preferences')
+        .set('Authorization', `Bearer ${unsubscribeToken}`)
+        .expect(401);
+    });
+  });
+
+  describe('POST /notifications/test', () => {
+    it('answers 204 without sending when no API key is configured, then throttles after 3 per hour', async () => {
+      const send = (): request.Test =>
+        auth(request(app.getHttpServer()).post('/notifications/test'));
+
+      await send().expect(204);
+      await send().expect(204);
+      await send().expect(204);
+      await send().expect(429);
+    });
+  });
 });
