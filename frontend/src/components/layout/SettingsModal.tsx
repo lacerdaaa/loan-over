@@ -11,6 +11,7 @@ import { useSnapshot } from '../../api/snapshot';
 import { clearToken } from '../../lib/auth';
 import { buildJsonExport, buildTextExport, downloadFile } from '../../lib/export';
 import { usePrivacy } from '../../lib/privacy';
+import { queryClient } from '../../lib/queryClient';
 import { Modal } from '../ui/Modal';
 
 const now = new Date();
@@ -29,14 +30,12 @@ interface Props {
   onAnimationsToggle: () => void;
 }
 
-export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThemeToggle, animations, onAnimationsToggle }: Props) => {
-  const navigate = useNavigate();
-  const { hidden, toggle: togglePrivacy } = usePrivacy();
+type ExportFormat = 'text' | 'json';
 
-  const [exportOpen, setExportOpen] = useState(false);
+const ExportModal = ({ onClose }: { onClose: () => void }) => {
   const [exportMonth, setExportMonth] = useState(CURRENT_MONTH);
   const [exportYear, setExportYear] = useState(CURRENT_YEAR);
-  const [exportFormat, setExportFormat] = useState<'text' | 'json'>('text');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('text');
 
   const { data: debts = [] } = useDebts();
   const { data: incomes = [] } = useIncome(exportMonth, exportYear);
@@ -53,11 +52,72 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
     } else {
       downloadFile(buildJsonExport(exportData), `loan-over-${exportYear}-${exportMonth}.json`, 'application/json');
     }
-    setExportOpen(false);
+    onClose();
   };
+
+  return (
+    <Modal open onClose={onClose} title="Exportar dados">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-base-content/50">Período</span>
+            <div className="flex gap-2">
+              <select
+                aria-label="Mês"
+                className="select select-sm flex-1"
+                value={exportMonth}
+                onChange={(e) => setExportMonth(Number(e.target.value))}
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                aria-label="Ano"
+                className="input input-sm w-24"
+                value={exportYear}
+                onChange={(e) => setExportYear(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-base-content/50">Formato</span>
+            <div className="flex gap-2">
+              <button
+                className={`btn btn-sm flex-1 gap-2 ${exportFormat === 'text' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setExportFormat('text')}
+              >
+                <FileText size={14} /> Texto
+              </button>
+              <button
+                className={`btn btn-sm flex-1 gap-2 ${exportFormat === 'json' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setExportFormat('json')}
+              >
+                <Braces size={14} /> JSON
+              </button>
+            </div>
+          </div>
+
+          <button className="btn btn-primary btn-sm gap-2 w-full" onClick={handleExport}>
+            <Download size={14} /> Baixar
+          </button>
+        </div>
+      </Modal>
+  );
+};
+
+export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThemeToggle, animations, onAnimationsToggle }: Props) => {
+  const navigate = useNavigate();
+  const { hidden, toggle: togglePrivacy } = usePrivacy();
+
+  const [exportOpen, setExportOpen] = useState(false);
 
   const handleLogout = () => {
     clearToken();
+    queryClient.clear();
     onClose();
     navigate('/login', { replace: true });
   };
@@ -173,54 +233,7 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
           Sair da conta
         </button>
       </div>
-      <Modal open={exportOpen} onClose={() => setExportOpen(false)} title="Exportar dados">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs text-base-content/50">Período</span>
-            <div className="flex gap-2">
-              <select
-                className="select select-sm flex-1"
-                value={exportMonth}
-                onChange={(e) => setExportMonth(Number(e.target.value))}
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                className="input input-sm w-24"
-                value={exportYear}
-                onChange={(e) => setExportYear(Number(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs text-base-content/50">Formato</span>
-            <div className="flex gap-2">
-              <button
-                className={`btn btn-sm flex-1 gap-2 ${exportFormat === 'text' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setExportFormat('text')}
-              >
-                <FileText size={14} /> Texto
-              </button>
-              <button
-                className={`btn btn-sm flex-1 gap-2 ${exportFormat === 'json' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setExportFormat('json')}
-              >
-                <Braces size={14} /> JSON
-              </button>
-            </div>
-          </div>
-
-          <button className="btn btn-primary btn-sm gap-2 w-full" onClick={handleExport}>
-            <Download size={14} /> Baixar
-          </button>
-        </div>
-      </Modal>
+      {exportOpen && <ExportModal onClose={() => setExportOpen(false)} />}
     </Modal>
   );
 };
