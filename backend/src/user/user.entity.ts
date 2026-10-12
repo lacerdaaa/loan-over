@@ -1,5 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+export type UserPlan = 'free' | 'pro';
+
 export type AccountType = 'personal' | 'business';
 
 export interface NotificationPreferences {
@@ -32,4 +34,19 @@ export class User {
 
   @Column({ default: false })
   declare monthly_report: boolean;
+
+  @Column({ type: 'varchar', default: 'free' })
+  declare plan: UserPlan;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare stripe_customer_id: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare stripe_subscription_id: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare subscription_status: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  declare current_period_end: Date | null;
 }

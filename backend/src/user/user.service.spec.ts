@@ -15,6 +15,11 @@ const makeUser = (overrides: Partial<User> = {}): User => ({
   account_type: null,
   email_notifications: true,
   monthly_report: false,
+  plan: 'free',
+  stripe_customer_id: null,
+  stripe_subscription_id: null,
+  subscription_status: null,
+  current_period_end: null,
   ...overrides,
 });
 

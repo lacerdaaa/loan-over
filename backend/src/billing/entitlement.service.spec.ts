@@ -5,19 +5,44 @@ import { EntitlementService } from './entitlement.service';
 const buildService = (billingFlag: string | undefined): EntitlementService =>
   new EntitlementService({ get: () => billingFlag } as unknown as ConfigService);
 
-describe('EntitlementService', () => {
-  const user = { id: 'user-1' } as User;
+const userWith = (plan: User['plan'], status: string | null): User =>
+  ({ id: 'user-1', plan, subscription_status: status }) as User;
 
+describe('EntitlementService', () => {
   describe('when billing is disabled', () => {
-    it('treats every user as Pro', () => {
-      expect(buildService(undefined).isPro(user)).toBe(true);
-      expect(buildService('false').isPro(user)).toBe(true);
+    it('treats every user as Pro, even a free one', () => {
+      const freeUser = userWith('free', null);
+
+      expect(buildService(undefined).isPro(freeUser)).toBe(true);
+      expect(buildService('false').isPro(freeUser)).toBe(true);
     });
   });
 
   describe('when billing is enabled', () => {
-    it('does not treat the user as Pro until plans exist', () => {
-      expect(buildService('true').isPro(user)).toBe(false);
+    const service = buildService('true');
+
+    it('does not treat a free user as Pro', () => {
+      expect(service.isPro(userWith('free', null))).toBe(false);
+    });
+
+    it('treats a Pro user with an active subscription as Pro', () => {
+      expect(service.isPro(userWith('pro', 'active'))).toBe(true);
+    });
+
+    it('treats a Pro user in a trial as Pro', () => {
+      expect(service.isPro(userWith('pro', 'trialing'))).toBe(true);
+    });
+
+    it('does not treat a Pro user with a past-due subscription as Pro', () => {
+      expect(service.isPro(userWith('pro', 'past_due'))).toBe(false);
+    });
+
+    it('does not treat a Pro user without a subscription status as Pro', () => {
+      expect(service.isPro(userWith('pro', null))).toBe(false);
+    });
+
+    it('does not treat a free user with a leftover active status as Pro', () => {
+      expect(service.isPro(userWith('free', 'active'))).toBe(false);
     });
   });
 });
