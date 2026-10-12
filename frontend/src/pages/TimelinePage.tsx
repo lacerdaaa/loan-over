@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, Gift, Zap } from 'lucide-react';
 import { useProjection } from '../api/projection';
 import { PageHeader } from '../components/ui/PageHeader';
+import { EventText } from '../components/ui/EventText';
 import { PageTransition } from '../components/ui/PageTransition';
 import { ProjectionChart } from '../components/ui/ProjectionChart';
 import { useAnimations } from '../lib/animations';
@@ -47,7 +48,7 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
             <div className="mt-0.5 w-5 h-5 rounded-md bg-warning/15 flex items-center justify-center shrink-0">
               <AlertTriangle size={11} className="text-warning" />
             </div>
-            <p className="text-sm text-base-content/70">{e.description}</p>
+            <p className="text-sm text-base-content/70"><EventText event={e} /></p>
           </div>
         ))}
         {liberations.map((e, i) => (
@@ -56,7 +57,7 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
               <Zap size={11} className="text-success" />
             </div>
             <div className="flex flex-1 items-baseline justify-between gap-2 min-w-0">
-              <p className="text-sm text-base-content/80">{e.description}</p>
+              <p className="text-sm text-base-content/80"><EventText event={e} /></p>
               {e.amount > 0 && (
                 <span className="text-xs font-semibold text-success tabular-nums shrink-0">
                   +{mask(formatCurrency(e.amount))}/mês
@@ -67,13 +68,13 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
         ))}
         {payrolls.map((e, i) => (
           <div key={`p-${i}`} className="flex items-start gap-2.5">
-            <div className="mt-0.5 w-5 h-5 rounded-md bg-warning/15 flex items-center justify-center shrink-0">
-              <Gift size={11} className="text-warning" />
+            <div className="mt-0.5 w-5 h-5 rounded-md bg-info/15 flex items-center justify-center shrink-0">
+              <Gift size={11} className="text-info" />
             </div>
             <div className="flex flex-1 items-baseline justify-between gap-2 min-w-0">
               <p className="text-sm text-base-content/70">{e.description}</p>
               {e.amount > 0 && (
-                <span className="text-xs font-semibold text-warning tabular-nums shrink-0">
+                <span className="text-xs font-semibold text-info tabular-nums shrink-0">
                   -{mask(formatCurrency(e.amount))}
                 </span>
               )}

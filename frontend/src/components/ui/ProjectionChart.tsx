@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { AlertTriangle, PartyPopper } from 'lucide-react';
+import { AlertTriangle, Gift, PartyPopper } from 'lucide-react';
 import {
   Bar,
   CartesianGrid,
@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { EventText } from './EventText';
 import { formatCurrency } from '../../lib/formatCurrency';
 import { monthLabel } from '../../lib/monthLabel';
 import { usePrivacy } from '../../lib/privacy';
@@ -24,6 +25,12 @@ interface TooltipPayload {
   payload: ProjectedMonth;
 }
 
+const EVENT_STYLE = {
+  liberation: { Icon: PartyPopper, className: 'text-success font-medium' },
+  alert: { Icon: AlertTriangle, className: 'text-warning' },
+  payroll: { Icon: Gift, className: 'text-info' },
+} as const;
+
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) => {
   const { mask } = usePrivacy();
   if (!active || !payload?.length) return null;
@@ -34,11 +41,14 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
     <div className="card bg-base-100 border border-base-300 shadow-lg p-3 text-sm max-w-xs">
       <p className="font-semibold mb-1">{monthLabel(d.month, d.year)}</p>
       <p className="text-base-content/70">Saldo livre: <span className="font-medium text-base-content">{mask(formatCurrency(d.free_balance))}</span></p>
-      {d.events.map((e, i) => (
-        <p key={i} className={`flex items-center gap-1 mt-1 ${e.type === 'liberation' ? 'text-success font-medium' : 'text-warning'}`}>
-          {e.type === 'liberation' ? <PartyPopper size={13} /> : <AlertTriangle size={13} />} {e.description}
-        </p>
-      ))}
+      {d.events.map((e, i) => {
+        const { Icon, className } = EVENT_STYLE[e.type];
+        return (
+          <p key={i} className={`flex items-center gap-1 mt-1 ${className}`}>
+            <Icon size={13} className="shrink-0" /> <span><EventText event={e} /></span>
+          </p>
+        );
+      })}
     </div>
   );
 };
@@ -49,6 +59,7 @@ const barColor = (value: number) =>
 export const ProjectionChart = ({ data }: Props) => {
   const { hidden } = usePrivacy();
   const nextLiberation = data.find((m) => m.events.some((e) => e.type === 'liberation'));
+  const nextLiberationEvent = nextLiberation?.events.find((e) => e.type === 'liberation');
 
   return (
     <div className="flex flex-col gap-4">
@@ -59,7 +70,7 @@ export const ProjectionChart = ({ data }: Props) => {
           className="alert bg-success/10 border border-success/30 text-success text-sm"
         >
           <PartyPopper size={15} className="shrink-0" /> Próxima liberação: <strong>{monthLabel(nextLiberation.month, nextLiberation.year)}</strong>
-          {' — '}{nextLiberation.events.find((e) => e.type === 'liberation')?.description}
+          {' — '}{nextLiberationEvent && <EventText event={nextLiberationEvent} />}
         </motion.div>
       )}
 
