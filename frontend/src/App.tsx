@@ -11,6 +11,7 @@ import { ErrorToast } from './components/ui/ErrorToast';
 import { Sidebar } from './components/layout/Sidebar';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { LoginPage } from './pages/LoginPage';
+import { UnsubscribedPage } from './pages/UnsubscribedPage';
 
 const ChooseModePage = lazy(() => import('./pages/ChooseModePage').then((m) => ({ default: m.ChooseModePage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -58,6 +59,7 @@ export const App = () => (
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/unsubscribed" element={<UnsubscribedPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/choose-mode" element={<ChooseModePage />} />
           <Route element={<AccountTypeGate />}>
