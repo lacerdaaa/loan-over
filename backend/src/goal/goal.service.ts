@@ -17,7 +17,12 @@ export class GoalService {
 
   async upsert(userId: string, dto: UpsertGoalDto): Promise<Goal> {
     const existing = await this.find(userId);
-    const fields = { ...dto, monthly_min: dto.monthly_min ?? null };
+    const { saved_amount, ...rest } = dto;
+    const fields = {
+      ...rest,
+      monthly_min: dto.monthly_min ?? null,
+      ...(saved_amount !== undefined && { saved_amount }),
+    };
 
     if (existing) {
       Object.assign(existing, fields);

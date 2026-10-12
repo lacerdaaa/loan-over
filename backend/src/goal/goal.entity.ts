@@ -21,4 +21,7 @@ export class Goal {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   declare monthly_min: number | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  declare saved_amount: number;
 }

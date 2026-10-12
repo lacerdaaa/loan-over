@@ -27,4 +27,14 @@ export class UpsertGoalDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   monthly_min?: number;
+
+  @ApiProperty({
+    example: 1500,
+    required: false,
+    description: 'Amount already saved toward the goal in BRL (kept as-is when omitted)',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  saved_amount?: number;
 }
