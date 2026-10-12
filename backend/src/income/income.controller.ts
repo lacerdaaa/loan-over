@@ -1,12 +1,22 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { MonthYearQueryDto } from '../shared/dto/month-year-query.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { CreateIncomeDto } from './dto/create-income.dto';
@@ -26,15 +36,12 @@ export class IncomeController {
       'Returns all fixed incomes plus variable incomes registered for the specified month/year. ' +
       'Amounts are gross; deductions are included in each income.',
   })
-  @ApiQuery({ name: 'month', required: true, example: 6 })
-  @ApiQuery({ name: 'year', required: true, example: 2026 })
   @ApiOkResponse({ type: [Income] })
   findForMonth(
     @CurrentUser() userId: string,
-    @Query('month') month: number,
-    @Query('year') year: number,
+    @Query() query: MonthYearQueryDto,
   ): Promise<Income[]> {
-    return this.service.findForMonth(userId, Number(month), Number(year));
+    return this.service.findForMonth(userId, query.month, query.year);
   }
 
   @Post()
@@ -52,7 +59,7 @@ export class IncomeController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete an income source and all its deductions' })
   @ApiNoContentResponse()
-  remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() userId: string): Promise<void> {
     return this.service.remove(id, userId);
   }
 
@@ -65,7 +72,7 @@ export class IncomeController {
   @HttpCode(201)
   addDeduction(
     @CurrentUser() userId: string,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateDeductionDto,
   ): Promise<IncomeDeduction> {
     return this.service.addDeduction(userId, id, dto);
@@ -77,8 +84,8 @@ export class IncomeController {
   @ApiNoContentResponse()
   removeDeduction(
     @CurrentUser() userId: string,
-    @Param('id') id: string,
-    @Param('deductionId') deductionId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('deductionId', ParseUUIDPipe) deductionId: string,
   ): Promise<void> {
     return this.service.removeDeduction(deductionId, id, userId);
   }
