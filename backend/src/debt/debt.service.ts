@@ -104,9 +104,8 @@ export class DebtService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
-    if (!exists) throw new NotFoundException(`Debt ${id} not found`);
-    await this.repo.delete(id);
+    const result = await this.repo.delete({ id, user: { id: userId } });
+    if (!result.affected) throw new NotFoundException(`Debt ${id} not found`);
   }
 
   advanceForMonth(debts: Debt[], now: Date): Debt[] {

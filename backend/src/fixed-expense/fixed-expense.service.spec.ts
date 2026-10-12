@@ -77,8 +77,16 @@ describe('FixedExpenseService', () => {
   });
 
   describe('remove', () => {
-    it('throws NotFoundException when expense does not exist', async () => {
-      repo.findOne.mockResolvedValue(null);
+    it('deletes the row scoped to the id and the owning user', async () => {
+      repo.delete.mockResolvedValue({ affected: 1, raw: [] });
+
+      await expect(service.remove('uuid-1', USER_ID)).resolves.toBeUndefined();
+
+      expect(repo.delete).toHaveBeenCalledWith({ id: 'uuid-1', user: { id: USER_ID } });
+    });
+
+    it('throws NotFoundException when nothing was deleted', async () => {
+      repo.delete.mockResolvedValue({ affected: 0, raw: [] });
 
       await expect(service.remove('ghost', USER_ID)).rejects.toThrow(NotFoundException);
     });
