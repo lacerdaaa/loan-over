@@ -25,6 +25,7 @@ npm run migration:revert
 npm run dev             # Vite dev server (requires VITE_API_URL in .env)
 npm run build           # tsc + vite build
 npm run lint            # eslint
+npm run test            # vitest unit tests
 ```
 
 ### Infrastructure

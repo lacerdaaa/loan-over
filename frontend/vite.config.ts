@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 const VENDOR_CHUNKS: Record<string, string> = {
   recharts: 'recharts',
@@ -13,6 +13,10 @@ const vendorChunk = (id: string): string | undefined => {
 };
 
 export default defineConfig({
+  test: {
+    environment: 'node',
+    include: ['src/**/*.spec.ts'],
+  },
   plugins: [react(), tailwindcss()],
   build: {
     rollupOptions: {
