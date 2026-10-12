@@ -4,15 +4,19 @@ import { client } from './client';
 import { invalidateFinancials } from './invalidate';
 import { toNullableNumber } from './numbers';
 
-type RawGoal = Omit<Goal, 'target_amount' | 'monthly_min'> & {
+type RawGoal = Omit<Goal, 'target_amount' | 'monthly_min' | 'saved_amount'> & {
   target_amount: number | string;
   monthly_min: number | string | null;
+  saved_amount?: number | string | null;
 };
+
+export type GoalInput = Omit<Goal, 'id' | 'saved_amount'> & { saved_amount?: number };
 
 const toGoal = (raw: RawGoal): Goal => ({
   ...raw,
   target_amount: Number(raw.target_amount),
   monthly_min: toNullableNumber(raw.monthly_min),
+  saved_amount: toNullableNumber(raw.saved_amount) ?? 0,
 });
 
 const QUERY_KEY = ['goal'];
@@ -29,7 +33,7 @@ export const useGoal = () =>
 export const useUpsertGoal = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Goal, 'id'>) =>
+    mutationFn: (data: GoalInput) =>
       client.post<RawGoal>('/goal', data).then((r) => toGoal(r.data)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
