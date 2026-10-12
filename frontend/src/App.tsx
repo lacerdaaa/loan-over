@@ -23,6 +23,7 @@ const GoalPage = lazy(() => import('./pages/GoalPage').then((m) => ({ default: m
 const IncomePage = lazy(() => import('./pages/IncomePage').then((m) => ({ default: m.IncomePage })));
 const OccasionalExpensesPage = lazy(() => import('./pages/OccasionalExpensesPage').then((m) => ({ default: m.OccasionalExpensesPage })));
 const PeoplePage = lazy(() => import('./pages/PeoplePage').then((m) => ({ default: m.PeoplePage })));
+const SimulatorPage = lazy(() => import('./pages/SimulatorPage').then((m) => ({ default: m.SimulatorPage })));
 const TimelinePage = lazy(() => import('./pages/TimelinePage').then((m) => ({ default: m.TimelinePage })));
 
 const PageFallback = () => (
@@ -45,6 +46,7 @@ const AnimatedRoutes = () => {
         <Route path="/goal" element={<GoalPage />} />
         <Route path="/billing/success" element={<BillingResultPage outcome="success" />} />
         <Route path="/billing/cancel" element={<BillingResultPage outcome="cancel" />} />
+        <Route path="/simulator" element={<SimulatorPage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
