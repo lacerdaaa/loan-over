@@ -476,4 +476,73 @@ describe('ProjectionService', () => {
       }
     });
   });
+
+  describe('when a debt generates liberation and alert events', () => {
+    const projectAlmostPaidDebt = (): ReturnType<ProjectionService['project']> =>
+      service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [],
+          debts: [
+            makeDebt({
+              id: 'debt-42',
+              name: 'Car',
+              installment_amount: 500,
+              total_installments: 3,
+              paid_installments: 1,
+            }),
+          ],
+          referenceMonth: 6,
+          referenceYear: 2026,
+        },
+        3,
+      );
+
+    it('identifies the debt on the alert event by id and name', () => {
+      const alert = projectAlmostPaidDebt()
+        .flatMap((m) => m.events)
+        .find((e) => e.type === 'alert');
+
+      expect(alert?.debt_id).toBe('debt-42');
+      expect(alert?.debt_name).toBe('Car');
+    });
+
+    it('identifies the debt on the liberation event by id and name', () => {
+      const liberation = projectAlmostPaidDebt()
+        .flatMap((m) => m.events)
+        .find((e) => e.type === 'liberation');
+
+      expect(liberation?.debt_id).toBe('debt-42');
+      expect(liberation?.debt_name).toBe('Car');
+    });
+
+    it('keeps the human readable description on the liberation event', () => {
+      const liberation = projectAlmostPaidDebt()
+        .flatMap((m) => m.events)
+        .find((e) => e.type === 'liberation');
+
+      expect(liberation?.description).toContain('Car quitada');
+    });
+  });
+
+  describe('when a payroll event is emitted', () => {
+    it('does not attach a debt reference to it', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 10,
+          referenceYear: 2026,
+          employees: [makeEmployee()],
+          taxRegime: 'simples',
+        },
+        1,
+      );
+
+      const payroll = result[0]?.events.find((e) => e.type === 'payroll');
+      expect(payroll).toBeDefined();
+      expect(payroll).not.toHaveProperty('debt_id');
+    });
+  });
 });

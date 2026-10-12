@@ -129,6 +129,8 @@ export class ProjectionService {
           type: 'liberation',
           description: `${debt.name} quitada — ${formatBrl(debt.installment_amount)}/mês liberados`,
           amount: Number(debt.installment_amount),
+          debt_id: debt.id,
+          debt_name: debt.name,
         },
       ];
     }
@@ -139,6 +141,8 @@ export class ProjectionService {
           type: 'alert',
           description: `${debt.name} — última parcela no próximo mês`,
           amount: Number(debt.installment_amount),
+          debt_id: debt.id,
+          debt_name: debt.name,
         },
       ];
     }
