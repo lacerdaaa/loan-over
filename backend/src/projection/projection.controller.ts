@@ -1,27 +1,17 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { DebtService } from '../debt/debt.service';
-import { EmployeeService } from '../employee/employee.service';
-import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
-import { IncomeService } from '../income/income.service';
-import { OrganizationService } from '../organization/organization.service';
 import { ProjectionQueryDto, DEFAULT_HORIZON } from './dto/projection-query.dto';
 import { ProjectedMonth } from '../shared/types';
-import { ProjectionInput, ProjectionService } from './projection.service';
+import { ProjectionInputAssembler } from './projection-input.assembler';
+import { ProjectionService } from './projection.service';
 
 @ApiTags('projection')
 @Controller('projection')
 export class ProjectionController {
   constructor(
     private readonly projectionService: ProjectionService,
-    private readonly incomeService: IncomeService,
-    private readonly debtService: DebtService,
-    private readonly fixedExpenseService: FixedExpenseService,
-    private readonly organizationService: OrganizationService,
-    private readonly employeeService: EmployeeService,
-    private readonly config: ConfigService,
+    private readonly inputAssembler: ProjectionInputAssembler,
   ) {}
 
   @Get()
@@ -42,35 +32,7 @@ export class ProjectionController {
     const refYear = query.year ?? now.getFullYear();
     const horizonMonths = query.horizon ?? DEFAULT_HORIZON;
 
-    const input = await this.buildInput(userId, refMonth, refYear);
+    const input = await this.inputAssembler.assemble(userId, refMonth, refYear);
     return this.projectionService.project(input, horizonMonths);
-  }
-
-  private async buildInput(
-    userId: string,
-    referenceMonth: number,
-    referenceYear: number,
-  ): Promise<ProjectionInput> {
-    const businessEnabled = this.config.get<string>('FEATURE_BUSINESS') === 'true';
-    const [incomes, debts, fixedExpenses, organization, employees] = await Promise.all([
-      this.incomeService.findForMonth(userId, referenceMonth, referenceYear),
-      this.debtService.findAll(userId),
-      this.fixedExpenseService.findAll(userId),
-      businessEnabled ? this.organizationService.find(userId) : Promise.resolve(null),
-      businessEnabled ? this.employeeService.findAll(userId) : Promise.resolve([]),
-    ]);
-
-    return {
-      incomes,
-      debts,
-      fixedExpenses,
-      referenceMonth,
-      referenceYear,
-      ...(organization && {
-        startingCashBalance: Number(organization.cash_balance),
-        employees,
-        taxRegime: organization.tax_regime,
-      }),
-    };
   }
 }

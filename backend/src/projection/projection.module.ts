@@ -4,13 +4,14 @@ import { EmployeeModule } from '../employee/employee.module';
 import { FixedExpenseModule } from '../fixed-expense/fixed-expense.module';
 import { IncomeModule } from '../income/income.module';
 import { OrganizationModule } from '../organization/organization.module';
+import { ProjectionInputAssembler } from './projection-input.assembler';
 import { ProjectionController } from './projection.controller';
 import { ProjectionService } from './projection.service';
 
 @Module({
   imports: [IncomeModule, DebtModule, FixedExpenseModule, OrganizationModule, EmployeeModule],
   controllers: [ProjectionController],
-  providers: [ProjectionService],
+  providers: [ProjectionService, ProjectionInputAssembler],
   exports: [ProjectionService],
 })
 export class ProjectionModule {}
