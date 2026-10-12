@@ -160,6 +160,29 @@ describe('ProjectionService', () => {
       expect(liberationMonth?.events[0].amount).toBe(500);
     });
 
+    it('formats the freed and alerting installment as Brazilian currency', () => {
+      const debt = makeDebt({
+        installment_amount: '129.18' as unknown as number,
+        total_installments: 3,
+        paid_installments: 1,
+      });
+
+      const result = service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [],
+          debts: [debt],
+          referenceMonth: 6,
+          referenceYear: 2026,
+        },
+        3,
+      );
+
+      const descriptions = result.flatMap((m) => m.events.map((e) => e.description));
+      expect(descriptions.some((d) => /quitada — R\$\s129,18\/mês liberados/.test(d))).toBe(true);
+      expect(descriptions.every((d) => !d.includes('129.18'))).toBe(true);
+    });
+
     it('does not count a closed debt in total_outflow', () => {
       const closed = makeDebt({ installment_amount: 500, closed: true });
 

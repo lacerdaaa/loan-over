@@ -9,6 +9,9 @@ import { Income } from '../income/income.entity';
 import { TaxRegime } from '../organization/organization.entity';
 import { IncomeCategory, IncomeType, ProjectedMonth, ProjectionEvent } from '../shared/types';
 
+const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatBrl = (value: number | string): string => BRL_FORMATTER.format(Number(value));
+
 const NOVEMBER = 11;
 const DECEMBER = 12;
 
@@ -124,7 +127,7 @@ export class ProjectionService {
       return [
         {
           type: 'liberation',
-          description: `${debt.name} quitada — R$${debt.installment_amount}/mês liberados`,
+          description: `${debt.name} quitada — ${formatBrl(debt.installment_amount)}/mês liberados`,
           amount: Number(debt.installment_amount),
         },
       ];
