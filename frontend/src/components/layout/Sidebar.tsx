@@ -116,7 +116,7 @@ export const Sidebar = () => {
   const spring = animations.enabled ? { type: 'spring' as const, stiffness: 400, damping: 36 } : { duration: 0 };
 
   return (
-    <div className="flex h-screen bg-base-100 overflow-hidden">
+    <div className="flex h-dvh bg-base-100 overflow-hidden">
 
       {/* Desktop sidebar */}
       <motion.aside
