@@ -8,7 +8,10 @@ import { OccasionalExpenseService } from './occasional-expense.service';
 
 const USER_ID = 'user-uuid';
 
-const mockRepository = () => ({
+const mockRepository = (): Record<
+  'find' | 'findOne' | 'create' | 'save' | 'delete',
+  jest.Mock
+> => ({
   find: jest.fn(),
   findOne: jest.fn(),
   create: jest.fn(),

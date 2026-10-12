@@ -9,7 +9,7 @@ import { AppModule } from './../src/app.module';
 import { Employee } from './../src/employee/employee.entity';
 import { Income } from './../src/income/income.entity';
 import { Organization } from './../src/organization/organization.entity';
-import { IncomeCategory, IncomeType } from './../src/shared/types';
+import { IncomeCategory, IncomeType, ProjectedMonth } from './../src/shared/types';
 import { User } from './../src/user/user.entity';
 
 describe('ProjectionController (e2e)', () => {
@@ -114,10 +114,10 @@ describe('ProjectionController (e2e)', () => {
       ).expect(200);
 
       // offset 1 → November 2026
-      const november = response.body[0];
-      const payroll = november.events.find((e: { type: string }) => e.type === 'payroll');
+      const [november] = response.body as ProjectedMonth[];
+      const payroll = november?.events.find((e) => e.type === 'payroll');
       expect(payroll).toBeDefined();
-      expect(payroll.amount).toBe(1500);
+      expect(payroll?.amount).toBe(1500);
     });
   });
 });

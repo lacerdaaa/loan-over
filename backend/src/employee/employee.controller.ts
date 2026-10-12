@@ -4,17 +4,13 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiNoContentResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { BusinessFeatureGuard } from '../auth/guards/business-feature.guard';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -54,7 +50,7 @@ export class EmployeeController {
   }
 
   @Delete(':id')
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an employee' })
   @ApiNoContentResponse()
   remove(@CurrentUser() userId: string, @Param('id') id: string): Promise<void> {

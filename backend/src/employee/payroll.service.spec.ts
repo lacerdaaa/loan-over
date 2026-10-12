@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TaxRegime } from '../organization/organization.entity';
-import { Employee, EmployeeRegime } from './employee.entity';
+import { Employee } from './employee.entity';
 import {
   FGTS_RATE,
   INSS_PATRONAL_RATE,
@@ -14,7 +13,7 @@ const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
   ({
     id: 'emp-1',
     name: 'Alice',
-    regime: 'clt' as EmployeeRegime,
+    regime: 'clt',
     gross_salary: 3000,
     monthly_benefits: 0,
     active: true,

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { BankTransaction } from './bank-transaction.entity';
 import { ImportTransactionsDto } from './dto/import-transactions.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -9,14 +9,31 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 const NULL_MATCHED_ID_KINDS = new Set(['payroll', 'ignored']);
 
 function computeHash(userId: string, date: string, amount: number, description: string): string {
-  return createHash('sha256')
-    .update(`${userId}|${date}|${amount}|${description}`)
-    .digest('hex');
+  return createHash('sha256').update(`${userId}|${date}|${amount}|${description}`).digest('hex');
 }
 
 function deriveMonthYear(date: string): { month: number; year: number } {
   const parsed = new Date(date);
   return { month: parsed.getUTCMonth() + 1, year: parsed.getUTCFullYear() };
+}
+
+function buildTransaction(
+  userId: string,
+  line: ImportTransactionsDto['transactions'][number],
+  hash: string,
+): DeepPartial<BankTransaction> {
+  const { month, year } = deriveMonthYear(line.date);
+  return {
+    user: { id: userId },
+    date: line.date,
+    description: line.description,
+    amount: line.amount,
+    month,
+    year,
+    import_hash: hash,
+    matched_kind: null,
+    matched_id: null,
+  };
 }
 
 @Injectable()
@@ -56,20 +73,7 @@ export class BankTransactionService {
       }
 
       seenInBatch.add(hash);
-      const { month, year } = deriveMonthYear(line.date);
-      toInsert.push(
-        this.repo.create({
-          user: { id: userId },
-          date: line.date,
-          description: line.description,
-          amount: line.amount,
-          month,
-          year,
-          import_hash: hash,
-          matched_kind: null,
-          matched_id: null,
-        }),
-      );
+      toInsert.push(this.repo.create(buildTransaction(userId, line, hash)));
     }
 
     if (toInsert.length > 0) {

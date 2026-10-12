@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -50,13 +51,13 @@ export class IncomeController {
     description: 'Pass optional deductions to create them atomically with the income.',
   })
   @ApiCreatedResponse({ type: Income })
-  @HttpCode(201)
+  @HttpCode(HttpStatus.CREATED)
   create(@CurrentUser() userId: string, @Body() dto: CreateIncomeDto): Promise<Income> {
     return this.service.create(userId, dto);
   }
 
   @Delete(':id')
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an income source and all its deductions' })
   @ApiNoContentResponse()
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() userId: string): Promise<void> {
@@ -69,7 +70,7 @@ export class IncomeController {
     description: 'Use for INSS, IRRF, IPTU, sister shares, etc.',
   })
   @ApiCreatedResponse({ type: IncomeDeduction })
-  @HttpCode(201)
+  @HttpCode(HttpStatus.CREATED)
   addDeduction(
     @CurrentUser() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -79,7 +80,7 @@ export class IncomeController {
   }
 
   @Delete(':id/deductions/:deductionId')
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a deduction from an income' })
   @ApiNoContentResponse()
   removeDeduction(

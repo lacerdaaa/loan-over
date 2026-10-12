@@ -7,7 +7,10 @@ import { EmployeeService } from './employee.service';
 
 const USER_ID = 'user-uuid';
 
-const mockRepository = () => ({
+const mockRepository = (): Record<
+  'find' | 'findOne' | 'create' | 'save' | 'delete',
+  jest.Mock
+> => ({
   find: jest.fn(),
   findOne: jest.fn(),
   create: jest.fn(),
@@ -44,7 +47,10 @@ describe('EmployeeService', () => {
 
   describe('findAll', () => {
     it('returns all employees for the given user ordered by name', async () => {
-      const employees = [makeEmployee({ name: 'Alice' }), makeEmployee({ id: 'emp-2', name: 'Bob' })];
+      const employees = [
+        makeEmployee({ name: 'Alice' }),
+        makeEmployee({ id: 'emp-2', name: 'Bob' }),
+      ];
       repo.find.mockResolvedValue(employees);
 
       const result = await service.findAll(USER_ID);

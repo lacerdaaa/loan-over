@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Debt } from '../debt/debt.entity';
-import { Employee, EmployeeRegime } from '../employee/employee.entity';
+import { Employee } from '../employee/employee.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { Income } from '../income/income.entity';
 import { IncomeCategory, IncomeType } from '../shared/types';
@@ -55,7 +55,7 @@ const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
   ({
     id: '1',
     name: 'Alice',
-    regime: 'clt' as EmployeeRegime,
+    regime: 'clt',
     gross_salary: 3000,
     monthly_benefits: 0,
     active: true,

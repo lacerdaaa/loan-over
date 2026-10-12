@@ -63,4 +63,26 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
     },
   },
+  // Tests and migrations: literals and mock method references are expected
+  {
+    files: ['**/*.spec.ts', 'test/**/*.ts', 'src/migrations/**/*.ts'],
+    rules: {
+      'no-magic-numbers': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+  // Validation decorators and constants files declare literal bounds by design
+  {
+    files: ['**/dto/**/*.ts', '**/*.constants.ts'],
+    rules: {
+      'no-magic-numbers': 'off',
+    },
+  },
+  // Generated migrations are long by nature
+  {
+    files: ['src/migrations/**/*.ts'],
+    rules: {
+      'max-lines-per-function': 'off',
+    },
+  },
 );
