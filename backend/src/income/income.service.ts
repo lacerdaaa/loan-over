@@ -66,8 +66,10 @@ export class IncomeService {
     return this.deductionRepo.save(deduction);
   }
 
-  async removeDeduction(deductionId: string): Promise<void> {
-    const exists = await this.deductionRepo.findOneBy({ id: deductionId });
+  async removeDeduction(deductionId: string, incomeId: string, userId: string): Promise<void> {
+    const exists = await this.deductionRepo.findOne({
+      where: { id: deductionId, income: { id: incomeId, user: { id: userId } } },
+    });
     if (!exists) throw new NotFoundException(`Deduction ${deductionId} not found`);
     await this.deductionRepo.delete(deductionId);
   }

@@ -13,7 +13,6 @@ const USER_ID = 'user-uuid';
 const mockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
-  findOneBy: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
   delete: jest.fn(),
@@ -137,18 +136,25 @@ describe('IncomeService', () => {
   });
 
   describe('removeDeduction', () => {
-    it('deletes a deduction by id', async () => {
-      deductionRepo.findOneBy.mockResolvedValue(makeDeduction(660));
+    it('deletes a deduction that belongs to the income owned by the user', async () => {
+      deductionRepo.findOne.mockResolvedValue(makeDeduction(660));
       deductionRepo.delete.mockResolvedValue({ affected: 1, raw: [] });
 
-      await expect(service.removeDeduction('d1')).resolves.not.toThrow();
+      await expect(service.removeDeduction('d1', '1', USER_ID)).resolves.not.toThrow();
+
+      expect(deductionRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'd1', income: { id: '1', user: { id: USER_ID } } },
+      });
       expect(deductionRepo.delete).toHaveBeenCalledWith('d1');
     });
 
-    it('throws NotFoundException when deduction does not exist', async () => {
-      deductionRepo.findOneBy.mockResolvedValue(null);
+    it('throws NotFoundException when the deduction is not in the user income', async () => {
+      deductionRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.removeDeduction('ghost')).rejects.toThrow(NotFoundException);
+      await expect(service.removeDeduction('d1', '1', 'other-user')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(deductionRepo.delete).not.toHaveBeenCalled();
     });
   });
 

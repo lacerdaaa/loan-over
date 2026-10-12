@@ -75,7 +75,11 @@ export class IncomeController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Remove a deduction from an income' })
   @ApiNoContentResponse()
-  removeDeduction(@Param('deductionId') deductionId: string): Promise<void> {
-    return this.service.removeDeduction(deductionId);
+  removeDeduction(
+    @CurrentUser() userId: string,
+    @Param('id') id: string,
+    @Param('deductionId') deductionId: string,
+  ): Promise<void> {
+    return this.service.removeDeduction(deductionId, id, userId);
   }
 }
