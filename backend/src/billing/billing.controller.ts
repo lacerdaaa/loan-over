@@ -1,13 +1,30 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Post,
+  RawBodyRequest,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
+import { Request } from 'express';
+import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { BillingFeatureGuard } from './billing-feature.guard';
+import { BillingWebhookService } from './billing-webhook.service';
 import { BillingService, BillingStatus, BillingUrl } from './billing.service';
 
 @ApiTags('billing')
 @Controller('billing')
 export class BillingController {
-  constructor(private readonly billing: BillingService) {}
+  constructor(
+    private readonly billing: BillingService,
+    private readonly webhook: BillingWebhookService,
+  ) {}
 
   @Get('status')
   @ApiOperation({ summary: 'Plan, entitlement and renewal date of the current user' })
@@ -32,5 +49,19 @@ export class BillingController {
   @ApiOkResponse({ description: 'Portal URL (400 when the user has no Stripe customer)' })
   portal(@CurrentUser() userId: string): Promise<BillingUrl> {
     return this.billing.createPortal(userId);
+  }
+
+  @Public()
+  @SkipThrottle()
+  @Post('webhook')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(BillingFeatureGuard)
+  @ApiOperation({ summary: 'Stripe webhook (signature verified against the raw body)' })
+  @ApiOkResponse({ description: 'Event acknowledged (400 on invalid signature)' })
+  stripeWebhook(
+    @Req() request: RawBodyRequest<Request>,
+    @Headers('stripe-signature') signature: string | undefined,
+  ): Promise<void> {
+    return this.webhook.handle(request.rawBody, signature);
   }
 }

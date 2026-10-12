@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 const DEFAULT_PORT = 3000;
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.useGlobalPipes(
     new ValidationPipe({
