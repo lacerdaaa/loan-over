@@ -3,15 +3,18 @@ import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, Eye, EyeOff, ListCheck
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDebts } from '../api/debts';
+import { useFixedExpenses } from '../api/fixed-expenses';
 import { useProjection } from '../api/projection';
 import { useSnapshot } from '../api/snapshot';
+import { LiberationSuggestions } from '../components/ui/LiberationSuggestions';
 import { StatCard } from '../components/ui/StatCard';
 import { PageTransition } from '../components/ui/PageTransition';
 import { addMonths } from '../lib/date';
-import { payoffMonth } from '../lib/debt';
+import { payoffMonth, remainingInstallments } from '../lib/debt';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
+import { useGoalPlan } from '../lib/useGoalPlan';
 import { useBusinessMode } from '../lib/useBusinessMode';
 import type { ProjectedMonth } from '../types/api';
 
@@ -19,6 +22,7 @@ const now = new Date();
 const CURRENT_MONTH = now.getMonth() + 1;
 const CURRENT_YEAR = now.getFullYear();
 const PROJECTION_HORIZON = 24;
+const LAST_INSTALLMENT = 1;
 
 interface Runway {
   months: number;
@@ -47,6 +51,8 @@ export const DashboardPage = () => {
   const business = useBusinessMode();
   const snapshot = useSnapshot(month, year);
   const debts = useDebts();
+  const fixedExpenses = useFixedExpenses();
+  const { goal, suggestions } = useGoalPlan();
   const projection = useProjection(CURRENT_MONTH, CURRENT_YEAR, PROJECTION_HORIZON, business);
   const openDebts = debts.data?.filter((d) => !d.closed) ?? [];
   const snap = snapshot.data;
@@ -59,7 +65,8 @@ export const DashboardPage = () => {
   };
 
   const isCurrentMonth = month === CURRENT_MONTH && year === CURRENT_YEAR;
-  const isEmpty = !snapshot.isLoading && !debts.isLoading && snap !== undefined && snap.total_income === 0 && openDebts.length === 0;
+  const isEmpty = !snapshot.isLoading && !debts.isLoading && snap !== undefined
+    && !fixedExpenses.isLoading && snap.total_income === 0 && openDebts.length === 0 && (fixedExpenses.data?.length ?? 0) === 0;
 
   return (
     <PageTransition>
@@ -161,6 +168,8 @@ export const DashboardPage = () => {
               )}
             </div>
 
+            {!business && <LiberationSuggestions suggestions={suggestions} hasGoal={goal !== null} />}
+
             {runway && (
               <div className="stats bg-base-200 border border-base-300 w-fit shadow-none">
                 <div className="stat">
@@ -221,7 +230,7 @@ export const DashboardPage = () => {
                           {debt.name}
                         </span>
                         <span className="text-base-content/50">
-                          {mask(formatCurrency(debt.installment_amount))}/mês · quitação {payoffMonth(debt)}
+                          {mask(formatCurrency(debt.installment_amount))}/mês · última parcela em {payoffMonth(debt)}
                         </span>
                       </div>
                       <progress
@@ -230,8 +239,11 @@ export const DashboardPage = () => {
                         max={debt.total_installments}
                       />
                     </div>
+                    {remainingInstallments(debt) === LAST_INSTALLMENT && (
+                      <span className="badge badge-warning badge-soft text-xs shrink-0">última parcela</span>
+                    )}
                     <span className="badge badge-ghost text-xs shrink-0">
-                      {debt.total_installments - debt.paid_installments} restantes
+                      {remainingInstallments(debt)} restantes
                     </span>
                   </motion.div>
                 ))}
