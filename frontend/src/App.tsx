@@ -16,6 +16,7 @@ import { UnsubscribedPage } from './pages/UnsubscribedPage';
 const ChooseModePage = lazy(() => import('./pages/ChooseModePage').then((m) => ({ default: m.ChooseModePage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })));
+const BillingResultPage = lazy(() => import('./pages/BillingResultPage').then((m) => ({ default: m.BillingResultPage })));
 const DebtsPage = lazy(() => import('./pages/DebtsPage').then((m) => ({ default: m.DebtsPage })));
 const FixedExpensesPage = lazy(() => import('./pages/FixedExpensesPage').then((m) => ({ default: m.FixedExpensesPage })));
 const GoalPage = lazy(() => import('./pages/GoalPage').then((m) => ({ default: m.GoalPage })));
@@ -42,6 +43,8 @@ const AnimatedRoutes = () => {
         <Route path="/fixed-expenses" element={<FixedExpensesPage />} />
         <Route path="/occasional-expenses" element={<OccasionalExpensesPage />} />
         <Route path="/goal" element={<GoalPage />} />
+        <Route path="/billing/success" element={<BillingResultPage outcome="success" />} />
+        <Route path="/billing/cancel" element={<BillingResultPage outcome="cancel" />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

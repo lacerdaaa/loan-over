@@ -13,7 +13,9 @@ import { buildJsonExport, buildTextExport, downloadFile } from '../../lib/export
 import { usePrivacy } from '../../lib/privacy';
 import { queryClient } from '../../lib/queryClient';
 import { Modal } from '../ui/Modal';
+import { BILLING_ENABLED } from '../../lib/flags';
 import { NotificationSettings } from './NotificationSettings';
+import { PlanSettings } from './PlanSettings';
 
 const now = new Date();
 const CURRENT_MONTH = now.getMonth() + 1;
@@ -224,6 +226,13 @@ export const SettingsModal = ({ open, onClose, name, email, avatar, dark, onThem
         </button>
 
         <div className="divider my-0" />
+
+        {BILLING_ENABLED && (
+          <>
+            <PlanSettings />
+            <div className="divider my-0" />
+          </>
+        )}
 
         <NotificationSettings />
 

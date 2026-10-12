@@ -21,9 +21,11 @@ export interface Entitlement {
   pro: string;
 }
 
+export const NOT_INCLUDED = '—';
+export const INCLUDED = '✓';
+
 export const ENTITLEMENTS: Entitlement[] = [
-  { feature: 'Projeção de até 24 meses', free: 'Incluído', pro: 'Incluído' },
-  { feature: 'Projeção de até 60 meses', free: '—', pro: 'Incluído' },
-  { feature: 'Simulador de cenários', free: '—', pro: 'Incluído' },
-  { feature: 'Relatório mensal por e-mail', free: '—', pro: 'Incluído' },
+  { feature: 'Projeção', free: 'até 24 meses', pro: 'até 60 meses' },
+  { feature: 'Simulador de cenários', free: NOT_INCLUDED, pro: INCLUDED },
+  { feature: 'Relatório mensal por e-mail', free: NOT_INCLUDED, pro: INCLUDED },
 ];
