@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { lazy, Suspense } from 'react';
 import { AnimationsProvider } from './lib/animations';
+import { BILLING_ENABLED } from './lib/flags';
 import { PrivacyProvider } from './lib/privacy';
 import { queryClient } from './lib/queryClient';
 import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
@@ -44,8 +45,12 @@ const AnimatedRoutes = () => {
         <Route path="/fixed-expenses" element={<FixedExpensesPage />} />
         <Route path="/occasional-expenses" element={<OccasionalExpensesPage />} />
         <Route path="/goal" element={<GoalPage />} />
-        <Route path="/billing/success" element={<BillingResultPage outcome="success" />} />
-        <Route path="/billing/cancel" element={<BillingResultPage outcome="cancel" />} />
+        {BILLING_ENABLED && (
+          <>
+            <Route path="/billing/success" element={<BillingResultPage outcome="success" />} />
+            <Route path="/billing/cancel" element={<BillingResultPage outcome="cancel" />} />
+          </>
+        )}
         <Route path="/simulator" element={<SimulatorPage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
