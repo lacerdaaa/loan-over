@@ -285,17 +285,32 @@ so redelivered events are harmless. Unknown events are acknowledged with `200` a
 
 ---
 
+## Database schema
+
+`synchronize` is enabled only when `NODE_ENV=development`. In every other environment the schema changes through migrations: run `npm run migration:run` (production runs the migrations automatically on boot).
+
 ## Automation rules
 
 ### Monthly auto-increment (cron)
 
-Every 1st day of the month at midnight, the server runs `DebtService.autoIncrementInstallments()`:
+Every 1st day of the month at 00:00 `America/Sao_Paulo` (03:00 UTC, the same UTC month the month key uses), the server runs `DebtService.autoIncrementInstallments()`:
 
 1. Loads all open debts.
 2. Increments `paid_installments` by 1 for each.
 3. If `paid_installments === total_installments`, sets `closed = true`.
 
 This means the system self-advances without any user action required. The user only needs to register debts once.
+
+A debt is only advanced once per month (`last_paid_month`) and only after its `start_date` month has begun. When a `PATCH /debts/:id` closes an open debt (for example by raising `paid_installments`), `last_paid_month` is set to the current month so the payoff notice fires.
+
+### Scheduler concurrency (advisory lock)
+
+Both crons run under a Postgres session-level advisory lock (`pg_try_advisory_lock`, one named key per job, see `SchedulerLockService`). With several backend instances only the one that gets the lock runs the job; the others skip it. The lock is released when the job ends, even on error.
+
+| Job | When | Time zone |
+|-----|------|-----------|
+| Debt auto-increment | day 1, 00:00 | `America/Sao_Paulo` |
+| Email notifications | day 1, 09:00 | `America/Sao_Paulo` |
 
 ### Email notifications (cron)
 
@@ -311,7 +326,7 @@ If there is nothing to say, no email is sent. A failure for one user is logged a
 
 ### Manual pay installment
 
-A user can also call `PATCH /debts/:id/pay` to increment `paid_installments` manually. The same `closed` check applies — the debt closes automatically when fully paid.
+A user can also call `PATCH /debts/:id/pay` to increment `paid_installments` manually. This is an **advance payment**: it counts one more installment immediately (and stamps `last_paid_month` with the current month), while the monthly cron keeps advancing on day 1 of each month (it only skips a debt already counted for that same month). The same `closed` check applies — the debt closes automatically when fully paid.
 
 ### Debt closure rule
 
