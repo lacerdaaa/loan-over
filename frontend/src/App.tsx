@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { AnimationsProvider } from './lib/animations';
 import { PrivacyProvider } from './lib/privacy';
 import { queryClient } from './lib/queryClient';
-import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { AccountTypeGate } from './components/auth/AccountTypeGate';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { ErrorToast } from './components/ui/ErrorToast';
@@ -34,6 +34,7 @@ const AnimatedRoutes = () => {
         <Route path="/occasional-expenses" element={<OccasionalExpensesPage />} />
         <Route path="/goal" element={<GoalPage />} />
         <Route path="/people" element={<PeoplePage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AnimatePresence>
   );
