@@ -1,0 +1,29 @@
+export const PRO_PRICE_LABEL = 'R$ 14,90/mês';
+
+export const FREE_HORIZON_LIMIT = 24;
+
+export const PLAN_LABELS = { free: 'Free', pro: 'Pro' } as const;
+
+export const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  active: 'Ativa',
+  trialing: 'Em teste',
+  past_due: 'Pagamento pendente',
+  canceled: 'Cancelada',
+  unpaid: 'Não paga',
+  incomplete: 'Incompleta',
+  incomplete_expired: 'Expirada',
+  paused: 'Pausada',
+};
+
+export interface Entitlement {
+  feature: string;
+  free: string;
+  pro: string;
+}
+
+export const ENTITLEMENTS: Entitlement[] = [
+  { feature: 'Projeção de até 24 meses', free: 'Incluído', pro: 'Incluído' },
+  { feature: 'Projeção de até 60 meses', free: '—', pro: 'Incluído' },
+  { feature: 'Simulador de cenários', free: '—', pro: 'Incluído' },
+  { feature: 'Relatório mensal por e-mail', free: '—', pro: 'Incluído' },
+];
