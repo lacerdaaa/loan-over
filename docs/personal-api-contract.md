@@ -28,10 +28,18 @@ Público:
 Agendamento (dia 1, 09:00 `America/Sao_Paulo`, depois do avanço automático de parcelas):
 
 - **Alerta de última parcela**: dívidas abertas com exatamente 1 parcela restante.
-- **Liberação**: dívidas que fecharam no mês anterior → "R$ X/mês liberados".
-- **Relatório mensal** (Pro + `monthly_report`): snapshot do mês + próximas liberações.
+- **Liberação**: dívidas cuja última parcela foi contada neste mês (fechadas com
+  `last_paid_month` = mês corrente, após o avanço automático) → "R$ X/mês liberados" a partir do
+  próximo mês.
+- **Relatório mensal** (Pro + `monthly_report`): snapshot do mês + até 3 próximas liberações
+  (projeção de 24 meses).
 - Um e-mail por usuário agregando os itens; nada a dizer → nada enviado.
-- Sem `RESEND_API_KEY` → no-op com log. Remetente em `EMAIL_FROM`.
+- Sem `RESEND_API_KEY` → no-op com log. Remetente em `EMAIL_FROM`. Falha de envio de um
+  usuário é logada e não interrompe os demais.
+- O link de cancelamento aponta para `${BACKEND_URL}/notifications/unsubscribe?token=...`
+  (nova variável `BACKEND_URL`, URL pública da API; default `http://localhost:3000`). O token
+  tem validade de 90 dias e **não** é aceito como token de sessão (`purpose` presente → 401).
+- Token ausente na query de `/notifications/unsubscribe` → 400.
 
 ## Cobrança (Stripe) — módulo `billing`
 

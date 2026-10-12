@@ -223,6 +223,18 @@ Every 1st day of the month at midnight, the server runs `DebtService.autoIncreme
 
 This means the system self-advances without any user action required. The user only needs to register debts once.
 
+### Email notifications (cron)
+
+Every 1st day of the month at 09:00 (`America/Sao_Paulo`, after the midnight auto-increment), `NotificationScheduler.runMonthly()` sends **at most one email per user**, aggregating:
+
+- **Last installment alert** (users with `email_notifications = true`, default on): open debts with exactly one installment remaining.
+- **Liberation notice** (same flag): debts whose final installment was counted this month (`closed = true` and `last_paid_month` = current month). From next month their installments are free.
+- **Monthly report** (users with `monthly_report = true`, default off, **Pro only**): the month's snapshot totals plus up to three upcoming liberations from a 24-month projection. Without Pro the flag is ignored (and cannot be enabled: `PATCH /notifications/preferences` answers 403).
+
+If there is nothing to say, no email is sent. A failure for one user is logged and never stops the others. Without `RESEND_API_KEY` emails are skipped with a log line; the sender is `EMAIL_FROM`.
+
+**Opt-out**: every email carries an unsubscribe link (signed token, valid 90 days, `GET /notifications/unsubscribe`) that turns both flags off and redirects to `${FRONTEND_URL}/unsubscribed`. Users can also change both flags with `PATCH /notifications/preferences` and send themselves a test email with `POST /notifications/test` (3 per hour). When `FEATURE_BILLING` is not `true`, every user counts as Pro.
+
 ### Manual pay installment
 
 A user can also call `PATCH /debts/:id/pay` to increment `paid_installments` manually. The same `closed` check applies — the debt closes automatically when fully paid.
