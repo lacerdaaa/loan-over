@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { EntitlementService } from '../billing/entitlement.service';
 import { Debt } from '../debt/debt.entity';
 import { dayKey, monthStartKey } from '../debt/debt-month.utils';
 import { DebtService } from '../debt/debt.service';
-import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { EmailService } from './email.service';
@@ -13,8 +11,6 @@ import { NotificationComposer } from './notification.composer';
 import { UnsubscribeTokenService } from './unsubscribe-token.service';
 
 export const RECIPIENT_BATCH_SIZE = 100;
-const MONTHLY_CRON = '0 9 1 * *';
-const CRON_TIME_ZONE = 'America/Sao_Paulo';
 const FALLBACK_USER_NAME = 'você';
 const LAST_INSTALLMENT_REMAINING = 1;
 
@@ -37,15 +33,7 @@ export class NotificationScheduler {
     private readonly composer: NotificationComposer,
     private readonly emailService: EmailService,
     private readonly unsubscribeTokens: UnsubscribeTokenService,
-    private readonly schedulerLock: SchedulerLockService,
   ) {}
-
-  @Cron(MONTHLY_CRON, { timeZone: CRON_TIME_ZONE })
-  async handleMonthlyCron(): Promise<void> {
-    await this.schedulerLock.runExclusive(SCHEDULER_LOCK_KEYS.NOTIFICATION_MONTHLY, () =>
-      this.runMonthly(new Date()),
-    );
-  }
 
   async runMonthly(now: Date): Promise<void> {
     let cursor: string | undefined;

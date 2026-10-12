@@ -8,8 +8,9 @@ describe('SchedulerLockService', () => {
   let service: SchedulerLockService;
 
   const mockLockResult = (acquired: boolean): void => {
-    queryRunner.query.mockImplementation((sql: string) =>
-      Promise.resolve(sql.includes('pg_try_advisory_lock') ? [{ acquired }] : []),
+    queryRunner.query.mockImplementation(
+      (sql: string): Promise<unknown[]> =>
+        Promise.resolve(sql.includes('pg_try_advisory_lock') ? [{ acquired }] : []),
     );
   };
 
@@ -19,7 +20,9 @@ describe('SchedulerLockService', () => {
       query: jest.fn(),
       release: jest.fn().mockResolvedValue(undefined),
     };
-    const dataSource = { createQueryRunner: () => queryRunner as unknown as QueryRunner };
+    const dataSource = {
+      createQueryRunner: (): QueryRunner => queryRunner as unknown as QueryRunner,
+    };
     service = new SchedulerLockService(dataSource as unknown as DataSource);
   });
 

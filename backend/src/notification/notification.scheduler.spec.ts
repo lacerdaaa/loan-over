@@ -2,7 +2,6 @@ import { Logger } from '@nestjs/common';
 import { EntitlementService } from '../billing/entitlement.service';
 import { Debt } from '../debt/debt.entity';
 import { DebtService } from '../debt/debt.service';
-import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { EmailService } from './email.service';
@@ -54,7 +53,6 @@ describe('NotificationScheduler', () => {
   let entitlements: { isPro: jest.Mock };
   let reportBuilder: { build: jest.Mock };
   let emailService: { send: jest.Mock };
-  let schedulerLock: { runExclusive: jest.Mock };
   let scheduler: NotificationScheduler;
 
   const sentTo = (): string[] =>
@@ -67,9 +65,6 @@ describe('NotificationScheduler', () => {
     entitlements = { isPro: jest.fn().mockReturnValue(true) };
     reportBuilder = { build: jest.fn().mockResolvedValue(REPORT) };
     emailService = { send: jest.fn().mockResolvedValue(undefined) };
-    schedulerLock = {
-      runExclusive: jest.fn((_key: number, job: () => Promise<void>) => job().then(() => true)),
-    };
     scheduler = new NotificationScheduler(
       userService as unknown as UserService,
       debtService as unknown as DebtService,
@@ -78,7 +73,6 @@ describe('NotificationScheduler', () => {
       new NotificationComposer(),
       emailService as unknown as EmailService,
       { buildUrl: () => UNSUBSCRIBE_URL } as unknown as UnsubscribeTokenService,
-      schedulerLock as unknown as SchedulerLockService,
     );
   });
 
@@ -249,29 +243,6 @@ describe('NotificationScheduler', () => {
         RECIPIENT_BATCH_SIZE,
       );
       expect(userService.findNotificationRecipients).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('when the cron fires', () => {
-    it('runs the monthly job for the current date', async () => {
-      const run = jest.spyOn(scheduler, 'runMonthly').mockResolvedValue();
-
-      await scheduler.handleMonthlyCron();
-
-      expect(run).toHaveBeenCalledWith(expect.any(Date));
-      expect(schedulerLock.runExclusive).toHaveBeenCalledWith(
-        SCHEDULER_LOCK_KEYS.NOTIFICATION_MONTHLY,
-        expect.any(Function),
-      );
-    });
-
-    it('skips the run when another instance already holds the lock', async () => {
-      const run = jest.spyOn(scheduler, 'runMonthly').mockResolvedValue();
-      schedulerLock.runExclusive.mockResolvedValue(false);
-
-      await scheduler.handleMonthlyCron();
-
-      expect(run).not.toHaveBeenCalled();
     });
   });
 });
