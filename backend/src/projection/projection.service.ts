@@ -22,6 +22,7 @@ export interface ProjectionInput {
   referenceMonth: number;
   referenceYear: number;
   startingCashBalance?: number;
+  startingSavings?: number;
   employees?: Employee[];
   taxRegime?: TaxRegime;
 }
@@ -31,31 +32,19 @@ export class ProjectionService {
   private readonly payrollService = new PayrollService();
 
   project(input: ProjectionInput, horizonMonths: number): ProjectedMonth[] {
-    const months: ProjectedMonth[] = [];
     const baseIncome = this.sumFixedIncome(input.incomes);
     const payrollCash = this.monthlyPayrollCash(input);
     let runningCash = input.startingCashBalance;
+    let cumulative = input.startingSavings ?? 0;
+    const months: ProjectedMonth[] = [];
 
     for (let offset = 0; offset < horizonMonths; offset++) {
-      const { month, year } = this.addMonths(input.referenceMonth, input.referenceYear, offset + 1);
-      const monthFixed = this.sumActiveExpensesForMonth(input.fixedExpenses, month, year);
-      const activeDebtTotal = this.sumActiveDebtInstallments(input.debts, offset);
-      const events = this.buildEvents(input.debts, offset);
-      const thirteenth = this.payrollEventFor(input, month, events);
-      const monthOutflow = monthFixed + activeDebtTotal + payrollCash + thirteenth;
-      const freeBalance = baseIncome - monthOutflow;
-
-      const projected: ProjectedMonth = {
-        month,
-        year,
-        free_balance: freeBalance,
-        events,
-        active_debts: this.countActiveDebts(input.debts, offset),
-        total_outflow: monthOutflow,
-      };
+      const projected = this.projectMonth(input, offset, baseIncome, payrollCash);
+      cumulative += projected.free_balance;
+      projected.cumulative_balance = cumulative;
 
       if (runningCash !== undefined) {
-        runningCash += freeBalance;
+        runningCash += projected.free_balance;
         projected.cash_balance = runningCash;
       }
 
@@ -63,6 +52,30 @@ export class ProjectionService {
     }
 
     return months;
+  }
+
+  private projectMonth(
+    input: ProjectionInput,
+    offset: number,
+    baseIncome: number,
+    payrollCash: number,
+  ): ProjectedMonth {
+    const { month, year } = this.addMonths(input.referenceMonth, input.referenceYear, offset + 1);
+    const monthFixed = this.sumActiveExpensesForMonth(input.fixedExpenses, month, year);
+    const activeDebtTotal = this.sumActiveDebtInstallments(input.debts, offset);
+    const events = this.buildEvents(input.debts, offset);
+    const thirteenth = this.payrollEventFor(input, month, events);
+    const monthOutflow = monthFixed + activeDebtTotal + payrollCash + thirteenth;
+
+    return {
+      month,
+      year,
+      free_balance: baseIncome - monthOutflow,
+      events,
+      active_debts: this.countActiveDebts(input.debts, offset),
+      total_outflow: monthOutflow,
+      cumulative_balance: 0,
+    };
   }
 
   private monthlyPayrollCash(input: ProjectionInput): number {

@@ -5,6 +5,8 @@ import { Employee } from '../employee/employee.entity';
 import { EmployeeService } from '../employee/employee.service';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
+import { Goal } from '../goal/goal.entity';
+import { GoalService } from '../goal/goal.service';
 import { Income } from '../income/income.entity';
 import { IncomeService } from '../income/income.service';
 import { Organization } from '../organization/organization.entity';
@@ -15,11 +17,13 @@ const USER_ID = 'user-uuid';
 const MONTH = 6;
 const YEAR = 2026;
 const CASH_BALANCE = 80000;
+const SAVED_AMOUNT = 1500.5;
 
 const incomes = [{ id: 'i1' }] as Income[];
 const debts = [{ id: 'd1' }] as Debt[];
 const fixedExpenses = [{ id: 'f1' }] as FixedExpense[];
 const employees = [{ id: 'e1' }] as Employee[];
+const goal = { saved_amount: '1500.50' } as unknown as Goal;
 const organization = {
   tax_regime: 'lucro',
   cash_balance: String(CASH_BALANCE),
@@ -31,6 +35,7 @@ interface Services {
   fixed: { findAll: jest.Mock };
   organization: { find: jest.Mock };
   employee: { findAll: jest.Mock };
+  goal: { find: jest.Mock };
 }
 
 const buildAssembler = (
@@ -42,6 +47,7 @@ const buildAssembler = (
     fixed: { findAll: jest.fn().mockResolvedValue(fixedExpenses) },
     organization: { find: jest.fn().mockResolvedValue(organization) },
     employee: { findAll: jest.fn().mockResolvedValue(employees) },
+    goal: { find: jest.fn().mockResolvedValue(goal) },
   };
   const config = { get: jest.fn().mockReturnValue(businessFlag) };
   const assembler = new ProjectionInputAssembler(
@@ -50,6 +56,7 @@ const buildAssembler = (
     services.fixed as unknown as FixedExpenseService,
     services.organization as unknown as OrganizationService,
     services.employee as unknown as EmployeeService,
+    services.goal as unknown as GoalService,
     config as unknown as ConfigService,
   );
   return { assembler, services };
@@ -68,8 +75,26 @@ describe('ProjectionInputAssembler', () => {
         fixedExpenses,
         referenceMonth: MONTH,
         referenceYear: YEAR,
+        startingSavings: SAVED_AMOUNT,
       });
       expect(services.income.findForMonth).toHaveBeenCalledWith(USER_ID, MONTH, YEAR);
+    });
+
+    it('starts the accumulated balance from the goal saved_amount as a number', async () => {
+      const { assembler } = buildAssembler(undefined);
+
+      const input = await assembler.assemble(USER_ID, MONTH, YEAR);
+
+      expect(input.startingSavings).toBe(SAVED_AMOUNT);
+    });
+
+    it('starts from zero savings when the user has no goal', async () => {
+      const { assembler, services } = buildAssembler(undefined);
+      services.goal.find.mockResolvedValue(null);
+
+      const input = await assembler.assemble(USER_ID, MONTH, YEAR);
+
+      expect(input.startingSavings).toBeUndefined();
     });
 
     it('does not load the organization or employees', async () => {
@@ -92,6 +117,14 @@ describe('ProjectionInputAssembler', () => {
       expect(input.employees).toBe(employees);
       expect(input.taxRegime).toBe('lucro');
     });
+
+    it('does not use the personal goal as starting savings', async () => {
+      const { assembler } = buildAssembler('true');
+
+      const input = await assembler.assemble(USER_ID, MONTH, YEAR);
+
+      expect(input.startingSavings).toBeUndefined();
+    });
   });
 
   describe('when the business feature is on but the user has no organization', () => {
@@ -104,6 +137,15 @@ describe('ProjectionInputAssembler', () => {
       expect(input.startingCashBalance).toBeUndefined();
       expect(input.employees).toBeUndefined();
       expect(input.taxRegime).toBeUndefined();
+    });
+
+    it('treats the user as personal and uses the goal saved_amount', async () => {
+      const { assembler, services } = buildAssembler('true');
+      services.organization.find.mockResolvedValue(null);
+
+      const input = await assembler.assemble(USER_ID, MONTH, YEAR);
+
+      expect(input.startingSavings).toBe(SAVED_AMOUNT);
     });
   });
 });

@@ -545,4 +545,59 @@ describe('ProjectionService', () => {
       expect(payroll).not.toHaveProperty('debt_id');
     });
   });
+
+  describe('cumulative_balance', () => {
+    const project = (
+      extra: Partial<Parameters<ProjectionService['project']>[0]>,
+      horizon: number,
+    ): ReturnType<ProjectionService['project']> =>
+      service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [makeExpense(1000)],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          ...extra,
+        },
+        horizon,
+      );
+
+    it('is the running sum of free_balance starting from zero by default', () => {
+      const result = project({}, 3);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([4000, 8000, 12000]);
+    });
+
+    it('starts from startingSavings when provided', () => {
+      const result = project({ startingSavings: 2500 }, 2);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([6500, 10500]);
+    });
+
+    it('grows faster after a debt is liberated', () => {
+      const debt = makeDebt({
+        installment_amount: 500,
+        total_installments: 2,
+        paid_installments: 1,
+      });
+
+      const result = project({ debts: [debt] }, 3);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([3500, 7500, 11500]);
+    });
+
+    it('goes negative when outflow exceeds income', () => {
+      const result = project({ fixedExpenses: [makeExpense(6000)] }, 2);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([-1000, -2000]);
+    });
+
+    it('does not interfere with the business cash_balance', () => {
+      const result = project({ startingCashBalance: 10000, startingSavings: 100 }, 1);
+
+      expect(result[0]?.cash_balance).toBe(14000);
+      expect(result[0]?.cumulative_balance).toBe(4100);
+    });
+  });
 });
