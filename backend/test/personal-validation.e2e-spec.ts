@@ -66,7 +66,7 @@ describe('Personal modules input validation (e2e)', () => {
     ).expect(201);
     const body = created.body as Income;
     incomeIds.push(body.id);
-    deductionId = body.deductions[0].id;
+    deductionId = body.deductions[0]?.id ?? '';
   });
 
   afterAll(async () => {

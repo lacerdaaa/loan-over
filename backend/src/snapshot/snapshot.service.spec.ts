@@ -6,7 +6,7 @@ import { IncomeDeduction } from '../income/income-deduction.entity';
 import { Income } from '../income/income.entity';
 import { OccasionalExpense } from '../occasional-expense/occasional-expense.entity';
 import { IncomeCategory, IncomeType } from '../shared/types';
-import { SnapshotService } from './snapshot.service';
+import { ComputeInput, SnapshotService } from './snapshot.service';
 
 const makeIncome = (
   amount: number,
@@ -74,7 +74,7 @@ const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
     ...overrides,
   }) as Employee;
 
-const compute = (service: SnapshotService, overrides: Parameters<SnapshotService['compute']>[0]) =>
+const compute = (service: SnapshotService, overrides: Partial<ComputeInput>) =>
   service.compute({
     month: 6,
     year: 2026,

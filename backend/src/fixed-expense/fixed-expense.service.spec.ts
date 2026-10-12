@@ -1,3 +1,4 @@
+import { User } from '../user/user.entity';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -17,11 +18,14 @@ const mockRepository = () => ({
 
 const makeExpense = (overrides: Partial<FixedExpense> = {}): FixedExpense => ({
   id: 'uuid-1',
+  user: { id: USER_ID } as User,
   name: 'Rent',
   amount: 1200,
   due_day: 5,
   active: true,
   from_benefit: false,
+  valid_from_month: null,
+  valid_from_year: null,
   ...overrides,
 });
 

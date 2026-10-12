@@ -157,7 +157,7 @@ describe('ProjectionService', () => {
 
       const liberationMonth = result.find((m) => m.events.some((e) => e.type === 'liberation'));
       expect(liberationMonth).toBeDefined();
-      expect(liberationMonth?.events[0].amount).toBe(500);
+      expect(liberationMonth?.events[0]?.amount).toBe(500);
     });
 
     it('formats the freed and alerting installment as Brazilian currency', () => {

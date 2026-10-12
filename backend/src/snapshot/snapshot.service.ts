@@ -13,7 +13,7 @@ import { IncomeCategory, MonthlySnapshot } from '../shared/types';
 const NOVEMBER = 11;
 const DECEMBER = 12;
 
-interface ComputeInput {
+export interface ComputeInput {
   month: number;
   year: number;
   incomes: Income[];

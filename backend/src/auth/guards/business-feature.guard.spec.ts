@@ -1,8 +1,6 @@
-import { ExecutionContext, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BusinessFeatureGuard } from './business-feature.guard';
-
-const makeContext = (): ExecutionContext => ({}) as ExecutionContext;
 
 const makeGuard = (flag: string | undefined): BusinessFeatureGuard => {
   const config = { get: jest.fn().mockReturnValue(flag) } as unknown as ConfigService;
@@ -14,7 +12,7 @@ describe('BusinessFeatureGuard', () => {
     it('allows the request through', () => {
       const guard = makeGuard('true');
 
-      expect(guard.canActivate(makeContext())).toBe(true);
+      expect(guard.canActivate()).toBe(true);
     });
   });
 
@@ -22,7 +20,7 @@ describe('BusinessFeatureGuard', () => {
     it('hides the endpoint by throwing NotFoundException', () => {
       const guard = makeGuard('false');
 
-      expect(() => guard.canActivate(makeContext())).toThrow(NotFoundException);
+      expect(() => guard.canActivate()).toThrow(NotFoundException);
     });
   });
 
@@ -30,7 +28,7 @@ describe('BusinessFeatureGuard', () => {
     it('hides the endpoint by throwing NotFoundException', () => {
       const guard = makeGuard(undefined);
 
-      expect(() => guard.canActivate(makeContext())).toThrow(NotFoundException);
+      expect(() => guard.canActivate()).toThrow(NotFoundException);
     });
   });
 });

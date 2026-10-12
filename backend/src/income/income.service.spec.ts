@@ -1,3 +1,4 @@
+import { User } from '../user/user.entity';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -20,6 +21,7 @@ const mockRepository = () => ({
 
 const makeIncome = (overrides: Partial<Income> = {}): Income => ({
   id: '1',
+  user: { id: USER_ID } as User,
   type: IncomeType.FIXED,
   category: IncomeCategory.SALARY,
   amount: 6000,

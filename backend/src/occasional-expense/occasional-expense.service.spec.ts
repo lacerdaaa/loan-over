@@ -1,3 +1,4 @@
+import { User } from '../user/user.entity';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -17,6 +18,7 @@ const mockRepository = () => ({
 
 const makeExpense = (overrides: Partial<OccasionalExpense> = {}): OccasionalExpense => ({
   id: 'uuid-1',
+  user: { id: USER_ID } as User,
   description: 'Car repair',
   amount: 800,
   month: 6,

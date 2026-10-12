@@ -1,3 +1,4 @@
+import { User } from '../user/user.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -19,12 +20,16 @@ const mockRepository = () => ({
 
 const makeDebt = (overrides: Partial<Debt> = {}): Debt => ({
   id: 'uuid-1',
+  user: { id: USER_ID } as User,
   name: 'Car loan',
   installment_amount: 500,
   total_installments: 12,
   paid_installments: 0,
   start_date: new Date('2026-01-01'),
   closed: false,
+  principal: null,
+  monthly_rate: null,
+  last_paid_month: null,
   ...overrides,
 });
 
