@@ -2,6 +2,11 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 export type AccountType = 'personal' | 'business';
 
+export interface NotificationPreferences {
+  email_notifications: boolean;
+  monthly_report: boolean;
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -21,4 +26,10 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true })
   declare account_type: AccountType | null;
+
+  @Column({ default: true })
+  declare email_notifications: boolean;
+
+  @Column({ default: false })
+  declare monthly_report: boolean;
 }

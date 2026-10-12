@@ -11,6 +11,7 @@ import { EmployeeModule } from './employee/employee.module';
 import { FixedExpenseModule } from './fixed-expense/fixed-expense.module';
 import { GoalModule } from './goal/goal.module';
 import { IncomeModule } from './income/income.module';
+import { NotificationModule } from './notification/notification.module';
 import { OccasionalExpenseModule } from './occasional-expense/occasional-expense.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ProjectionModule } from './projection/projection.module';
@@ -59,6 +60,7 @@ import { UserModule } from './user/user.module';
     OrganizationModule,
     EmployeeModule,
     BankTransactionModule,
+    NotificationModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
