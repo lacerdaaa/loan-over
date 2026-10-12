@@ -257,8 +257,9 @@ off by default.
 - **Flag off:** every user is treated as Pro, nothing is gated, and `POST /billing/checkout`,
   `/billing/portal` and `/billing/webhook` answer `404`. `GET /billing/status` still works and reports
   `billing_enabled: false, is_pro: true`.
-- **Flag on:** a user is Pro only when `plan = pro` **and** `subscription_status` is `active` or
-  `trialing`. Everyone else is on the free plan.
+- **Flag on:** a user is Pro only when `plan = pro` **and** `subscription_status` is `active`,
+  `trialing` or `past_due` (Stripe Smart Retries grace period; access is lost only when the
+  subscription becomes `canceled`, `unpaid`, `incomplete*` or `paused`). Everyone else is on the free plan.
 
 | Feature | Free | Pro |
 |---|---|---|

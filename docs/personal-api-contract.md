@@ -62,7 +62,7 @@ Campos novos em `users`: `plan` (`'free' | 'pro'`, default `'free'`), `stripe_cu
   assinatura inválida, `404` com a flag desligada. Idempotente: sincroniza o estado a partir da
   assinatura Stripe. `deleted` → `plan 'free'`, `subscription_status 'canceled'`.
 
-`is_pro` = `!billing_enabled || (plan === 'pro' && status ∈ {active, trialing})`.
+`is_pro` = `!billing_enabled || (plan === 'pro' && status ∈ {active, trialing, past_due})`. `past_due` stays Pro during Stripe's retry grace period; `canceled`, `unpaid`, `incomplete*` and `paused` lose access.
 
 ### Entitlements
 

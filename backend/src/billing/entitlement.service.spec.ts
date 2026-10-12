@@ -33,9 +33,16 @@ describe('EntitlementService', () => {
       expect(service.isPro(userWith('pro', 'trialing'))).toBe(true);
     });
 
-    it('does not treat a Pro user with a past-due subscription as Pro', () => {
-      expect(service.isPro(userWith('pro', 'past_due'))).toBe(false);
+    it('keeps a Pro user with a past-due subscription as Pro during the Stripe retry grace period', () => {
+      expect(service.isPro(userWith('pro', 'past_due'))).toBe(true);
     });
+
+    it.each(['canceled', 'unpaid', 'incomplete', 'incomplete_expired', 'paused'])(
+      'does not treat a Pro user whose subscription is %s as Pro',
+      (status) => {
+        expect(service.isPro(userWith('pro', status))).toBe(false);
+      },
+    );
 
     it('does not treat a Pro user without a subscription status as Pro', () => {
       expect(service.isPro(userWith('pro', null))).toBe(false);

@@ -4,7 +4,7 @@ import { User } from '../user/user.entity';
 
 export const PRO_REQUIRED_MESSAGE = 'Recurso disponível no plano Pro';
 
-const PRO_SUBSCRIPTION_STATUSES: readonly string[] = ['active', 'trialing'];
+const PRO_SUBSCRIPTION_STATUSES: readonly string[] = ['active', 'trialing', 'past_due'];
 
 @Injectable()
 export class EntitlementService {
