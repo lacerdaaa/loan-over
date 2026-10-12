@@ -20,6 +20,6 @@ import { SnapshotService } from './snapshot.service';
   ],
   controllers: [SnapshotController],
   providers: [SnapshotService, SnapshotInputAssembler],
-  exports: [SnapshotService],
+  exports: [SnapshotService, SnapshotInputAssembler],
 })
 export class SnapshotModule {}

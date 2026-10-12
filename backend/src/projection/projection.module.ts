@@ -20,6 +20,6 @@ import { ProjectionService } from './projection.service';
   ],
   controllers: [ProjectionController],
   providers: [ProjectionService, ProjectionInputAssembler],
-  exports: [ProjectionService],
+  exports: [ProjectionService, ProjectionInputAssembler],
 })
 export class ProjectionModule {}
