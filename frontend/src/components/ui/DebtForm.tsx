@@ -83,6 +83,8 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
           type="number"
           className="input input-sm"
           required
+          min={1}
+          step={1}
           value={values.total_installments || ''}
           onChange={(e) => onChange({ ...values, total_installments: Number(e.target.value) })}
         />
@@ -91,6 +93,9 @@ export const DebtForm = ({ values, onChange, onSubmit, onCancel, pending }: Prop
         <input
           type="number"
           className="input input-sm"
+          min={0}
+          max={values.total_installments}
+          step={1}
           value={values.paid_installments}
           onChange={(e) => onChange({ ...values, paid_installments: Number(e.target.value) })}
         />

@@ -3,8 +3,10 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+const DEFAULT_PORT = 3000;
+
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -14,7 +16,7 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  app.enableCors();
+  app.enableCors({ origin: process.env.FRONTEND_URL || true });
 
   const config = new DocumentBuilder()
     .setTitle('Loan Over API')
@@ -35,8 +37,8 @@ async function bootstrap(): Promise<void> {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? DEFAULT_PORT;
   await app.listen(port);
 }
 
-bootstrap();
+void bootstrap();

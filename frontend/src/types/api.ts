@@ -76,6 +76,7 @@ export interface Goal {
   deadline_month: number;
   deadline_year: number;
   monthly_min: number | null;
+  saved_amount: number;
 }
 
 export interface OccasionalExpense {
@@ -104,12 +105,15 @@ export interface ProjectionEvent {
   type: 'liberation' | 'alert' | 'payroll';
   description: string;
   amount: number;
+  debt_id?: string;
+  debt_name?: string;
 }
 
 export interface ProjectedMonth {
   month: number;
   year: number;
   free_balance: number;
+  cumulative_balance: number;
   events: ProjectionEvent[];
   active_debts: number;
   total_outflow: number;

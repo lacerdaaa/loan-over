@@ -130,6 +130,13 @@ There is at most one Goal record in the database (the API upserts into it).
 | `email` | string | Google account email |
 | `name` | string \| null | Display name |
 | `avatar` | string \| null | Profile photo URL |
+| `email_notifications` | boolean | Last-installment and payoff e-mail alerts (default `true`) |
+| `monthly_report` | boolean | Monthly e-mail report, Pro only (default `false`) |
+| `plan` | `free` \| `pro` | Subscription plan (default `free`) |
+| `stripe_customer_id` | string \| null | Stripe customer, created on the first checkout |
+| `stripe_subscription_id` | string \| null | Current Stripe subscription |
+| `subscription_status` | string \| null | Stripe status (`active`, `trialing`, `past_due`, `canceled`, ...) |
+| `current_period_end` | timestamp \| null | End of the paid period (next renewal) |
 
 ---
 
@@ -209,13 +216,84 @@ The month before a debt closes (`i === remaining_installments − 1`), the engin
 
 This signals the user that a liberation is coming next month.
 
+### Horizon limits
+
+`horizon` accepts 1..60 months (default 24). Horizons above 24 require the Pro plan; a free user
+receives `403 { "message": "Recurso disponível no plano Pro" }`.
+
+### What-if simulator (Pro)
+
+`POST /projection/simulate` runs the same engine twice over the same inputs and returns
+`{ baseline, scenario }` (both arrays of projected months, each with `cumulative_balance`):
+
+```json
+{
+  "horizon": 24,
+  "hypothetical_debts": [
+    { "name": "Notebook", "installment_amount": 350, "installments": 10, "start_offset": 0 }
+  ],
+  "extra_monthly_income": 0,
+  "extra_monthly_expense": 0
+}
+```
+
+- All fields are optional. Up to 10 hypothetical debts; `installment_amount` > 0 with at most 2
+  decimals; `installments` 1..360; `start_offset` is the 0-based projected month of the first
+  installment and must be lower than `horizon`.
+- Only the **scenario** is changed: each hypothetical debt is charged for `installments` months from
+  `start_offset`, and `extra_monthly_income` / `extra_monthly_expense` shift every month.
+  The baseline never includes them.
+- Hypothetical debts emit the same `alert` / `liberation` events as real ones, without `debt_id`
+  (`debt_name` is the given name).
+- Free users receive `403`. Nothing is persisted.
+
 ---
+
+## Plans & billing
+
+Billing is controlled by the `FEATURE_BILLING` flag (backend) and `VITE_FEATURE_BILLING` (frontend),
+off by default.
+
+- **Flag off:** every user is treated as Pro, nothing is gated, and `POST /billing/checkout`,
+  `/billing/portal` and `/billing/webhook` answer `404`. `GET /billing/status` still works and reports
+  `billing_enabled: false, is_pro: true`.
+- **Flag on:** a user is Pro only when `plan = pro` **and** `subscription_status` is `active`,
+  `trialing` or `past_due` (Stripe Smart Retries grace period; access is lost only when the
+  subscription becomes `canceled`, `unpaid`, `incomplete*` or `paused`). Everyone else is on the free plan.
+
+| Feature | Free | Pro |
+|---|---|---|
+| Projection `horizon` | up to 24 months | up to 60 months |
+| What-if simulator | no | yes |
+| Monthly e-mail report | no | yes |
+
+A Pro-only feature used without Pro answers `403 { "message": "Recurso disponível no plano Pro" }`.
+
+**Flow:** `POST /billing/checkout` creates (once) a Stripe customer, stores `stripe_customer_id` and
+returns a Stripe Checkout URL (subscription mode, price `STRIPE_PRICE_PRO`). `POST /billing/portal`
+returns a Customer Portal URL (`400` if the user has no customer yet).
+
+**Webhook** (`POST /billing/webhook`, public, raw body, signature checked against
+`STRIPE_WEBHOOK_SECRET`; `400` on a bad signature). Handlers set state from the Stripe subscription,
+so redelivered events are harmless. Unknown events are acknowledged with `200` and ignored.
+
+| Event | Effect |
+|---|---|
+| `checkout.session.completed` | Links customer and subscription to the user in `client_reference_id`, retrieves the subscription and syncs plan, status and period end |
+| `customer.subscription.updated` | Finds the user by `stripe_customer_id` and syncs plan, status and `current_period_end` (`canceled` / `incomplete_expired` map to `free`; `past_due` keeps `pro` until Stripe cancels) |
+| `customer.subscription.deleted` | Plan `free`, status `canceled` |
+
+---
+
+## Database schema
+
+`synchronize` is enabled only when `NODE_ENV=development`. In every other environment the schema changes through migrations: run `npm run migration:run` (production runs the migrations automatically on boot).
 
 ## Automation rules
 
 ### Monthly auto-increment (cron)
 
-Every 1st day of the month at midnight, the server runs `DebtService.autoIncrementInstallments()`:
+Every 1st day of the month at 00:00 `America/Sao_Paulo` (03:00 UTC, the same UTC month the month key uses), the server runs `DebtService.autoIncrementInstallments()`:
 
 1. Loads all open debts.
 2. Increments `paid_installments` by 1 for each.
@@ -223,9 +301,32 @@ Every 1st day of the month at midnight, the server runs `DebtService.autoIncreme
 
 This means the system self-advances without any user action required. The user only needs to register debts once.
 
+A debt is only advanced once per month (`last_paid_month`) and only after its `start_date` month has begun. When a `PATCH /debts/:id` closes an open debt (for example by raising `paid_installments`), `last_paid_month` is set to the current month so the payoff notice fires.
+
+### Scheduler concurrency (advisory lock)
+
+Both crons run under a Postgres session-level advisory lock (`pg_try_advisory_lock`, one named key per job, see `SchedulerLockService`). With several backend instances only the one that gets the lock runs the job; the others skip it. The lock is released when the job ends, even on error.
+
+| Job | When | Time zone |
+|-----|------|-----------|
+| Debt auto-increment | day 1, 00:00 | `America/Sao_Paulo` |
+| Email notifications | day 1, 09:00 | `America/Sao_Paulo` |
+
+### Email notifications (cron)
+
+Every 1st day of the month at 09:00 (`America/Sao_Paulo`, after the midnight auto-increment), `NotificationScheduler.runMonthly()` sends **at most one email per user**, aggregating:
+
+- **Last installment alert** (users with `email_notifications = true`, default on): open debts with exactly one installment remaining.
+- **Liberation notice** (same flag): debts whose final installment was counted this month (`closed = true` and `last_paid_month` = current month). From next month their installments are free.
+- **Monthly report** (users with `monthly_report = true`, default off, **Pro only**): the month's snapshot totals plus up to three upcoming liberations from a 24-month projection. Without Pro the flag is ignored (and cannot be enabled: `PATCH /notifications/preferences` answers 403).
+
+If there is nothing to say, no email is sent. A failure for one user is logged and never stops the others. Without `RESEND_API_KEY` emails are skipped with a log line; the sender is `EMAIL_FROM`.
+
+**Opt-out**: every email carries an unsubscribe link (signed token, valid 90 days, `GET /notifications/unsubscribe`) that turns both flags off and redirects to `${FRONTEND_URL}/unsubscribed`. Users can also change both flags with `PATCH /notifications/preferences` and send themselves a test email with `POST /notifications/test` (3 per hour). When `FEATURE_BILLING` is not `true`, every user counts as Pro.
+
 ### Manual pay installment
 
-A user can also call `PATCH /debts/:id/pay` to increment `paid_installments` manually. The same `closed` check applies — the debt closes automatically when fully paid.
+A user can also call `PATCH /debts/:id/pay` to increment `paid_installments` manually. This is an **advance payment**: it counts one more installment immediately (and stamps `last_paid_month` with the current month), while the monthly cron keeps advancing on day 1 of each month (it only skips a debt already counted for that same month). The same `closed` check applies — the debt closes automatically when fully paid.
 
 ### Debt closure rule
 
@@ -277,7 +378,8 @@ The Dashboard shows `total_benefit` as a separate card so the user can see how m
 | Method | Path | Description |
 |---|---|---|
 | GET | `/snapshot` | Monthly snapshot for a given month/year |
-| GET | `/projection` | N-month forward projection |
+| GET | `/projection` | N-month forward projection (`horizon` above 24 is Pro) |
+| POST | `/projection/simulate` | What-if scenario vs. baseline (Pro) |
 | GET/POST/DELETE | `/income` | Manage incomes |
 | POST/DELETE | `/income/:id/deductions` | Manage deductions on an income |
 | GET/POST/PATCH/DELETE | `/debts` | Manage debts |
@@ -288,3 +390,10 @@ The Dashboard shows `total_benefit` as a separate card so the user can see how m
 | GET | `/auth/google` | Initiate Google OAuth flow |
 | GET | `/auth/google/callback` | OAuth callback, issues JWT |
 | GET | `/auth/me` | Returns current user from JWT |
+| GET/PATCH | `/notifications/preferences` | Read / update e-mail notification preferences (monthly report is Pro) |
+| POST | `/notifications/test` | Send a test e-mail to the current user (3 per hour) |
+| GET | `/notifications/unsubscribe` | Public; turns off all e-mails from a signed link |
+| GET | `/billing/status` | Plan, `is_pro`, subscription status and renewal date |
+| POST | `/billing/checkout` | Stripe Checkout URL (404 when billing is off) |
+| POST | `/billing/portal` | Stripe Customer Portal URL (404 when billing is off) |
+| POST | `/billing/webhook` | Public Stripe webhook (404 when billing is off) |

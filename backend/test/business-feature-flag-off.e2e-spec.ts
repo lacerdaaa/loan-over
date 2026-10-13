@@ -9,7 +9,7 @@ import { AppModule } from './../src/app.module';
 import { Employee } from './../src/employee/employee.entity';
 import { Income } from './../src/income/income.entity';
 import { Organization } from './../src/organization/organization.entity';
-import { IncomeCategory, IncomeType } from './../src/shared/types';
+import { IncomeCategory, IncomeType, ProjectedMonth } from './../src/shared/types';
 import { User } from './../src/user/user.entity';
 
 describe('Business feature flag OFF (e2e)', () => {
@@ -115,7 +115,7 @@ describe('Business feature flag OFF (e2e)', () => {
       ).expect(200);
 
       expect(response.body).toHaveLength(3);
-      for (const month of response.body) {
+      for (const month of response.body as ProjectedMonth[]) {
         expect(month).not.toHaveProperty('cash_balance');
       }
     });
@@ -128,8 +128,8 @@ describe('Business feature flag OFF (e2e)', () => {
           .query({ month: 10, year: 2026, horizon: 3 }),
       ).expect(200);
 
-      for (const month of response.body) {
-        expect(month.events.some((e: { type: string }) => e.type === 'payroll')).toBe(false);
+      for (const month of response.body as ProjectedMonth[]) {
+        expect(month.events.some((e) => e.type === 'payroll')).toBe(false);
       }
     });
   });
@@ -153,9 +153,7 @@ describe('Business feature flag OFF (e2e)', () => {
 
     it('hides POST /bank-transactions/import behind a 404', () => {
       return auth(
-        request(app.getHttpServer())
-          .post('/bank-transactions/import')
-          .send({ transactions: [] }),
+        request(app.getHttpServer()).post('/bank-transactions/import').send({ transactions: [] }),
       ).expect(404);
     });
   });

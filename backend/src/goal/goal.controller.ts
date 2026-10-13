@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UpsertGoalDto } from './dto/upsert-goal.dto';
@@ -28,7 +28,7 @@ export class GoalController {
   }
 
   @Delete()
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove the savings goal' })
   @ApiNoContentResponse()
   remove(@CurrentUser() userId: string): Promise<void> {

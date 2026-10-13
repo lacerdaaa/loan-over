@@ -1,168 +1,149 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, HelpCircle, Snowflake, Target, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useDebts } from '../api/debts';
-import { useGoal, useUpsertGoal } from '../api/goal';
-import { useSnapshot } from '../api/snapshot';
+import { useState } from 'react';
+import { useUpsertGoal } from '../api/goal';
 import { Field } from '../components/ui/Field';
+import { LiberationSuggestions } from '../components/ui/LiberationSuggestions';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
-import { remainingBalance } from '../lib/debt';
+import { MAX_PAYOFF_MONTHS } from '../lib/debt';
 import { formatCurrency } from '../lib/formatCurrency';
+import { offsetToLabel, savedProgressPercent, type GoalStatus } from '../lib/goalPlan';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
-import type { Debt } from '../types/api';
+import { useGoalPlan } from '../lib/useGoalPlan';
+import type { Goal } from '../types/api';
 
 const now = new Date();
 const MONTH = now.getMonth() + 1;
 const YEAR = now.getFullYear();
-const MAX_MONTHS = 120;
 
-interface DebtResult {
-  name: string;
-  installment: number;
-  trueRemainingBalance: number;
-  snowballPayoffOffset: number;
-  naturalPayoffOffset: number;
-  monthsSaved: number;
-}
+const INITIAL_DEADLINE_YEAR_OFFSET = 1;
 
-interface SimResult {
-  debtFreeOffset: number | null;
-  goalOffset: number | null;
-  debtOrder: DebtResult[];
-  postDebtMonthlyFree: number;
-}
-
-interface DebtState {
-  name: string;
-  installment: number;
-  rate: number;
-  balance: number;
-  initialBalance: number;
-  freed: boolean;
-  snowballPayoffOffset: number;
-  naturalPayoffOffset: number;
-}
-
-function naturalPayoffOffset(installment: number, rate: number, balance: number): number {
-  if (rate === 0) return Math.ceil(balance / installment);
-  let b = balance;
-  let months = 0;
-  while (b > 0.01 && months < MAX_MONTHS) {
-    b -= installment - b * rate;
-    months++;
-  }
-  return months;
-}
-
-function simulate(openDebts: Debt[], baseFreeBalance: number, monthlyMin: number, targetAmount: number): SimResult {
-  const states: DebtState[] = openDebts
-    .map((d) => {
-      const installment = Number(d.installment_amount);
-      const rate = Number(d.monthly_rate ?? 0);
-      const balance = remainingBalance(d);
-      return {
-        name: d.name,
-        installment,
-        rate,
-        balance,
-        initialBalance: balance,
-        freed: false,
-        snowballPayoffOffset: 0,
-        naturalPayoffOffset: naturalPayoffOffset(installment, rate, balance),
-      };
-    })
-    .sort((a, b) => a.balance - b.balance);
-
-  let freeBal = baseFreeBalance;
-  let cumSavings = 0;
-  let debtFreeOffset: number | null = null;
-  let goalOffset: number | null = null;
-
-  for (let offset = 1; offset <= MAX_MONTHS; offset++) {
-    const allDone = states.every((d) => d.freed);
-
-    if (!allDone) {
-      const saved = Math.min(monthlyMin, Math.max(0, freeBal));
-      cumSavings += saved;
-      const extra = Math.max(0, freeBal - saved);
-
-      // Apply extra to the smallest active debt
-      const target = states.find((d) => !d.freed);
-      if (target) target.balance -= extra;
-
-      // Advance every active debt by one installment (with amortization)
-      for (const d of states) {
-        if (d.freed) continue;
-        const interest = d.rate > 0 ? d.balance * d.rate : 0;
-        d.balance -= d.installment - interest;
-
-        if (d.balance <= 0.01 && !d.freed) {
-          d.freed = true;
-          d.snowballPayoffOffset = offset;
-          freeBal += d.installment;
-        }
-      }
-
-      if (states.every((d) => d.freed) && debtFreeOffset === null) {
-        debtFreeOffset = offset;
-      }
-    } else {
-      cumSavings += freeBal;
-    }
-
-    if (targetAmount > 0 && cumSavings >= targetAmount && goalOffset === null) {
-      goalOffset = offset;
-    }
-
-    if (debtFreeOffset !== null && (goalOffset !== null || targetAmount === 0)) break;
-  }
-
-  const debtOrder: DebtResult[] = states.map((d) => ({
-    name: d.name,
-    installment: d.installment,
-    trueRemainingBalance: d.initialBalance,
-    snowballPayoffOffset: d.snowballPayoffOffset || d.naturalPayoffOffset,
-    naturalPayoffOffset: d.naturalPayoffOffset,
-    monthsSaved: Math.max(0, d.naturalPayoffOffset - (d.snowballPayoffOffset || d.naturalPayoffOffset)),
-  }));
-
-  return { debtFreeOffset, goalOffset, debtOrder, postDebtMonthlyFree: freeBal };
-}
-
-function offsetToLabel(offset: number | null): string {
-  if (offset === null) return '—';
-  const d = new Date(YEAR, MONTH - 1 + offset, 1);
-  return monthLabel(d.getMonth() + 1, d.getFullYear());
-}
-
-export const GoalPage = () => {
-  const { data: goal } = useGoal();
-  const { data: snapshot } = useSnapshot(MONTH, YEAR);
-  const { data: allDebts = [] } = useDebts();
+const GoalForm = ({ goal }: { goal: Goal | null }) => {
   const upsert = useUpsertGoal();
-
-  const { hidden, mask } = usePrivacy();
-  const openDebts = allDebts.filter((d) => !d.closed);
-  const freeBal = snapshot?.free_balance ?? 0;
-  const targetAmount = goal?.target_amount ?? 0;
-  const monthlyMin = goal?.monthly_min ?? 0;
-
   const [form, setForm] = useState({
     target_amount: goal?.target_amount ?? 0,
     deadline_month: goal?.deadline_month ?? MONTH,
-    deadline_year: goal?.deadline_year ?? YEAR + 1,
+    deadline_year: goal?.deadline_year ?? YEAR + INITIAL_DEADLINE_YEAR_OFFSET,
     monthly_min: goal?.monthly_min ?? 0,
+    saved_amount: goal?.saved_amount ?? 0,
   });
 
-  const debtsKey = JSON.stringify(openDebts);
-  const result = useMemo(
-    () => simulate(openDebts, freeBal, monthlyMin, targetAmount),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- debtsKey is the stable stand-in for openDebts
-    [debtsKey, freeBal, monthlyMin, targetAmount],
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    upsert.mutate(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
+      <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
+
+      <Field label="Valor da meta (R$)">
+        <input type="number" step="0.01" className="input input-sm"
+          placeholder="Ex: 10.000" value={form.target_amount || ''}
+          onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
+      </Field>
+
+      <Field label="Quanto já guardei (R$)">
+        <input type="number" step="0.01" min="0" className="input input-sm"
+          placeholder="Valor já separado para a meta" value={form.saved_amount || ''}
+          onChange={(e) => setForm({ ...form, saved_amount: Number(e.target.value) })} />
+      </Field>
+
+      <Field label="Poupança mínima/mês (R$)">
+        <input type="number" step="0.01" className="input input-sm"
+          placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
+          onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Prazo — mês">
+          <select className="select select-sm" value={form.deadline_month}
+            onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {new Date(0, i).toLocaleString('pt-BR', { month: 'short' })}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Prazo — ano">
+          <input type="number" className="input input-sm" value={form.deadline_year}
+            onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
+        </Field>
+      </div>
+
+      <motion.button whileTap={{ scale: 0.97 }} type="submit"
+        className="btn btn-primary btn-sm w-full" disabled={upsert.isPending}>
+        Salvar
+      </motion.button>
+    </form>
   );
+};
+
+const STATUS_BADGE = (status: GoalStatus): { className: string; label: string } | null => {
+  switch (status.kind) {
+    case 'achieved': return { className: 'badge-success', label: 'Meta atingida' };
+    case 'on_track': return { className: 'badge-success', label: 'No prazo' };
+    case 'late': return {
+      className: 'badge-error',
+      label: `Atrasado ${status.monthsLate} ${status.monthsLate === 1 ? 'mês' : 'meses'}`,
+    };
+    case 'expired': return { className: 'badge-error', label: 'Prazo vencido' };
+    case 'unreachable': return { className: 'badge-warning', label: 'Fora do alcance' };
+  }
+};
+
+const GoalProgress = ({ goal, status, requiredMonthly, monthsLeft }: {
+  goal: Goal;
+  status: GoalStatus | null;
+  requiredMonthly: number | null;
+  monthsLeft: number;
+}) => {
+  const { mask } = usePrivacy();
+  const percent = savedProgressPercent(goal.saved_amount, goal.target_amount);
+  const badge = status ? STATUS_BADGE(status) : null;
+
+  return (
+    <div className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-semibold text-sm text-base-content">Progresso da meta</h2>
+        {badge && <span className={`badge badge-sm ${badge.className}`}>{badge.label}</span>}
+      </div>
+      <progress className="progress progress-success w-full" value={percent} max={100} aria-label="Progresso da meta" />
+      <p className="text-xs text-base-content/60 tabular-nums">
+        {mask(formatCurrency(goal.saved_amount))} de {mask(formatCurrency(goal.target_amount))} ({Math.round(percent)}%)
+      </p>
+      <p className="text-xs text-base-content/60 leading-relaxed">
+        Prazo: <span className="font-semibold text-base-content">{monthLabel(goal.deadline_month, goal.deadline_year)}</span>
+        {monthsLeft >= 0 ? ` (${monthsLeft} ${monthsLeft === 1 ? 'mês' : 'meses'})` : ' (vencido)'}
+        {requiredMonthly !== null && requiredMonthly > 0 && (
+          <> · aporte necessário <span className="font-semibold text-base-content">{mask(formatCurrency(requiredMonthly))}/mês</span></>
+        )}
+      </p>
+    </div>
+  );
+};
+
+const simulationWarning = (freeBal: number, targetAmount: number, goalOffset: number | null): string | null => {
+  if (freeBal <= 0) {
+    return 'Seu saldo livre projetado é zero ou negativo: não sobra dinheiro para poupar nem para antecipar dívidas.';
+  }
+  if (targetAmount > 0 && goalOffset === null) {
+    return `Com o saldo livre atual, a meta não é atingida em ${MAX_PAYOFF_MONTHS} meses.`;
+  }
+  return null;
+};
+
+export const GoalPage = () => {
+  const { goal, openDebts, baseFreeBalance: freeBal, result, suggestions, monthsLeft, status, requiredMonthly } = useGoalPlan();
+  const { hidden, mask } = usePrivacy();
+  const targetAmount = goal?.target_amount ?? 0;
+  const monthlyMin = goal?.monthly_min ?? 0;
+
+  const warning = simulationWarning(freeBal, targetAmount, result.goalOffset);
 
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -193,11 +174,6 @@ export const GoalPage = () => {
     },
   ] as const;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    upsert.mutate(form);
-  };
-
   return (
     <PageTransition>
       <div className="flex flex-col gap-5 w-full">
@@ -210,6 +186,7 @@ export const GoalPage = () => {
             <button
               type="button"
               aria-label="Como funciona o Snowball"
+              data-tutorial="goal-help"
               onClick={() => { setTutorialStep(0); setTutorialOpen(true); }}
               className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-base-content mt-1 shrink-0"
             >
@@ -225,6 +202,9 @@ export const GoalPage = () => {
               {TUTORIAL_STEPS.map((_, i) => (
                 <button
                   key={i}
+                  type="button"
+                  aria-label={`Passo ${i + 1} do tutorial`}
+                  aria-current={i === tutorialStep}
                   onClick={() => setTutorialStep(i)}
                   className={`h-1 flex-1 rounded-full transition-colors ${i === tutorialStep ? 'bg-primary' : 'bg-primary/20'}`}
                 />
@@ -297,11 +277,11 @@ export const GoalPage = () => {
             <div className="stat-desc">{targetAmount > 0 ? offsetToLabel(result.goalOffset) : 'sem meta definida'}</div>
           </div>
           <div className="stat">
-            <div className="stat-title text-xs">Saldo livre atual</div>
+            <div className="stat-title text-xs">Saldo livre projetado</div>
             <div className="stat-value font-mono tabular-nums text-xl text-base-content">
               {mask(formatCurrency(freeBal))}
             </div>
-            <div className="stat-desc">este mês</div>
+            <div className="stat-desc">próximo mês</div>
           </div>
         </div>
 
@@ -320,7 +300,7 @@ export const GoalPage = () => {
               <div className="divide-y divide-base-300">
                 {result.debtOrder.map((d, i) => (
                   <motion.div
-                    key={d.name}
+                    key={d.id}
                     initial={{ opacity: 0, x: -6 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
@@ -364,50 +344,20 @@ export const GoalPage = () => {
                   {' '}→ meta em{' '}
                   <span className="font-semibold text-success">{offsetToLabel(result.goalOffset)}</span>
                 </p>
-                {result.goalOffset !== null && (
-                  <progress className="progress progress-success w-full" value={1} max={result.goalOffset} />
-                )}
               </div>
             )}
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="card bg-base-200 border border-base-300 p-4 flex flex-col gap-3">
-              <h2 className="font-semibold text-sm text-base-content">Configurar meta</h2>
+            {goal && (
+              <GoalProgress goal={goal} status={status} requiredMonthly={requiredMonthly} monthsLeft={monthsLeft} />
+            )}
 
-              <Field label="Valor da meta (R$)">
-                <input type="number" step="0.01" className="input input-sm"
-                  placeholder="Ex: 10.000" value={form.target_amount || ''}
-                  onChange={(e) => setForm({ ...form, target_amount: Number(e.target.value) })} />
-              </Field>
+            <LiberationSuggestions suggestions={suggestions} hasGoal={goal !== null} />
 
-              <Field label="Poupança mínima/mês (R$)">
-                <input type="number" step="0.01" className="input input-sm"
-                  placeholder="Quanto guardar enquanto quita" value={form.monthly_min || ''}
-                  onChange={(e) => setForm({ ...form, monthly_min: Number(e.target.value) })} />
-              </Field>
+            {warning && (
+              <div role="alert" className="alert alert-warning alert-soft text-xs">{warning}</div>
+            )}
 
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="Prazo — mês">
-                  <select className="select select-sm" value={form.deadline_month}
-                    onChange={(e) => setForm({ ...form, deadline_month: Number(e.target.value) })}>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {new Date(0, i).toLocaleString('pt-BR', { month: 'short' })}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Prazo — ano">
-                  <input type="number" className="input input-sm" value={form.deadline_year}
-                    onChange={(e) => setForm({ ...form, deadline_year: Number(e.target.value) })} />
-                </Field>
-              </div>
-
-              <motion.button whileTap={{ scale: 0.97 }} type="submit"
-                className="btn btn-primary btn-sm w-full" disabled={upsert.isPending}>
-                Salvar
-              </motion.button>
-            </form>
+            <GoalForm key={goal?.id ?? 'new'} goal={goal} />
           </div>
         </div>
       </div>

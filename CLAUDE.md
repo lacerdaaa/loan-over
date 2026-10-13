@@ -25,6 +25,7 @@ npm run migration:revert
 npm run dev             # Vite dev server (requires VITE_API_URL in .env)
 npm run build           # tsc + vite build
 npm run lint            # eslint
+npm run test            # vitest unit tests
 ```
 
 ### Infrastructure
@@ -32,7 +33,7 @@ npm run lint            # eslint
 docker compose up -d    # start PostgreSQL (port 5432)
 ```
 
-Backend env vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FRONTEND_URL`.
+Backend env vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FRONTEND_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `BACKEND_URL`, `FEATURE_BILLING`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`.
 Frontend env: `VITE_API_URL` (e.g. `http://localhost:3000`).
 
 ---

@@ -13,7 +13,7 @@ import { IncomeCategory, MonthlySnapshot } from '../shared/types';
 const NOVEMBER = 11;
 const DECEMBER = 12;
 
-interface ComputeInput {
+export interface ComputeInput {
   month: number;
   year: number;
   incomes: Income[];
@@ -28,59 +28,55 @@ interface ComputeInput {
 export class SnapshotService {
   private readonly payrollService = new PayrollService();
 
-  compute({
+  compute(input: ComputeInput): MonthlySnapshot {
+    const { month, year } = input;
+    const totals = this.sumTotals(input);
+    const total_payroll = this.computePayroll(month, input.employees, input.taxRegime);
+    const free_balance =
+      totals.total_income -
+      totals.total_fixed -
+      totals.total_debts -
+      totals.total_occasional -
+      (total_payroll ?? 0);
+
+    return {
+      month,
+      year,
+      ...totals,
+      free_balance,
+      ...(total_payroll !== undefined && { total_payroll }),
+    };
+  }
+
+  private sumTotals({
     month,
     year,
     incomes,
     fixedExpenses,
     debts,
     occasionalExpenses,
-    employees,
-    taxRegime,
-  }: ComputeInput): MonthlySnapshot {
-    const total_income = incomes
-      .filter((i) => i.category !== IncomeCategory.BENEFIT)
-      .reduce((sum, i) => sum + netAmount(i), 0);
+  }: ComputeInput): Omit<MonthlySnapshot, 'month' | 'year' | 'free_balance' | 'total_payroll'> {
+    const openDebts = debts.filter((d) => !d.closed);
+    const isBenefit = (i: Income): boolean => i.category === IncomeCategory.BENEFIT;
+    const sumNet = (list: Income[]): number => list.reduce((sum, i) => sum + netAmount(i), 0);
+    const sumAmount = (list: Array<{ amount: number }>): number =>
+      list.reduce((sum, e) => sum + Number(e.amount), 0);
 
-    const total_fixed = fixedExpenses
-      .filter((e) => e.active && !e.from_benefit && isExpenseActiveForMonth(e, month, year))
-      .reduce((sum, e) => sum + Number(e.amount), 0);
-
-    const total_debts = debts
-      .filter((d) => !d.closed)
-      .reduce((sum, d) => sum + Number(d.installment_amount), 0);
-
-    const total_occasional = occasionalExpenses
-      .filter((e) => !e.from_benefit)
-      .reduce((sum, e) => sum + Number(e.amount), 0);
-
-    const total_benefit = incomes
-      .filter((i) => i.category === IncomeCategory.BENEFIT)
-      .reduce((sum, i) => sum + netAmount(i), 0);
-
-    const total_debt_balance = debts
-      .filter((d) => !d.closed)
-      .reduce(
+    return {
+      total_income: sumNet(incomes.filter((i) => !isBenefit(i))),
+      total_fixed: sumAmount(
+        fixedExpenses.filter(
+          (e) => e.active && !e.from_benefit && isExpenseActiveForMonth(e, month, year),
+        ),
+      ),
+      total_debts: openDebts.reduce((sum, d) => sum + Number(d.installment_amount), 0),
+      total_occasional: sumAmount(occasionalExpenses.filter((e) => !e.from_benefit)),
+      total_benefit: sumNet(incomes.filter(isBenefit)),
+      total_debt_balance: openDebts.reduce(
         (sum, d) =>
           sum + (d.total_installments - d.paid_installments) * Number(d.installment_amount),
         0,
-      );
-
-    const total_payroll = this.computePayroll(month, employees, taxRegime);
-    const free_balance =
-      total_income - total_fixed - total_debts - total_occasional - (total_payroll ?? 0);
-
-    return {
-      month,
-      year,
-      total_income,
-      total_fixed,
-      total_debts,
-      total_occasional,
-      total_benefit,
-      total_debt_balance,
-      free_balance,
-      ...(total_payroll !== undefined && { total_payroll }),
+      ),
     };
   }
 

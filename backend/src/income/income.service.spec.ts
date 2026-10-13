@@ -1,3 +1,4 @@
+import { User } from '../user/user.entity';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -10,10 +11,12 @@ import { IncomeService } from './income.service';
 
 const USER_ID = 'user-uuid';
 
-const mockRepository = () => ({
+const mockRepository = (): Record<
+  'find' | 'findOne' | 'create' | 'save' | 'delete',
+  jest.Mock
+> => ({
   find: jest.fn(),
   findOne: jest.fn(),
-  findOneBy: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
   delete: jest.fn(),
@@ -21,6 +24,7 @@ const mockRepository = () => ({
 
 const makeIncome = (overrides: Partial<Income> = {}): Income => ({
   id: '1',
+  user: { id: USER_ID } as User,
   type: IncomeType.FIXED,
   category: IncomeCategory.SALARY,
   amount: 6000,
@@ -73,25 +77,6 @@ describe('IncomeService', () => {
     });
   });
 
-  describe('netAmount', () => {
-    it('returns gross amount when there are no deductions', () => {
-      const income = makeIncome({ amount: 6000, deductions: [] });
-      expect(service.netAmount(income)).toBe(6000);
-    });
-
-    it('subtracts all deductions from gross amount', () => {
-      const income = makeIncome({
-        amount: 6000,
-        deductions: [
-          makeDeduction(660, 'INSS'),
-          makeDeduction(420, 'IRRF'),
-          makeDeduction(200, 'Health'),
-        ],
-      });
-      expect(service.netAmount(income)).toBe(4720);
-    });
-  });
-
   describe('create', () => {
     it('saves a new income with category and returns it', async () => {
       const dto: CreateIncomeDto = {
@@ -109,6 +94,24 @@ describe('IncomeService', () => {
 
       expect(result.category).toBe(IncomeCategory.SALARY);
       expect(repo.save).toHaveBeenCalledWith(saved);
+    });
+
+    it('persists the deductions given in the dto', async () => {
+      const dto: CreateIncomeDto = {
+        type: IncomeType.FIXED,
+        category: IncomeCategory.SALARY,
+        amount: 6000,
+        description: 'Salary',
+        deductions: [{ label: 'INSS', amount: 660 }],
+      };
+      repo.create.mockImplementation((entity) => entity as Income);
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Income));
+
+      await service.create(USER_ID, dto);
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ deductions: [{ label: 'INSS', amount: 660 }] }),
+      );
     });
   });
 
@@ -137,24 +140,39 @@ describe('IncomeService', () => {
   });
 
   describe('removeDeduction', () => {
-    it('deletes a deduction by id', async () => {
-      deductionRepo.findOneBy.mockResolvedValue(makeDeduction(660));
+    it('deletes a deduction that belongs to the income owned by the user', async () => {
+      deductionRepo.findOne.mockResolvedValue(makeDeduction(660));
       deductionRepo.delete.mockResolvedValue({ affected: 1, raw: [] });
 
-      await expect(service.removeDeduction('d1')).resolves.not.toThrow();
+      await expect(service.removeDeduction('d1', '1', USER_ID)).resolves.not.toThrow();
+
+      expect(deductionRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'd1', income: { id: '1', user: { id: USER_ID } } },
+      });
       expect(deductionRepo.delete).toHaveBeenCalledWith('d1');
     });
 
-    it('throws NotFoundException when deduction does not exist', async () => {
-      deductionRepo.findOneBy.mockResolvedValue(null);
+    it('throws NotFoundException when the deduction is not in the user income', async () => {
+      deductionRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.removeDeduction('ghost')).rejects.toThrow(NotFoundException);
+      await expect(service.removeDeduction('d1', '1', 'other-user')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(deductionRepo.delete).not.toHaveBeenCalled();
     });
   });
 
   describe('remove', () => {
-    it('throws NotFoundException when income does not exist', async () => {
-      repo.findOne.mockResolvedValue(null);
+    it('deletes the row scoped to the id and the owning user', async () => {
+      repo.delete.mockResolvedValue({ affected: 1, raw: [] });
+
+      await expect(service.remove('1', USER_ID)).resolves.toBeUndefined();
+
+      expect(repo.delete).toHaveBeenCalledWith({ id: '1', user: { id: USER_ID } });
+    });
+
+    it('throws NotFoundException when nothing was deleted', async () => {
+      repo.delete.mockResolvedValue({ affected: 0, raw: [] });
 
       await expect(service.remove('ghost', USER_ID)).rejects.toThrow(NotFoundException);
     });

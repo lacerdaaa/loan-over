@@ -1,6 +1,21 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+export type UserPlan = 'free' | 'pro';
+
+export interface UserBilling {
+  plan: UserPlan;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  current_period_end: Date | null;
+}
+
 export type AccountType = 'personal' | 'business';
+
+export interface NotificationPreferences {
+  email_notifications: boolean;
+  monthly_report: boolean;
+}
 
 @Entity('users')
 export class User {
@@ -21,4 +36,25 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true })
   declare account_type: AccountType | null;
+
+  @Column({ default: true })
+  declare email_notifications: boolean;
+
+  @Column({ default: false })
+  declare monthly_report: boolean;
+
+  @Column({ type: 'varchar', default: 'free' })
+  declare plan: UserPlan;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare stripe_customer_id: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare stripe_subscription_id: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  declare subscription_status: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  declare current_period_end: Date | null;
 }

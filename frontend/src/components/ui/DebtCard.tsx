@@ -3,6 +3,7 @@ import { Check, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useDeleteDebt, usePayInstallment, useUpdateDebt } from '../../api/debts';
 import { payoffMonth, remainingBalance } from '../../lib/debt';
+import { debtPayloadFromForm } from '../../lib/debtPayload';
 import { formatCurrency } from '../../lib/formatCurrency';
 import { usePrivacy } from '../../lib/privacy';
 import type { Debt } from '../../types/api';
@@ -13,14 +14,16 @@ interface Props {
   debt: Debt;
 }
 
-const toDateInput = (date: Date | string) =>
-  new Date(date).toISOString().slice(0, 10);
+const RATE_DECIMALS = 4;
+const DATE_INPUT_LENGTH = 'YYYY-MM-DD'.length;
+
+const toDateInput = (date: string) => date.slice(0, DATE_INPUT_LENGTH);
 
 const formFromDebt = (debt: Debt): DebtFormValues => ({
   name: debt.name,
-  installment_amount: Number(debt.installment_amount),
-  principal: Number(debt.principal ?? 0),
-  monthly_rate: Number(debt.monthly_rate ?? 0) * 100,
+  installment_amount: debt.installment_amount,
+  principal: debt.principal ?? 0,
+  monthly_rate: Number(((debt.monthly_rate ?? 0) * 100).toFixed(RATE_DECIMALS)),
   total_installments: debt.total_installments,
   paid_installments: debt.paid_installments,
   start_date: toDateInput(debt.start_date),
@@ -41,15 +44,12 @@ export const DebtCard = ({ debt }: Props) => {
     : 0;
   const remaining = debt.total_installments - debt.paid_installments;
   const payoffCost = remainingBalance(debt);
-  const faceCost = remaining * Number(debt.installment_amount);
+  const faceCost = remaining * debt.installment_amount;
   const showPayoffCost = !!debt.monthly_rate && !debt.closed && payoffCost < faceCost - 0.01;
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = form.hasInterest
-      ? { id: debt.id, name: form.name, principal: form.principal, monthly_rate: form.monthly_rate / 100, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date }
-      : { id: debt.id, name: form.name, installment_amount: form.installment_amount, monthly_rate: null, principal: null, total_installments: form.total_installments, paid_installments: form.paid_installments, start_date: form.start_date };
-    update.mutate(payload as Parameters<typeof update.mutate>[0], { onSuccess: () => setEditing(false) });
+    update.mutate({ ...debtPayloadFromForm(form), id: debt.id }, { onSuccess: () => setEditing(false) });
   };
 
   return (
@@ -66,7 +66,7 @@ export const DebtCard = ({ debt }: Props) => {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm text-base-content/60 tabular-nums">{mask(formatCurrency(debt.installment_amount))}/mês</p>
               {debt.monthly_rate ? (
-                <span className="badge badge-ghost badge-xs tabular-nums">{(Number(debt.monthly_rate) * 100).toFixed(2)}% a.m.</span>
+                <span className="badge badge-ghost badge-xs tabular-nums">{Number((debt.monthly_rate * 100).toFixed(RATE_DECIMALS))}% a.m.</span>
               ) : null}
             </div>
           </div>
@@ -117,7 +117,7 @@ export const DebtCard = ({ debt }: Props) => {
           <progress className="progress progress-primary w-full" value={progress} max={100} />
           <div className="flex justify-between text-xs text-base-content/50 mt-1">
             <span>{debt.paid_installments} de {debt.total_installments} pagas</span>
-            <span>quitação: {payoffMonth(debt.start_date, debt.total_installments)}</span>
+            <span>quitação: {payoffMonth(debt)}</span>
           </div>
           {showPayoffCost && (
             <div className="flex justify-between text-xs mt-1.5">

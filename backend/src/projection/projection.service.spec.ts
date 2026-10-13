@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Debt } from '../debt/debt.entity';
-import { Employee, EmployeeRegime } from '../employee/employee.entity';
+import { Employee } from '../employee/employee.entity';
 import { FixedExpense } from '../fixed-expense/fixed-expense.entity';
 import { Income } from '../income/income.entity';
 import { IncomeCategory, IncomeType } from '../shared/types';
-import { ProjectionService } from './projection.service';
+import { ProjectionInput, ProjectionService } from './projection.service';
 
 const makeIncome = (
   amount: number,
@@ -55,7 +55,7 @@ const makeEmployee = (overrides: Partial<Employee> = {}): Employee =>
   ({
     id: '1',
     name: 'Alice',
-    regime: 'clt' as EmployeeRegime,
+    regime: 'clt',
     gross_salary: 3000,
     monthly_benefits: 0,
     active: true,
@@ -157,7 +157,30 @@ describe('ProjectionService', () => {
 
       const liberationMonth = result.find((m) => m.events.some((e) => e.type === 'liberation'));
       expect(liberationMonth).toBeDefined();
-      expect(liberationMonth?.events[0].amount).toBe(500);
+      expect(liberationMonth?.events[0]?.amount).toBe(500);
+    });
+
+    it('formats the freed and alerting installment as Brazilian currency', () => {
+      const debt = makeDebt({
+        installment_amount: '129.18' as unknown as number,
+        total_installments: 3,
+        paid_installments: 1,
+      });
+
+      const result = service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [],
+          debts: [debt],
+          referenceMonth: 6,
+          referenceYear: 2026,
+        },
+        3,
+      );
+
+      const descriptions = result.flatMap((m) => m.events.map((e) => e.description));
+      expect(descriptions.some((d) => /quitada — R\$\s129,18\/mês liberados/.test(d))).toBe(true);
+      expect(descriptions.every((d) => !d.includes('129.18'))).toBe(true);
     });
 
     it('does not count a closed debt in total_outflow', () => {
@@ -451,6 +474,214 @@ describe('ProjectionService', () => {
       for (const month of result) {
         expect(month).not.toHaveProperty('cash_balance');
       }
+    });
+  });
+
+  describe('when a debt generates liberation and alert events', () => {
+    const projectAlmostPaidDebt = (): ReturnType<ProjectionService['project']> =>
+      service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [],
+          debts: [
+            makeDebt({
+              id: 'debt-42',
+              name: 'Car',
+              installment_amount: 500,
+              total_installments: 3,
+              paid_installments: 1,
+            }),
+          ],
+          referenceMonth: 6,
+          referenceYear: 2026,
+        },
+        3,
+      );
+
+    it('identifies the debt on the alert event by id and name', () => {
+      const alert = projectAlmostPaidDebt()
+        .flatMap((m) => m.events)
+        .find((e) => e.type === 'alert');
+
+      expect(alert?.debt_id).toBe('debt-42');
+      expect(alert?.debt_name).toBe('Car');
+    });
+
+    it('identifies the debt on the liberation event by id and name', () => {
+      const liberation = projectAlmostPaidDebt()
+        .flatMap((m) => m.events)
+        .find((e) => e.type === 'liberation');
+
+      expect(liberation?.debt_id).toBe('debt-42');
+      expect(liberation?.debt_name).toBe('Car');
+    });
+
+    it('keeps the human readable description on the liberation event', () => {
+      const liberation = projectAlmostPaidDebt()
+        .flatMap((m) => m.events)
+        .find((e) => e.type === 'liberation');
+
+      expect(liberation?.description).toContain('Car quitada');
+    });
+  });
+
+  describe('when a payroll event is emitted', () => {
+    it('does not attach a debt reference to it', () => {
+      const result = service.project(
+        {
+          incomes: [makeIncome(10000)],
+          fixedExpenses: [],
+          debts: [],
+          referenceMonth: 10,
+          referenceYear: 2026,
+          employees: [makeEmployee()],
+          taxRegime: 'simples',
+        },
+        1,
+      );
+
+      const payroll = result[0]?.events.find((e) => e.type === 'payroll');
+      expect(payroll).toBeDefined();
+      expect(payroll).not.toHaveProperty('debt_id');
+    });
+  });
+
+  describe('cumulative_balance', () => {
+    const project = (
+      extra: Partial<Parameters<ProjectionService['project']>[0]>,
+      horizon: number,
+    ): ReturnType<ProjectionService['project']> =>
+      service.project(
+        {
+          incomes: [makeIncome(5000)],
+          fixedExpenses: [makeExpense(1000)],
+          debts: [],
+          referenceMonth: 6,
+          referenceYear: 2026,
+          ...extra,
+        },
+        horizon,
+      );
+
+    it('is the running sum of free_balance starting from zero by default', () => {
+      const result = project({}, 3);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([4000, 8000, 12000]);
+    });
+
+    it('starts from startingSavings when provided', () => {
+      const result = project({ startingSavings: 2500 }, 2);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([6500, 10500]);
+    });
+
+    it('grows faster after a debt is liberated', () => {
+      const debt = makeDebt({
+        installment_amount: 500,
+        total_installments: 2,
+        paid_installments: 1,
+      });
+
+      const result = project({ debts: [debt] }, 3);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([3500, 7500, 11500]);
+    });
+
+    it('goes negative when outflow exceeds income', () => {
+      const result = project({ fixedExpenses: [makeExpense(6000)] }, 2);
+
+      expect(result.map((m) => m.cumulative_balance)).toEqual([-1000, -2000]);
+    });
+
+    it('does not interfere with the business cash_balance', () => {
+      const result = project({ startingCashBalance: 10000, startingSavings: 100 }, 1);
+
+      expect(result[0]?.cash_balance).toBe(14000);
+      expect(result[0]?.cumulative_balance).toBe(4100);
+    });
+  });
+  describe('simulate', () => {
+    const baseInput = (): ProjectionInput => ({
+      incomes: [makeIncome(5000)],
+      fixedExpenses: [makeExpense(1000)],
+      debts: [],
+      referenceMonth: 6,
+      referenceYear: 2026,
+    });
+    const notebook = {
+      name: 'Notebook',
+      installment_amount: 350,
+      installments: 3,
+      start_offset: 1,
+    };
+
+    describe('when the scenario changes nothing', () => {
+      it('returns a scenario identical to the baseline', () => {
+        const result = service.simulate(baseInput(), 4, {});
+
+        expect(result.scenario).toEqual(result.baseline);
+        expect(result.baseline).toEqual(service.project(baseInput(), 4));
+      });
+    });
+
+    describe('when a hypothetical debt is added', () => {
+      it('charges its installment only from start_offset for the given installments', () => {
+        const result = service.simulate(baseInput(), 6, { hypothetical_debts: [notebook] });
+
+        expect(result.scenario.map((m) => m.free_balance)).toEqual([
+          4000, 3650, 3650, 3650, 4000, 4000,
+        ]);
+        expect(result.scenario.map((m) => m.active_debts)).toEqual([0, 1, 1, 1, 0, 0]);
+      });
+
+      it('leaves the baseline untouched', () => {
+        const result = service.simulate(baseInput(), 6, { hypothetical_debts: [notebook] });
+
+        expect(result.baseline.map((m) => m.free_balance)).toEqual([
+          4000, 4000, 4000, 4000, 4000, 4000,
+        ]);
+      });
+
+      it('emits an alert before the last installment and a liberation after it, without a debt id', () => {
+        const result = service.simulate(baseInput(), 6, { hypothetical_debts: [notebook] });
+
+        expect(result.scenario[3]?.events).toEqual([
+          {
+            type: 'alert',
+            description: 'Notebook — última parcela no próximo mês',
+            amount: 350,
+            debt_name: 'Notebook',
+          },
+        ]);
+        expect(result.scenario[4]?.events).toEqual([
+          {
+            type: 'liberation',
+            description: expect.stringContaining('Notebook quitada') as string,
+            amount: 350,
+            debt_name: 'Notebook',
+          },
+        ]);
+      });
+
+      it('accumulates the lower balance in cumulative_balance', () => {
+        const result = service.simulate(baseInput(), 4, { hypothetical_debts: [notebook] });
+
+        expect(result.scenario.map((m) => m.cumulative_balance)).toEqual([
+          4000, 7650, 11300, 14950,
+        ]);
+      });
+    });
+
+    describe('when extra monthly income and expense are given', () => {
+      it('adds the income to and the expense to the outflow of every month', () => {
+        const result = service.simulate(baseInput(), 2, {
+          extra_monthly_income: 500,
+          extra_monthly_expense: 200,
+        });
+
+        expect(result.scenario.map((m) => m.free_balance)).toEqual([4300, 4300]);
+        expect(result.scenario.map((m) => m.total_outflow)).toEqual([1200, 1200]);
+      });
     });
   });
 });

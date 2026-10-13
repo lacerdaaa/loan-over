@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { type CreateIncomePayload, useAddDeduction, useCreateIncome, useDeleteIncome, useIncome, useRemoveDeduction } from '../api/income';
 import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
+import { SalaryDeductionPreview } from '../components/ui/SalaryDeductionPreview';
 import { MonthNav } from '../components/ui/MonthNav';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageTransition } from '../components/ui/PageTransition';
 import { formatCurrency } from '../lib/formatCurrency';
 import { labelsFor } from '../lib/labels';
+import { missingSalaryDeductions, salaryDeductions } from '../lib/payrollTaxes';
 import { usePrivacy } from '../lib/privacy';
 import { useBusinessMode } from '../lib/useBusinessMode';
 import type { Income, IncomeCategory, IncomeType } from '../types/api';
@@ -18,18 +20,28 @@ const CATEGORY_LABEL: Record<IncomeCategory, string> = { salary: 'Salário', ren
 
 const deductions = (income: Income) => income.deductions ?? [];
 const netAmount = (income: Income) =>
-  income.amount - deductions(income).reduce((s, d) => s + Number(d.amount), 0);
+  income.amount - deductions(income).reduce((s, d) => s + d.amount, 0);
 
 type DeductionFormState = { incomeId: string; label: string; amount: string };
 
-const DeductionRow = ({ income, month, year }: { income: Income; month: number; year: number }) => {
+const DeductionRow = ({ income }: { income: Income }) => {
   const [showForm, setShowForm] = useState(false);
   const [deductionForm, setDeductionForm] = useState<DeductionFormState>({ incomeId: income.id, label: '', amount: '' });
-  const addDeduction = useAddDeduction(income.id, month, year);
-  const removeDeduction = useRemoveDeduction(income.id, month, year);
+  const addDeduction = useAddDeduction(income.id);
+  const removeDeduction = useRemoveDeduction(income.id);
   const { mask } = usePrivacy();
   const net = netAmount(income);
   const hasDeductions = deductions(income).length > 0;
+  const missingDeductions = missingSalaryDeductions(income.amount, deductions(income).map((d) => d.label));
+  const canCalculate = income.category === 'salary' && missingDeductions.length > 0;
+
+  const calculateDeductions = async () => {
+    try {
+      for (const d of missingDeductions) await addDeduction.mutateAsync(d);
+    } catch {
+      // The global mutation toast already reports the failure; a retry applies what is still missing.
+    }
+  };
 
   const submitDeduction = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +80,11 @@ const DeductionRow = ({ income, month, year }: { income: Income; month: number; 
           <span>{mask(formatCurrency(net))}</span>
         </div>
       )}
+      {canCalculate && (
+        <button className="text-xs text-primary/70 hover:text-primary mt-1 mr-3" disabled={addDeduction.isPending} onClick={calculateDeductions}>
+          Calcular deduções
+        </button>
+      )}
       {showForm ? (
         <form onSubmit={submitDeduction} className="flex gap-2 mt-1">
           <input
@@ -104,21 +121,34 @@ export const IncomePage = () => {
   const [year, setYear] = useState(now.getFullYear());
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ description: '', amount: 0, type: tab, category: 'other' as IncomeCategory });
+  const [calcDeductions, setCalcDeductions] = useState(false);
+  const [dependents, setDependents] = useState(0);
   const { hidden, mask } = usePrivacy();
   const labels = labelsFor(useBusinessMode());
 
   const { data: incomes = [] } = useIncome(month, year);
-  const create = useCreateIncome(month, year);
-  const remove = useDeleteIncome(month, year);
+  const create = useCreateIncome();
+  const remove = useDeleteIncome();
 
   const filtered = incomes.filter((i) => i.type === tab);
 
+  const withCalculatedDeductions = form.category === 'salary' && calcDeductions && form.amount > 0;
+
+  const closeModal = () => {
+    setOpen(false);
+    setCalcDeductions(false);
+    setDependents(0);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: CreateIncomePayload = tab === 'fixed'
+    const base: CreateIncomePayload = tab === 'fixed'
       ? { description: form.description, amount: form.amount, type: 'fixed', category: form.category, month: null, year: null }
       : { description: form.description, amount: form.amount, type: 'variable', category: form.category, month, year };
-    create.mutate(payload, { onSuccess: () => setOpen(false) });
+    const payload: CreateIncomePayload = withCalculatedDeductions
+      ? { ...base, deductions: salaryDeductions(form.amount, dependents) }
+      : base;
+    create.mutate(payload, { onSuccess: closeModal });
   };
 
   return (
@@ -169,7 +199,7 @@ export const IncomePage = () => {
                   <motion.button whileTap={{ scale: 0.93 }} aria-label="Remover renda" className="btn btn-ghost btn-xs text-error" onClick={() => remove.mutate(income.id)}><X size={14} /></motion.button>
                 </div>
               </div>
-              <DeductionRow income={income} month={month} year={year} />
+              <DeductionRow income={income} />
             </motion.div>
           ))}
           {filtered.length === 0 && (
@@ -193,7 +223,7 @@ export const IncomePage = () => {
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nova renda">
+      <Modal open={open} onClose={closeModal} title="Nova renda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Field label="Descrição">
             <input className="input input-sm" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -209,8 +239,24 @@ export const IncomePage = () => {
           <Field label="Valor bruto (R$)">
             <input type="number" step="0.01" className="input input-sm" required value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
           </Field>
+          {form.category === 'salary' && (
+            <div className="flex flex-col gap-2">
+              <label className="label cursor-pointer justify-start gap-2 text-xs">
+                <input type="checkbox" className="checkbox checkbox-primary checkbox-xs" checked={calcDeductions} onChange={(e) => setCalcDeductions(e.target.checked)} />
+                Calcular INSS e IRRF
+              </label>
+              {calcDeductions && (
+                <>
+                  <Field label="Dependentes">
+                    <input type="number" min={0} step={1} className="input input-sm" value={dependents} onChange={(e) => setDependents(Math.max(0, Math.floor(Number(e.target.value))))} />
+                  </Field>
+                  <SalaryDeductionPreview gross={form.amount} dependents={dependents} />
+                </>
+              )}
+            </div>
+          )}
           <div className="flex gap-2 mt-2">
-            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={() => setOpen(false)}>Cancelar</button>
+            <button type="button" className="btn btn-ghost btn-sm flex-1" onClick={closeModal}>Cancelar</button>
             <motion.button whileTap={{ scale: 0.97 }} type="submit" className="btn btn-primary btn-sm flex-1" disabled={create.isPending}>Salvar</motion.button>
           </div>
         </form>

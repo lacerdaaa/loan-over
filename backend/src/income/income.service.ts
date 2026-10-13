@@ -33,13 +33,6 @@ export class IncomeService {
     return [...fixed, ...variable];
   }
 
-  netAmount(income: Income): number {
-    return (
-      Number(income.amount) -
-      (income.deductions ?? []).reduce((sum, d) => sum + Number(d.amount), 0)
-    );
-  }
-
   async create(userId: string, dto: CreateIncomeDto): Promise<Income> {
     const income = this.repo.create({
       user: { id: userId },
@@ -49,7 +42,7 @@ export class IncomeService {
       description: dto.description,
       month: dto.month ?? null,
       year: dto.year ?? null,
-      deductions: [],
+      deductions: dto.deductions ?? [],
     });
     return this.repo.save(income);
   }
@@ -66,15 +59,16 @@ export class IncomeService {
     return this.deductionRepo.save(deduction);
   }
 
-  async removeDeduction(deductionId: string): Promise<void> {
-    const exists = await this.deductionRepo.findOneBy({ id: deductionId });
+  async removeDeduction(deductionId: string, incomeId: string, userId: string): Promise<void> {
+    const exists = await this.deductionRepo.findOne({
+      where: { id: deductionId, income: { id: incomeId, user: { id: userId } } },
+    });
     if (!exists) throw new NotFoundException(`Deduction ${deductionId} not found`);
     await this.deductionRepo.delete(deductionId);
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
-    if (!exists) throw new NotFoundException(`Income ${id} not found`);
-    await this.repo.delete(id);
+    const result = await this.repo.delete({ id, user: { id: userId } });
+    if (!result.affected) throw new NotFoundException(`Income ${id} not found`);
   }
 }

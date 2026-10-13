@@ -131,18 +131,14 @@ describe('BankTransactions (e2e)', () => {
         request(app.getHttpServer())
           .post('/bank-transactions/import')
           .send({
-            transactions: [
-              { date: '2026-08-05', description: 'To be matched', amount: 800 },
-            ],
+            transactions: [{ date: '2026-08-05', description: 'To be matched', amount: 800 }],
           }),
       ).expect(201);
 
       expect(response.body.imported).toBe(1);
 
       const list = await auth(
-        request(app.getHttpServer())
-          .get('/bank-transactions')
-          .query({ month: 8, year: 2026 }),
+        request(app.getHttpServer()).get('/bank-transactions').query({ month: 8, year: 2026 }),
       ).expect(200);
 
       txId = (list.body as BankTransaction[])[0]!.id;
@@ -203,21 +199,19 @@ describe('BankTransactions (e2e)', () => {
       expect(importRes.body.imported).toBe(1);
 
       const list = await auth(
-        request(app.getHttpServer())
-          .get('/bank-transactions')
-          .query({ month: 9, year: 2026 }),
+        request(app.getHttpServer()).get('/bank-transactions').query({ month: 9, year: 2026 }),
       ).expect(200);
 
       const id = (list.body as BankTransaction[])[0]!.id;
 
-      await auth(
-        request(app.getHttpServer()).delete(`/bank-transactions/${id}`),
-      ).expect(204);
+      await auth(request(app.getHttpServer()).delete(`/bank-transactions/${id}`)).expect(204);
     });
 
     it('returns 404 when deleting a non-existent transaction', async () => {
       await auth(
-        request(app.getHttpServer()).delete('/bank-transactions/f47ac10b-58cc-4372-a567-0e02b2c3d479'),
+        request(app.getHttpServer()).delete(
+          '/bank-transactions/f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        ),
       ).expect(404);
     });
   });

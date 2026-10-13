@@ -2,15 +2,21 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
+import { SCHEDULER_LOCK_KEYS, SchedulerLockService } from '../shared/scheduler-lock.service';
 import { CreateDebtDto } from './dto/create-debt.dto';
 import { UpdateDebtDto } from './dto/update-debt.dto';
 import { Debt } from './debt.entity';
+import { dayKey, monthStartKey } from './debt-month.utils';
+
+const CRON_TIME_ZONE = 'America/Sao_Paulo';
+const NON_COPIED_UPDATE_FIELDS: ReadonlySet<string> = new Set(['start_date', 'installment_amount']);
 
 @Injectable()
 export class DebtService {
   constructor(
     @InjectRepository(Debt)
     private readonly repo: Repository<Debt>,
+    private readonly schedulerLock: SchedulerLockService,
   ) {}
 
   findAll(userId: string): Promise<Debt[]> {
@@ -34,11 +40,23 @@ export class DebtService {
       monthly_rate: dto.monthly_rate ?? null,
       closed: false,
     });
+    this.applyClosingRule(debt);
     return this.repo.save(debt);
   }
 
   private priceInstallment(principal: number, rate: number, n: number): number {
+    if (rate === 0) return principal / n;
     return (principal * rate) / (1 - Math.pow(1 + rate, -n));
+  }
+
+  private countInstallment(debt: Debt, monthStart: string): void {
+    debt.paid_installments += 1;
+    debt.last_paid_month = monthStart;
+    this.applyClosingRule(debt);
+  }
+
+  private applyClosingRule(debt: Debt): void {
+    debt.closed = debt.paid_installments >= debt.total_installments;
   }
 
   async payInstallment(id: string, userId: string): Promise<Debt> {
@@ -46,8 +64,7 @@ export class DebtService {
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
     if (debt.closed) throw new BadRequestException(`Debt ${id} is already closed`);
 
-    debt.paid_installments += 1;
-    debt.closed = debt.paid_installments === debt.total_installments;
+    this.countInstallment(debt, monthStartKey(new Date()));
 
     return this.repo.save(debt);
   }
@@ -56,41 +73,75 @@ export class DebtService {
     const debt = await this.repo.findOne({ where: { id, user: { id: userId } } });
     if (!debt) throw new NotFoundException(`Debt ${id} not found`);
 
-    if (dto.name !== undefined) debt.name = dto.name;
-    if (dto.total_installments !== undefined) debt.total_installments = dto.total_installments;
-    if (dto.paid_installments !== undefined) debt.paid_installments = dto.paid_installments;
-    if (dto.start_date !== undefined) debt.start_date = new Date(dto.start_date);
-    if (dto.principal !== undefined) debt.principal = dto.principal ?? null;
-    if (dto.monthly_rate !== undefined) debt.monthly_rate = dto.monthly_rate ?? null;
-
-    const principal = dto.principal ?? (debt.principal ? Number(debt.principal) : null);
-    const rate = dto.monthly_rate ?? (debt.monthly_rate ? Number(debt.monthly_rate) : null);
-    const n = debt.total_installments;
-
-    if (principal != null && rate != null) {
-      debt.installment_amount = this.priceInstallment(principal, rate, n);
-    } else if (dto.installment_amount !== undefined) {
-      debt.installment_amount = dto.installment_amount;
-    }
-
-    debt.closed = debt.paid_installments >= debt.total_installments;
+    const wasClosed = debt.closed;
+    this.applyFields(debt, dto);
+    this.applyInstallment(debt, dto);
+    this.applyClosingRule(debt);
+    if (!wasClosed && debt.closed) debt.last_paid_month = monthStartKey(new Date());
 
     return this.repo.save(debt);
   }
 
-  async remove(id: string, userId: string): Promise<void> {
-    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
-    if (!exists) throw new NotFoundException(`Debt ${id} not found`);
-    await this.repo.delete(id);
+  private applyFields(debt: Debt, dto: UpdateDebtDto): void {
+    const copied = Object.entries(dto).filter(
+      ([key, value]) => value !== undefined && !NON_COPIED_UPDATE_FIELDS.has(key),
+    );
+    Object.assign(debt, Object.fromEntries(copied));
+    if (dto.start_date !== undefined) debt.start_date = new Date(dto.start_date);
   }
 
-  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
-  async autoIncrementInstallments(): Promise<void> {
-    const activeDebts = await this.repo.find({ where: { closed: false } });
-    for (const debt of activeDebts) {
-      debt.paid_installments += 1;
-      debt.closed = debt.paid_installments === debt.total_installments;
-      await this.repo.save(debt);
+  private applyInstallment(debt: Debt, dto: UpdateDebtDto): void {
+    const pricingChanged =
+      dto.principal !== undefined ||
+      dto.monthly_rate !== undefined ||
+      dto.total_installments !== undefined;
+    const hasPriceData = debt.principal != null && debt.monthly_rate != null;
+
+    if (pricingChanged && hasPriceData) {
+      debt.installment_amount = this.priceInstallment(
+        Number(debt.principal),
+        Number(debt.monthly_rate),
+        debt.total_installments,
+      );
+      return;
     }
+    if (dto.installment_amount !== undefined) debt.installment_amount = dto.installment_amount;
+  }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const result = await this.repo.delete({ id, user: { id: userId } });
+    if (!result.affected) throw new NotFoundException(`Debt ${id} not found`);
+  }
+
+  advanceForMonth(debts: Debt[], now: Date): Debt[] {
+    const monthStart = monthStartKey(now);
+    const due = debts.filter((debt) => this.isDueForMonth(debt, monthStart));
+    due.forEach((debt) => this.countInstallment(debt, monthStart));
+    return due;
+  }
+
+  private isDueForMonth(debt: Debt, monthStart: string): boolean {
+    const hasStarted = dayKey(debt.start_date) <= monthStart;
+    const alreadyCounted = debt.last_paid_month != null && debt.last_paid_month >= monthStart;
+    return !debt.closed && hasStarted && !alreadyCounted;
+  }
+
+  /**
+   * Fires at 00:00 BRT on day 1, i.e. 03:00 UTC of the same day. That is still the same
+   * UTC month, so the UTC-based `monthStartKey(new Date())` resolves to the month that just
+   * began. Without the time zone the cron would fire at 00:00 server time and, on a UTC
+   * host, the BRT-based notification cron (09:00 BRT) could race it. 09:00 BRT runs after.
+   */
+  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT, { timeZone: CRON_TIME_ZONE })
+  async handleMonthlyCron(): Promise<void> {
+    await this.schedulerLock.runExclusive(SCHEDULER_LOCK_KEYS.DEBT_MONTHLY_ADVANCE, () =>
+      this.autoIncrementInstallments(),
+    );
+  }
+
+  async autoIncrementInstallments(): Promise<void> {
+    const openDebts = await this.repo.find({ where: { closed: false } });
+    const advanced = this.advanceForMonth(openDebts, new Date());
+    await this.repo.save(advanced);
   }
 }

@@ -7,7 +7,9 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateIf,
 } from 'class-validator';
+import { IsAtMostProperty } from '../../shared/validators/is-at-most-property.validator';
 
 export class CreateDebtDto {
   @ApiProperty({ example: 'Car loan' })
@@ -19,7 +21,7 @@ export class CreateDebtDto {
     example: 850.0,
     description: 'Monthly installment in BRL. Omit when providing principal + monthly_rate.',
   })
-  @IsOptional()
+  @ValidateIf((dto: CreateDebtDto) => dto.principal == null || dto.monthly_rate == null)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   installment_amount?: number;
@@ -54,6 +56,7 @@ export class CreateDebtDto {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @IsAtMostProperty('total_installments')
   paid_installments?: number;
 
   @ApiProperty({ example: '2024-03-01', description: 'Date of the first installment (ISO 8601)' })

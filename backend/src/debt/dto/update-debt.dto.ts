@@ -8,6 +8,7 @@ import {
   IsNotEmpty,
   Min,
 } from 'class-validator';
+import { IsAtMostProperty } from '../../shared/validators/is-at-most-property.validator';
 
 export class UpdateDebtDto {
   @ApiPropertyOptional()
@@ -44,6 +45,7 @@ export class UpdateDebtDto {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @IsAtMostProperty('total_installments')
   paid_installments?: number;
 
   @ApiPropertyOptional()

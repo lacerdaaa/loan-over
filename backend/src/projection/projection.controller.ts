@@ -1,28 +1,20 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { DebtService } from '../debt/debt.service';
-import { EmployeeService } from '../employee/employee.service';
-import { FixedExpenseService } from '../fixed-expense/fixed-expense.service';
-import { IncomeService } from '../income/income.service';
-import { OrganizationService } from '../organization/organization.service';
+import { ProjectionQueryDto, DEFAULT_HORIZON } from './dto/projection-query.dto';
 import { ProjectedMonth } from '../shared/types';
-import { ProjectionInput, ProjectionService } from './projection.service';
-
-const DEFAULT_HORIZON = 24;
+import { ProjectionAccessService } from './projection-access.service';
+import { ProjectionInputAssembler } from './projection-input.assembler';
+import { ProjectionService, SimulationResult } from './projection.service';
+import { SimulateProjectionDto } from './dto/simulate-projection.dto';
 
 @ApiTags('projection')
 @Controller('projection')
 export class ProjectionController {
   constructor(
     private readonly projectionService: ProjectionService,
-    private readonly incomeService: IncomeService,
-    private readonly debtService: DebtService,
-    private readonly fixedExpenseService: FixedExpenseService,
-    private readonly organizationService: OrganizationService,
-    private readonly employeeService: EmployeeService,
-    private readonly config: ConfigService,
+    private readonly inputAssembler: ProjectionInputAssembler,
+    private readonly access: ProjectionAccessService,
   ) {}
 
   @Get()
@@ -33,65 +25,39 @@ export class ProjectionController {
       '"liberation" event — the freed installment amount compounds into free_balance from that month onward. ' +
       'Also emits an "alert" event the month before a debt closes.',
   })
-  @ApiQuery({
-    name: 'month',
-    required: false,
-    example: 6,
-    description: 'Reference month (defaults to current)',
-  })
-  @ApiQuery({
-    name: 'year',
-    required: false,
-    example: 2026,
-    description: 'Reference year (defaults to current)',
-  })
-  @ApiQuery({
-    name: 'horizon',
-    required: false,
-    example: 24,
-    description: 'Number of months to project (default 24)',
-  })
-  @ApiOkResponse({ description: 'Array of ProjectedMonth' })
+  @ApiOkResponse({ description: 'Array of ProjectedMonth (horizon above 24 requires Pro: 403)' })
   async get(
     @CurrentUser() userId: string,
-    @Query('month') month: number,
-    @Query('year') year: number,
-    @Query('horizon') horizon?: number,
+    @Query() query: ProjectionQueryDto,
   ): Promise<ProjectedMonth[]> {
     const now = new Date();
-    const refMonth = Number(month) || now.getMonth() + 1;
-    const refYear = Number(year) || now.getFullYear();
-    const horizonMonths = Number(horizon) || DEFAULT_HORIZON;
+    const refMonth = query.month ?? now.getMonth() + 1;
+    const refYear = query.year ?? now.getFullYear();
+    const horizonMonths = query.horizon ?? DEFAULT_HORIZON;
 
-    const input = await this.buildInput(userId, refMonth, refYear);
+    await this.access.assertHorizonAllowed(userId, horizonMonths);
+    const input = await this.inputAssembler.assemble(userId, refMonth, refYear);
     return this.projectionService.project(input, horizonMonths);
   }
 
-  private async buildInput(
-    userId: string,
-    referenceMonth: number,
-    referenceYear: number,
-  ): Promise<ProjectionInput> {
-    const businessEnabled = this.config.get<string>('FEATURE_BUSINESS') === 'true';
-    const [incomes, debts, fixedExpenses, organization, employees] = await Promise.all([
-      this.incomeService.findForMonth(userId, referenceMonth, referenceYear),
-      this.debtService.findAll(userId),
-      this.fixedExpenseService.findAll(userId),
-      businessEnabled ? this.organizationService.find(userId) : Promise.resolve(null),
-      businessEnabled ? this.employeeService.findAll(userId) : Promise.resolve([]),
-    ]);
-
-    return {
-      incomes,
-      debts,
-      fixedExpenses,
-      referenceMonth,
-      referenceYear,
-      ...(organization && {
-        startingCashBalance: Number(organization.cash_balance),
-        employees,
-        taxRegime: organization.tax_regime,
-      }),
-    };
+  @Post('simulate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Simulate a what-if scenario against the baseline projection (Pro)',
+    description:
+      'Adds hypothetical debts and extra monthly income/expense to the projection and returns ' +
+      'both the unchanged baseline and the scenario.',
+  })
+  @ApiOkResponse({
+    description: '{ baseline, scenario } — both arrays of ProjectedMonth (403 without Pro)',
+  })
+  async simulate(
+    @CurrentUser() userId: string,
+    @Body() dto: SimulateProjectionDto,
+  ): Promise<SimulationResult> {
+    await this.access.assertSimulatorAllowed(userId);
+    const now = new Date();
+    const input = await this.inputAssembler.assemble(userId, now.getMonth() + 1, now.getFullYear());
+    return this.projectionService.simulate(input, dto.horizon ?? DEFAULT_HORIZON, dto);
   }
 }

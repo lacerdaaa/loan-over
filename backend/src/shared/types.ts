@@ -16,6 +16,8 @@ export interface ProjectionEvent {
   type: ProjectionEventType;
   description: string;
   amount: number;
+  debt_id?: string;
+  debt_name?: string;
 }
 
 export interface ProjectedMonth {
@@ -25,6 +27,7 @@ export interface ProjectedMonth {
   events: ProjectionEvent[];
   active_debts: number;
   total_outflow: number;
+  cumulative_balance: number;
   cash_balance?: number;
 }
 

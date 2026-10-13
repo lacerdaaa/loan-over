@@ -87,9 +87,7 @@ describe('EmployeeController (e2e)', () => {
 
     it('rejects a missing name', () => {
       return auth(
-        request(app.getHttpServer())
-          .post('/employees')
-          .send({ regime: 'clt', gross_salary: 3000 }),
+        request(app.getHttpServer()).post('/employees').send({ regime: 'clt', gross_salary: 3000 }),
       ).expect(400);
     });
 
@@ -132,9 +130,7 @@ describe('EmployeeController (e2e)', () => {
 
     describe('DELETE /employees/:id', () => {
       it('deletes the employee and returns 204', () => {
-        return auth(
-          request(app.getHttpServer()).delete(`/employees/${createdId}`),
-        ).expect(204);
+        return auth(request(app.getHttpServer()).delete(`/employees/${createdId}`)).expect(204);
       });
 
       it('returns 404 when employee does not exist', () => {

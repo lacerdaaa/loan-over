@@ -1,25 +1,37 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
+import { lazy, Suspense } from 'react';
 import { AnimationsProvider } from './lib/animations';
+import { BILLING_ENABLED } from './lib/flags';
 import { PrivacyProvider } from './lib/privacy';
-import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
+import { queryClient } from './lib/queryClient';
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { AccountTypeGate } from './components/auth/AccountTypeGate';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ErrorToast } from './components/ui/ErrorToast';
 import { Sidebar } from './components/layout/Sidebar';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
-import { ChooseModePage } from './pages/ChooseModePage';
-import { DashboardPage } from './pages/DashboardPage';
-import { LandingPage } from './pages/LandingPage';
-import { DebtsPage } from './pages/DebtsPage';
-import { FixedExpensesPage } from './pages/FixedExpensesPage';
-import { GoalPage } from './pages/GoalPage';
-import { IncomePage } from './pages/IncomePage';
 import { LoginPage } from './pages/LoginPage';
-import { OccasionalExpensesPage } from './pages/OccasionalExpensesPage';
-import { PeoplePage } from './pages/PeoplePage';
-import { TimelinePage } from './pages/TimelinePage';
+import { UnsubscribedPage } from './pages/UnsubscribedPage';
 
-const queryClient = new QueryClient();
+const ChooseModePage = lazy(() => import('./pages/ChooseModePage').then((m) => ({ default: m.ChooseModePage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })));
+const BillingResultPage = lazy(() => import('./pages/BillingResultPage').then((m) => ({ default: m.BillingResultPage })));
+const DebtsPage = lazy(() => import('./pages/DebtsPage').then((m) => ({ default: m.DebtsPage })));
+const FixedExpensesPage = lazy(() => import('./pages/FixedExpensesPage').then((m) => ({ default: m.FixedExpensesPage })));
+const GoalPage = lazy(() => import('./pages/GoalPage').then((m) => ({ default: m.GoalPage })));
+const IncomePage = lazy(() => import('./pages/IncomePage').then((m) => ({ default: m.IncomePage })));
+const OccasionalExpensesPage = lazy(() => import('./pages/OccasionalExpensesPage').then((m) => ({ default: m.OccasionalExpensesPage })));
+const PeoplePage = lazy(() => import('./pages/PeoplePage').then((m) => ({ default: m.PeoplePage })));
+const SimulatorPage = lazy(() => import('./pages/SimulatorPage').then((m) => ({ default: m.SimulatorPage })));
+const TimelinePage = lazy(() => import('./pages/TimelinePage').then((m) => ({ default: m.TimelinePage })));
+
+const PageFallback = () => (
+  <div className="flex min-h-dvh items-center justify-center">
+    <span className="loading loading-spinner loading-lg text-primary" />
+  </div>
+);
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -33,7 +45,15 @@ const AnimatedRoutes = () => {
         <Route path="/fixed-expenses" element={<FixedExpensesPage />} />
         <Route path="/occasional-expenses" element={<OccasionalExpensesPage />} />
         <Route path="/goal" element={<GoalPage />} />
+        {BILLING_ENABLED && (
+          <>
+            <Route path="/billing/success" element={<BillingResultPage outcome="success" />} />
+            <Route path="/billing/cancel" element={<BillingResultPage outcome="cancel" />} />
+          </>
+        )}
+        <Route path="/simulator" element={<SimulatorPage />} />
         <Route path="/people" element={<PeoplePage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AnimatePresence>
   );
@@ -44,10 +64,12 @@ export const App = () => (
   <PrivacyProvider>
   <QueryClientProvider client={queryClient}>
     <Router>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/unsubscribed" element={<UnsubscribedPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/choose-mode" element={<ChooseModePage />} />
           <Route element={<AccountTypeGate />}>
@@ -57,7 +79,9 @@ export const App = () => (
           </Route>
         </Route>
       </Routes>
+      </Suspense>
     </Router>
+    <ErrorToast />
   </QueryClientProvider>
   </PrivacyProvider>
   </AnimationsProvider>

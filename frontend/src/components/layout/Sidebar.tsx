@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Users, Wallet, X } from 'lucide-react';
+import { CreditCard, FlaskConical, LayoutDashboard, ListChecks, Menu, Receipt, Settings, Target, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
@@ -12,7 +12,15 @@ import { useBusinessMode } from '../../lib/useBusinessMode';
 import { TutorialModal } from '../ui/TutorialModal';
 import { SettingsModal } from './SettingsModal';
 
-const NAV_ITEMS: { to: string; labelKey: LabelKey; Icon: LucideIcon; end?: boolean; tutorialId?: string }[] = [
+interface NavItem {
+  to: string;
+  labelKey: LabelKey;
+  Icon: LucideIcon;
+  end?: boolean;
+  tutorialId?: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard', labelKey: 'dashboard', Icon: LayoutDashboard },
   { to: '/timeline', labelKey: 'timeline', Icon: TrendingUp },
   { to: '/debts', labelKey: 'debts', Icon: CreditCard, tutorialId: 'debts' },
@@ -22,16 +30,20 @@ const NAV_ITEMS: { to: string; labelKey: LabelKey; Icon: LucideIcon; end?: boole
   { to: '/goal', labelKey: 'goal', Icon: Target },
 ];
 
+const PEOPLE_ITEM: NavItem = { to: '/people', labelKey: 'people', Icon: Users };
+const SIMULATOR_ITEM: NavItem = { to: '/simulator', labelKey: 'simulator', Icon: FlaskConical };
+
 const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) => {
   const isBusinessMode = useBusinessMode();
   const labels = labelsFor(isBusinessMode);
   return (
   <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
-    {NAV_ITEMS.map(({ to, labelKey, Icon, end, tutorialId }) => (
+    {[...NAV_ITEMS, isBusinessMode ? PEOPLE_ITEM : SIMULATOR_ITEM].map(({ to, labelKey, Icon, end, tutorialId }) => (
       <NavLink
         key={to}
         to={to}
         end={end}
+        aria-label={labels[labelKey]}
         onClick={onNavClick}
         {...(tutorialId ? { 'data-tutorial': tutorialId } : {})}
         className={({ isActive }) =>
@@ -46,22 +58,6 @@ const NavItems = ({ collapsed, onNavClick }: { collapsed?: boolean; onNavClick?:
         {!collapsed && <span>{labels[labelKey]}</span>}
       </NavLink>
     ))}
-    {isBusinessMode && (
-      <NavLink
-        to="/people"
-        onClick={onNavClick}
-        className={({ isActive }) =>
-          `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
-          ${isActive
-            ? 'bg-primary/10 text-primary border-l-2 border-primary pl-[10px]'
-            : 'text-base-content/60 hover:text-base-content hover:bg-base-300'
-          }`
-        }
-      >
-        <Users size={18} className="shrink-0" />
-        {!collapsed && <span>{labels.people}</span>}
-      </NavLink>
-    )}
   </nav>
   );
 };
@@ -116,7 +112,7 @@ export const Sidebar = () => {
   const spring = animations.enabled ? { type: 'spring' as const, stiffness: 400, damping: 36 } : { duration: 0 };
 
   return (
-    <div className="flex h-screen bg-base-100 overflow-hidden">
+    <div className="flex h-dvh bg-base-100 overflow-hidden">
 
       {/* Desktop sidebar */}
       <motion.aside
@@ -128,6 +124,8 @@ export const Sidebar = () => {
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-expanded={!collapsed}
             className="font-mono font-bold text-primary text-sm whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity"
           >
             {collapsed ? '//' : '// loan over'}
@@ -156,7 +154,7 @@ export const Sidebar = () => {
                 <div className="flex items-center gap-3">
                   <span className="font-mono font-bold text-primary text-sm">// loan over</span>
                 </div>
-                <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(false)}>
+                <button className="btn btn-ghost btn-sm btn-square" aria-label="Fechar menu" onClick={() => setMobileOpen(false)}>
                   <X size={18} />
                 </button>
               </div>
@@ -171,7 +169,7 @@ export const Sidebar = () => {
       {/* Content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className="flex md:hidden items-center gap-3 px-4 py-3 border-b border-base-300 bg-base-200 shrink-0">
-          <button className="btn btn-ghost btn-sm btn-square" onClick={() => setMobileOpen(true)}>
+          <button className="btn btn-ghost btn-sm btn-square" aria-label="Abrir menu" onClick={() => setMobileOpen(true)}>
             <Menu size={20} />
           </button>
           <span className="font-mono font-bold text-primary text-sm">// loan over</span>

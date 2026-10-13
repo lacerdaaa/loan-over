@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useCreateOccasionalExpense, useDeleteOccasionalExpense, useOccasionalExpenses } from '../api/occasional-expenses';
+import { ConfirmDeleteButton } from '../components/ui/ConfirmDeleteButton';
 import { Field } from '../components/ui/Field';
 import { Modal } from '../components/ui/Modal';
 import { MonthNav } from '../components/ui/MonthNav';
@@ -22,12 +23,12 @@ export const OccasionalExpensesPage = () => {
   const [form, setForm] = useState(EMPTY);
 
   const { data: expenses = [] } = useOccasionalExpenses(month, year);
-  const create = useCreateOccasionalExpense(month, year);
-  const remove = useDeleteOccasionalExpense(month, year);
+  const create = useCreateOccasionalExpense();
+  const remove = useDeleteOccasionalExpense();
   const { hidden, mask } = usePrivacy();
   const labels = labelsFor(useBusinessMode());
 
-  const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
+  const total = expenses.filter((e) => !e.from_benefit).reduce((s, e) => s + e.amount, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,14 +76,7 @@ export const OccasionalExpensesPage = () => {
                     <span className={`text-sm font-semibold tabular-nums ${exp.from_benefit ? 'text-warning' : 'text-base-content'}`}>
                       {mask(formatCurrency(exp.amount))}
                     </span>
-                    <motion.button
-                      whileTap={{ scale: 0.93 }}
-                      aria-label="Excluir gasto"
-                      className="btn btn-ghost btn-xs text-base-content/30 hover:text-error"
-                      onClick={() => remove.mutate(exp.id)}
-                    >
-                      <X size={14} />
-                    </motion.button>
+                    <ConfirmDeleteButton label="Excluir gasto" pending={remove.isPending} onConfirm={() => remove.mutate(exp.id)} />
                   </div>
                 </motion.div>
               ))}

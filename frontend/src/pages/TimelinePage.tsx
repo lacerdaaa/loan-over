@@ -1,13 +1,18 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Gift, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { usePro } from '../api/billing';
 import { useProjection } from '../api/projection';
 import { PageHeader } from '../components/ui/PageHeader';
+import { EventText } from '../components/ui/EventText';
+import { ProBadge } from '../components/ui/ProBadge';
 import { PageTransition } from '../components/ui/PageTransition';
 import { ProjectionChart } from '../components/ui/ProjectionChart';
 import { useAnimations } from '../lib/animations';
 import { formatCurrency } from '../lib/formatCurrency';
 import { monthLabel } from '../lib/monthLabel';
 import { usePrivacy } from '../lib/privacy';
+import { allowedHorizon, HORIZON_OPTIONS, loadHorizon, requiresPro, saveHorizon, type Horizon } from '../lib/timelineHorizon';
 import type { ProjectedMonth } from '../types/api';
 
 const now = new Date();
@@ -47,7 +52,7 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
             <div className="mt-0.5 w-5 h-5 rounded-md bg-warning/15 flex items-center justify-center shrink-0">
               <AlertTriangle size={11} className="text-warning" />
             </div>
-            <p className="text-sm text-base-content/70">{e.description}</p>
+            <p className="text-sm text-base-content/70"><EventText event={e} /></p>
           </div>
         ))}
         {liberations.map((e, i) => (
@@ -56,7 +61,7 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
               <Zap size={11} className="text-success" />
             </div>
             <div className="flex flex-1 items-baseline justify-between gap-2 min-w-0">
-              <p className="text-sm text-base-content/80">{e.description}</p>
+              <p className="text-sm text-base-content/80"><EventText event={e} /></p>
               {e.amount > 0 && (
                 <span className="text-xs font-semibold text-success tabular-nums shrink-0">
                   +{mask(formatCurrency(e.amount))}/mês
@@ -67,13 +72,13 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
         ))}
         {payrolls.map((e, i) => (
           <div key={`p-${i}`} className="flex items-start gap-2.5">
-            <div className="mt-0.5 w-5 h-5 rounded-md bg-warning/15 flex items-center justify-center shrink-0">
-              <Gift size={11} className="text-warning" />
+            <div className="mt-0.5 w-5 h-5 rounded-md bg-info/15 flex items-center justify-center shrink-0">
+              <Gift size={11} className="text-info" />
             </div>
             <div className="flex flex-1 items-baseline justify-between gap-2 min-w-0">
               <p className="text-sm text-base-content/70">{e.description}</p>
               {e.amount > 0 && (
-                <span className="text-xs font-semibold text-warning tabular-nums shrink-0">
+                <span className="text-xs font-semibold text-info tabular-nums shrink-0">
                   -{mask(formatCurrency(e.amount))}
                 </span>
               )}
@@ -85,15 +90,49 @@ const MonthGroup = ({ m, index }: { m: ProjectedMonth; index: number }) => {
   );
 };
 
+const HorizonSelector = ({ value, isPro, onChange }: { value: Horizon; isPro: boolean; onChange: (h: Horizon) => void }) => (
+  <div role="group" aria-label="Horizonte da projeção" className="join" data-tutorial="timeline-horizon">
+    {HORIZON_OPTIONS.map((option) => {
+      const locked = requiresPro(option) && !isPro;
+      return (
+        <span
+          key={option}
+          className={`join-item ${locked ? 'tooltip tooltip-left' : ''}`}
+          data-tip={locked ? 'Disponível no plano Pro' : undefined}
+        >
+          <button
+            type="button"
+            aria-pressed={option === value}
+            disabled={locked}
+            onClick={() => onChange(option)}
+            className={`btn btn-xs gap-1 rounded-none ${option === value ? 'btn-primary' : 'btn-ghost border-base-300'}`}
+          >
+            {option}m {requiresPro(option) && <ProBadge />}
+          </button>
+        </span>
+      );
+    })}
+  </div>
+);
+
 export const TimelinePage = () => {
-  const { data, isLoading } = useProjection(MONTH, YEAR, 24);
+  const isPro = usePro();
+  const [storedHorizon, setHorizon] = useState<Horizon>(loadHorizon);
+  const horizon = allowedHorizon(storedHorizon, isPro);
+  const { data, isLoading } = useProjection(MONTH, YEAR, horizon);
+
+  const handleHorizonChange = (next: Horizon) => {
+    setHorizon(next);
+    saveHorizon(next);
+  };
   const months = data?.filter((m) => m.events.length > 0) ?? [];
 
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 w-full">
         <PageHeader
-          title="Projeção 24 meses"
+          title={`Projeção ${horizon} meses`}
+          action={<HorizonSelector value={horizon} isPro={isPro} onChange={handleHorizonChange} />}
           subtitle="Fluxo de caixa futuro com base nas dívidas e renda atuais"
         />
 
@@ -112,7 +151,7 @@ export const TimelinePage = () => {
               <Zap size={22} className="text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-base-content">Nenhum marco nos próximos 24 meses</p>
+              <p className="font-semibold text-base-content">Nenhum marco nos próximos {horizon} meses</p>
               <p className="text-sm text-base-content/50 mt-1 max-w-xs">
                 Cadastre dívidas para ver as datas de quitação e os meses em que o saldo fica livre.
               </p>

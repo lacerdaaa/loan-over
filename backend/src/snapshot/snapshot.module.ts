@@ -5,6 +5,7 @@ import { FixedExpenseModule } from '../fixed-expense/fixed-expense.module';
 import { IncomeModule } from '../income/income.module';
 import { OccasionalExpenseModule } from '../occasional-expense/occasional-expense.module';
 import { OrganizationModule } from '../organization/organization.module';
+import { SnapshotInputAssembler } from './snapshot-input.assembler';
 import { SnapshotController } from './snapshot.controller';
 import { SnapshotService } from './snapshot.service';
 
@@ -18,7 +19,7 @@ import { SnapshotService } from './snapshot.service';
     OrganizationModule,
   ],
   controllers: [SnapshotController],
-  providers: [SnapshotService],
-  exports: [SnapshotService],
+  providers: [SnapshotService, SnapshotInputAssembler],
+  exports: [SnapshotService, SnapshotInputAssembler],
 })
 export class SnapshotModule {}

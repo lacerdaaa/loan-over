@@ -11,6 +11,7 @@ import { EmployeeModule } from './employee/employee.module';
 import { FixedExpenseModule } from './fixed-expense/fixed-expense.module';
 import { GoalModule } from './goal/goal.module';
 import { IncomeModule } from './income/income.module';
+import { NotificationModule } from './notification/notification.module';
 import { OccasionalExpenseModule } from './occasional-expense/occasional-expense.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ProjectionModule } from './projection/projection.module';
@@ -26,10 +27,11 @@ import { UserModule } from './user/user.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const url = config.get<string>('DATABASE_URL');
-        const isProd = config.get<string>('NODE_ENV') === 'production';
+        const nodeEnv = config.get<string>('NODE_ENV');
+        const isProd = nodeEnv === 'production';
         const base = {
           autoLoadEntities: true,
-          synchronize: !isProd,
+          synchronize: nodeEnv === 'development',
           migrations: isProd ? ['dist/migrations/*.js'] : ['src/migrations/*.ts'],
           migrationsRun: isProd,
         };
@@ -58,6 +60,7 @@ import { UserModule } from './user/user.module';
     OrganizationModule,
     EmployeeModule,
     BankTransactionModule,
+    NotificationModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

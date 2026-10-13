@@ -35,8 +35,7 @@ export class FixedExpenseService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const exists = await this.repo.findOne({ where: { id, user: { id: userId } } });
-    if (!exists) throw new NotFoundException(`FixedExpense ${id} not found`);
-    await this.repo.delete(id);
+    const result = await this.repo.delete({ id, user: { id: userId } });
+    if (!result.affected) throw new NotFoundException(`FixedExpense ${id} not found`);
   }
 }

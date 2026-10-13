@@ -8,10 +8,11 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { PricingSection } from '../components/ui/PricingSection';
 import { BlueprintGrid } from '../components/ui/BlueprintGrid';
 import { isAuthenticated } from '../lib/auth';
 import { PALETTES, type LandingMode, type LandingPalette } from '../lib/brand';
-import { BUSINESS_MODE_ENABLED } from '../lib/flags';
+import { BILLING_ENABLED, BUSINESS_MODE_ENABLED } from '../lib/flags';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 const AUTH_URL = `${API_URL}/auth/google`;
@@ -637,6 +638,8 @@ export const LandingPage = () => {
           </motion.div>
         </div>
       </section>
+
+      {BILLING_ENABLED && mode === 'personal' && <PricingSection palette={palette} href={heroHref} />}
 
       {/* CTA */}
       <CTASection palette={palette} content={content.cta} href={heroHref} />

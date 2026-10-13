@@ -17,13 +17,19 @@ export class GoalService {
 
   async upsert(userId: string, dto: UpsertGoalDto): Promise<Goal> {
     const existing = await this.find(userId);
+    const { saved_amount, ...rest } = dto;
+    const fields = {
+      ...rest,
+      monthly_min: dto.monthly_min ?? null,
+      ...(saved_amount !== undefined && { saved_amount }),
+    };
 
     if (existing) {
-      Object.assign(existing, dto);
+      Object.assign(existing, fields);
       return this.repo.save(existing);
     }
 
-    const goal = this.repo.create({ user: { id: userId }, ...dto });
+    const goal = this.repo.create({ user: { id: userId }, ...fields });
     return this.repo.save(goal);
   }
 

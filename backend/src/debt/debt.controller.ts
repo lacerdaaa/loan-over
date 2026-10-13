@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateDebtDto } from './dto/create-debt.dto';
@@ -29,7 +40,7 @@ export class DebtController {
   @ApiOperation({ summary: 'Update a debt' })
   @ApiOkResponse({ type: Debt })
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userId: string,
     @Body() dto: UpdateDebtDto,
   ): Promise<Debt> {
@@ -43,15 +54,18 @@ export class DebtController {
       'Increments paid_installments by 1. Automatically sets closed=true when the last installment is paid.',
   })
   @ApiOkResponse({ type: Debt })
-  payInstallment(@Param('id') id: string, @CurrentUser() userId: string): Promise<Debt> {
+  payInstallment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() userId: string,
+  ): Promise<Debt> {
     return this.service.payInstallment(id, userId);
   }
 
   @Delete(':id')
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a debt' })
   @ApiNoContentResponse()
-  remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() userId: string): Promise<void> {
     return this.service.remove(id, userId);
   }
 }

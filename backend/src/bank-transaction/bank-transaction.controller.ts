@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -65,7 +66,7 @@ export class BankTransactionController {
   }
 
   @Delete(':id')
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a bank transaction' })
   @ApiNoContentResponse()
   remove(@CurrentUser() userId: string, @Param('id') id: string): Promise<void> {

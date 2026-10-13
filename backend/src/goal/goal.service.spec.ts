@@ -13,6 +13,7 @@ const makeGoal = (overrides: Partial<Goal> = {}): Goal =>
     deadline_month: 12,
     deadline_year: 2027,
     monthly_min: null,
+    saved_amount: 0,
     ...overrides,
   }) as Goal;
 
@@ -76,6 +77,60 @@ describe('GoalService', () => {
 
       expect(repo.create).not.toHaveBeenCalled();
       expect(result.monthly_min).toBe(400);
+    });
+  });
+
+  describe('upsert when monthly_min is omitted', () => {
+    it('clears the monthly_min of an existing goal', async () => {
+      const existing = makeGoal({ monthly_min: 200 });
+      repo.findOne.mockResolvedValue(existing);
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Goal));
+      const dto = { target_amount: 15000, deadline_month: 6, deadline_year: 2028 };
+
+      const result = await service.upsert(USER_ID, dto);
+
+      expect(result.monthly_min).toBeNull();
+    });
+  });
+
+  describe('upsert with saved_amount', () => {
+    const baseDto = { target_amount: 15000, deadline_month: 6, deadline_year: 2028 };
+
+    it('stores the saved_amount when creating a goal', async () => {
+      repo.findOne.mockResolvedValue(null);
+      repo.create.mockImplementation((data: Partial<Goal>) => data as Goal);
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Goal));
+
+      const result = await service.upsert(USER_ID, { ...baseDto, saved_amount: 1200.5 });
+
+      expect(result.saved_amount).toBe(1200.5);
+    });
+
+    it('replaces the saved_amount of an existing goal when provided', async () => {
+      repo.findOne.mockResolvedValue(makeGoal({ saved_amount: 300 }));
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Goal));
+
+      const result = await service.upsert(USER_ID, { ...baseDto, saved_amount: 900 });
+
+      expect(result.saved_amount).toBe(900);
+    });
+
+    it('keeps the existing saved_amount when it is omitted', async () => {
+      repo.findOne.mockResolvedValue(makeGoal({ saved_amount: 300 }));
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Goal));
+
+      const result = await service.upsert(USER_ID, baseDto);
+
+      expect(result.saved_amount).toBe(300);
+    });
+
+    it('keeps the existing saved_amount when it is explicitly undefined', async () => {
+      repo.findOne.mockResolvedValue(makeGoal({ saved_amount: 300 }));
+      repo.save.mockImplementation((entity) => Promise.resolve(entity as Goal));
+
+      const result = await service.upsert(USER_ID, { ...baseDto, saved_amount: undefined });
+
+      expect(result.saved_amount).toBe(300);
     });
   });
 

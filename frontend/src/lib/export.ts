@@ -29,7 +29,7 @@ export function buildJsonExport(data: ExportData): string {
 }
 
 const netIncome = (income: Income): number =>
-  Number(income.amount) - (income.deductions ?? []).reduce((s, d) => s + Number(d.amount), 0);
+  income.amount - (income.deductions ?? []).reduce((s, d) => s + d.amount, 0);
 
 export function buildTextExport(data: ExportData): string {
   const { month, year, incomes, debts, fixedExpenses, occasionalExpenses, goal, snapshot } = data;
@@ -60,7 +60,7 @@ export function buildTextExport(data: ExportData): string {
 
   // Fixed expenses
   const activeExpenses = fixedExpenses.filter((e) => e.active && !e.from_benefit);
-  const totalFixed = activeExpenses.reduce((s, e) => s + Number(e.amount), 0);
+  const totalFixed = activeExpenses.reduce((s, e) => s + e.amount, 0);
 
   lines.push(`## Gastos Fixos (${formatCurrency(totalFixed)}/mês)`);
   for (const e of fixedExpenses.filter((e) => !e.from_benefit)) {
@@ -78,7 +78,7 @@ export function buildTextExport(data: ExportData): string {
   // Debts
   const openDebts = debts.filter((d) => !d.closed);
   const closedDebts = debts.filter((d) => d.closed);
-  const totalDebtInstallments = openDebts.reduce((s, d) => s + Number(d.installment_amount), 0);
+  const totalDebtInstallments = openDebts.reduce((s, d) => s + d.installment_amount, 0);
   const totalDebtBalance = openDebts.reduce((s, d) => s + remainingBalance(d), 0);
 
   lines.push(`## Dívidas em aberto (${openDebts.length} dívidas | parcelas: ${formatCurrency(totalDebtInstallments)}/mês | saldo devedor total: ${formatCurrency(totalDebtBalance)})`);
@@ -87,8 +87,8 @@ export function buildTextExport(data: ExportData): string {
     lines.push(`${i + 1}. ${d.name} — ${formatCurrency(d.installment_amount)}/mês, ${remaining} parcelas restantes`);
     if (d.monthly_rate) {
       const pv = remainingBalance(d);
-      const face = remaining * Number(d.installment_amount);
-      lines.push(`   Taxa: ${(Number(d.monthly_rate) * 100).toFixed(2)}% a.m. | Valor para quitar hoje: ${formatCurrency(pv)} (face: ${formatCurrency(face)})`);
+      const face = remaining * d.installment_amount;
+      lines.push(`   Taxa: ${((d.monthly_rate ?? 0) * 100).toFixed(2)}% a.m. | Valor para quitar hoje: ${formatCurrency(pv)} (face: ${formatCurrency(face)})`);
     } else {
       lines.push(`   Saldo devedor: ${formatCurrency(remainingBalance(d))}`);
     }
@@ -100,7 +100,7 @@ export function buildTextExport(data: ExportData): string {
 
   // Occasional expenses
   if (occasionalExpenses.length > 0) {
-    const totalOccasional = occasionalExpenses.filter((e) => !e.from_benefit).reduce((s, e) => s + Number(e.amount), 0);
+    const totalOccasional = occasionalExpenses.filter((e) => !e.from_benefit).reduce((s, e) => s + e.amount, 0);
     lines.push(`## Gastos do Mês — ${monthLabel(month, year)} (total: ${formatCurrency(totalOccasional)})`);
     for (const e of occasionalExpenses) {
       const tag = e.from_benefit ? ' [benefício]' : '';

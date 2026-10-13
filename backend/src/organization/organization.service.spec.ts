@@ -62,7 +62,7 @@ describe('OrganizationService', () => {
     it('updates the existing organization without creating a new one', async () => {
       const existing = makeOrg({ name: 'Old Co', cash_balance: 10000 });
       repo.findOne.mockResolvedValue(existing);
-      const dto = { name: 'New Co', cnpj: null, cash_balance: 25000 };
+      const dto = { name: 'New Co', cash_balance: 25000 };
       repo.save.mockImplementation((o: Organization) => Promise.resolve(o));
 
       const result = await service.upsert(USER_ID, dto);

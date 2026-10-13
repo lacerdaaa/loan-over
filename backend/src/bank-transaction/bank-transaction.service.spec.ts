@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { BankTransaction } from './bank-transaction.entity';
 import { BankTransactionService } from './bank-transaction.service';
 
@@ -12,14 +11,14 @@ function makeHash(userId: string, date: string, amount: number, description: str
   return createHash('sha256').update(`${userId}|${date}|${amount}|${description}`).digest('hex');
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyFn = (...args: any[]) => any;
-
-const mockRepository = () => ({
+const mockRepository = (): Record<
+  'find' | 'findOne' | 'create' | 'save' | 'delete',
+  jest.Mock
+> => ({
   find: jest.fn(),
   findOne: jest.fn(),
   create: jest.fn((data: Partial<BankTransaction>) => data as BankTransaction),
-  save: jest.fn() as jest.MockedFunction<AnyFn>,
+  save: jest.fn(),
   delete: jest.fn(),
 });
 
@@ -39,7 +38,7 @@ const makeTx = (overrides: Partial<BankTransaction> = {}): BankTransaction =>
 
 describe('BankTransactionService', () => {
   let service: BankTransactionService;
-  let repo: jest.Mocked<Repository<BankTransaction>>;
+  let repo: ReturnType<typeof mockRepository>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -71,7 +70,7 @@ describe('BankTransactionService', () => {
   describe('import', () => {
     it('inserts new transactions and returns { imported, skipped }', async () => {
       repo.find.mockResolvedValue([]);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entities) => entities);
+      repo.save.mockImplementation((entities: unknown) => Promise.resolve(entities));
 
       const dto = {
         transactions: [
@@ -90,12 +89,10 @@ describe('BankTransactionService', () => {
     it('skips a transaction when its import_hash already exists for the user', async () => {
       const hash = makeHash(USER_ID, '2026-06-15', 1500, 'Pagamento cliente');
       repo.find.mockResolvedValue([{ import_hash: hash } as BankTransaction]);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entities) => entities);
+      repo.save.mockImplementation((entities: unknown) => Promise.resolve(entities));
 
       const dto = {
-        transactions: [
-          { date: '2026-06-15', description: 'Pagamento cliente', amount: 1500 },
-        ],
+        transactions: [{ date: '2026-06-15', description: 'Pagamento cliente', amount: 1500 }],
       };
 
       const result = await service.import(USER_ID, dto);
@@ -106,7 +103,7 @@ describe('BankTransactionService', () => {
 
     it('deduplicates transactions within the same batch', async () => {
       repo.find.mockResolvedValue([]);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entities) => entities);
+      repo.save.mockImplementation((entities: unknown) => Promise.resolve(entities));
 
       const dto = {
         transactions: [
@@ -124,9 +121,9 @@ describe('BankTransactionService', () => {
     it('derives month and year from the date field, not from the client', async () => {
       repo.find.mockResolvedValue([]);
       let savedEntities: BankTransaction[] = [];
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entities) => {
-        savedEntities = entities as BankTransaction[];
-        return entities;
+      repo.save.mockImplementation((entities: BankTransaction[]) => {
+        savedEntities = entities;
+        return Promise.resolve(entities);
       });
 
       const dto = {
@@ -142,7 +139,7 @@ describe('BankTransactionService', () => {
     it('does not throw on duplicate — counts it as skipped', async () => {
       const hash = makeHash(USER_ID, '2026-06-15', 1500, 'Pagamento cliente');
       repo.find.mockResolvedValue([{ import_hash: hash } as BankTransaction]);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entities) => entities);
+      repo.save.mockImplementation((entities: unknown) => Promise.resolve(entities));
 
       const dto = {
         transactions: [{ date: '2026-06-15', description: 'Pagamento cliente', amount: 1500 }],
@@ -177,7 +174,7 @@ describe('BankTransactionService', () => {
     it('forces matched_id to null when matched_kind is ignored', async () => {
       const tx = makeTx({ matched_kind: 'income', matched_id: 'some-uuid' });
       repo.findOne.mockResolvedValue(tx);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entity) => entity);
+      repo.save.mockImplementation((entity: unknown) => Promise.resolve(entity));
 
       await service.updateMatch(USER_ID, 'tx-1', {
         matched_kind: 'ignored',
@@ -192,7 +189,7 @@ describe('BankTransactionService', () => {
     it('forces matched_id to null when matched_kind is payroll', async () => {
       const tx = makeTx({ matched_kind: 'income', matched_id: 'some-uuid' });
       repo.findOne.mockResolvedValue(tx);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entity) => entity);
+      repo.save.mockImplementation((entity: unknown) => Promise.resolve(entity));
 
       await service.updateMatch(USER_ID, 'tx-1', {
         matched_kind: 'payroll',
@@ -207,7 +204,7 @@ describe('BankTransactionService', () => {
     it('zeros both matched_kind and matched_id when matched_kind is null (unmatch)', async () => {
       const tx = makeTx({ matched_kind: 'income', matched_id: 'income-uuid' });
       repo.findOne.mockResolvedValue(tx);
-      (repo.save as jest.MockedFunction<AnyFn>).mockImplementation(async (entity) => entity);
+      repo.save.mockImplementation((entity: unknown) => Promise.resolve(entity));
 
       await service.updateMatch(USER_ID, 'tx-1', { matched_kind: null });
 

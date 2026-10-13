@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateFixedExpenseDto } from './dto/create-fixed-expense.dto';
@@ -32,7 +43,7 @@ export class FixedExpenseController {
   })
   @ApiOkResponse({ type: FixedExpense })
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userId: string,
     @Body() dto: UpdateFixedExpenseDto,
   ): Promise<FixedExpense> {
@@ -40,10 +51,10 @@ export class FixedExpenseController {
   }
 
   @Delete(':id')
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a fixed expense' })
   @ApiNoContentResponse()
-  remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() userId: string): Promise<void> {
     return this.service.remove(id, userId);
   }
 }
